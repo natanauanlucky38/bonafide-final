@@ -11,71 +11,116 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
 $errors = [];
 $successMessage = "";
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle form submission for creating a job posting
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
     // Sanitize and validate form inputs
     $job_title = trim($_POST['job_title']);
     $company = trim($_POST['company']);
     $location = trim($_POST['location']);
     $min_salary = trim($_POST['min_salary']);
     $max_salary = trim($_POST['max_salary']);
-    $description = trim($_POST['description']);
+    $description = trim($_POST['description']); 
     $openings = intval($_POST['openings']);
     $deadline = trim($_POST['deadline']);
+    $status = trim($_POST['status']);
     $has_questionnaire = isset($_POST['has_questionnaire']) ? 1 : 0;
 
-    // Questionnaire data
-    $questions = $_POST['questions'] ?? [];
-    $dealbreakers = $_POST['dealbreakers'] ?? [];
-
-    // Basic validation
-    if (empty($job_title) || empty($company) || empty($location) || empty($openings) || empty($deadline)) {
+    // Basic validation for required fields
+    if (empty($job_title) || empty($company) || empty($location) || empty($openings) || empty($deadline) || empty($description) || empty($status)) {
         $errors[] = "Please fill in all required fields.";
     }
 
-    // If no errors, insert into the database
+    // Validate deadline
+    if (!preg_match('/\d{4}-\d{2}-\d{2}/', $deadline)) {
+        $errors[] = "Invalid date format for deadline.";
+    }
+
+    // Insert into the database if no errors
     if (empty($errors)) {
-        $created_by = $_SESSION['user_id']; // Recruiter's user ID
+        $created_by = $_SESSION['user_id'];
 
         // Insert job posting into the database
         $sql = "
-            INSERT INTO job_postings (job_title, company, location, min_salary, max_salary, description, openings, created_by, deadline, has_questionnaire)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO job_postings (job_title, company, location, min_salary, max_salary, description, openings, created_by, deadline, has_questionnaire, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ";
-
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param('sssssisiis', $job_title, $company, $location, $min_salary, $max_salary, $description, $openings, $created_by, $deadline, $has_questionnaire);
+        $stmt->bind_param('sssssssisss', $job_title, $company, $location, $min_salary, $max_salary, $description, $openings, $created_by, $deadline, $has_questionnaire, $status);
 
         if ($stmt->execute()) {
-            $job_id = $stmt->insert_id;  // Get the ID of the newly created job posting
+            $job_id = $stmt->insert_id;
 
-            // If the job has a questionnaire, insert the questions
-            if ($has_questionnaire && !empty($questions)) {
+            // Insert questionnaire if applicable
+            if ($has_questionnaire) {
+                $questions = $_POST['questions'] ?? [];
+                $question_types = $_POST['question_types'] ?? []; 
+                $dealbreakers = $_POST['dealbreakers'] ?? [];
+                $choices = $_POST['choices'] ?? []; 
+                $correct_answers = $_POST['correct_answers'] ?? []; 
+
                 $questionSql = "
-                    INSERT INTO questionnaire_template (job_id, question_text, is_required, is_dealbreaker)
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO questionnaire_template (job_id, question_text, question_type, is_required, is_dealbreaker, choice_a, choice_b, choice_c, choice_d, correct_answer)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ";
                 $questionStmt = $conn->prepare($questionSql);
 
                 foreach ($questions as $index => $questionText) {
                     $is_dealbreaker = isset($dealbreakers[$index]) ? 1 : 0;
-                    $is_required = 1;  // Assuming all questions are required
+                    $is_required = 1;  
+                    $question_type = $question_types[$index]; 
 
-                    // Now bind the parameters
-                    $questionStmt->bind_param('isii', $job_id, $questionText, $is_required, $is_dealbreaker);
+                    $choice_a = $choice_b = $choice_c = $choice_d = null;
+
+                    if ($question_type === 'MULTIPLE_CHOICE') {
+                        $choice_a = trim($choices[$index]['a'] ?? '');
+                        $choice_b = trim($choices[$index]['b'] ?? '');
+                        $choice_c = trim($choices[$index]['c'] ?? '');
+                        $choice_d = trim($choices[$index]['d'] ?? '');
+                    }
+
+                    // Correct answer handling
+                    $correct_answer = trim($correct_answers[$index] ?? '');
+                    if ($question_type === 'YES_NO') {
+                        // Ensure correct answer is stored as YES or NO
+                        $correct_answer = strtoupper($correct_answer) === 'YES' ? 'YES' : 'NO';
+                    } elseif ($question_type === 'MULTIPLE_CHOICE') {
+                        // Store correct answer as A, B, C, or D
+                        $correct_answer = strtoupper($correct_answer);
+                    }
+
+                    $questionStmt->bind_param('issiiissss', $job_id, $questionText, $question_type, $is_required, $is_dealbreaker, $choice_a, $choice_b, $choice_c, $choice_d, $correct_answer);
                     $questionStmt->execute();
                 }
                 $questionStmt->close();
             }
 
-            $successMessage = "Job posting created successfully with the questionnaire!";
+            $successMessage = "Job posting created successfully!";
         } else {
             $errors[] = "Failed to create job posting. Please try again.";
         }
-
         $stmt->close();
     }
 }
+
+// Handle job deletion
+if (isset($_GET['delete_job_id'])) {
+    $job_id = intval($_GET['delete_job_id']);
+    $deleteSql = "DELETE FROM job_postings WHERE job_id = ?";
+    $deleteStmt = $conn->prepare($deleteSql);
+    $deleteStmt->bind_param('i', $job_id);
+    if ($deleteStmt->execute()) {
+        $successMessage = "Job deleted successfully!";
+    }
+    $deleteStmt->close();
+}
+
+// Fetch all job postings to display in the job list
+$sql = "SELECT job_id, job_title, company, location, min_salary, max_salary, description, openings, status, deadline FROM job_postings WHERE created_by = ? ORDER BY created_at DESC";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('i', $_SESSION['user_id']);
+$stmt->execute();
+$jobs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -86,16 +131,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Create Job Posting</title>
     <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS file -->
     <script>
-        // JavaScript function to add more questionnaire fields dynamically
         function addQuestion() {
             const container = document.getElementById('questionnaire-container');
-            const questionIndex = container.children.length;  // Number of questions added
+            const questionIndex = container.children.length;
 
             const questionDiv = document.createElement('div');
             questionDiv.innerHTML = `
                 <div>
                     <label>Question ${questionIndex + 1}:</label>
                     <input type="text" name="questions[]" required>
+                    <label for="question_type">Type:</label>
+                    <select name="question_types[]" onchange="showChoices(this, ${questionIndex})">
+                        <option value="TEXT">Text</option>
+                        <option value="YES_NO">Yes/No</option>
+                        <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+                    </select>
+                    <div id="choices_${questionIndex}" style="display:none;">
+                        <div id="multiple_choices_${questionIndex}" style="display:none;">
+                            <label>Choices (A-D):</label>
+                            <input type="text" name="choices[${questionIndex}][a]" placeholder="Choice A">
+                            <input type="text" name="choices[${questionIndex}][b]" placeholder="Choice B">
+                            <input type="text" name="choices[${questionIndex}][c]" placeholder="Choice C">
+                            <input type="text" name="choices[${questionIndex}][d]" placeholder="Choice D">
+                            <label>Correct Answer:</label>
+                            <select name="correct_answers[]">
+                                <option value="">Select Correct Answer</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                        </div>
+                        <div id="yes_no_choices_${questionIndex}" style="display:none;">
+                            <label>Correct Answer:</label>
+                            <select name="correct_answers[]">
+                                <option value="">Select Correct Answer</option>
+                                <option value="YES">Yes</option>
+                                <option value="NO">No</option>
+                            </select>
+                        </div>
+                    </div>
                     <input type="checkbox" name="dealbreakers[${questionIndex}]">
                     <label>Dealbreaker</label>
                     <button type="button" onclick="removeQuestion(this)">Remove</button>
@@ -105,7 +180,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             container.appendChild(questionDiv);
         }
 
-        // JavaScript function to remove a question field
+        function showChoices(selectElement, questionIndex) {
+            const choicesDiv = document.getElementById(`choices_${questionIndex}`);
+            const multipleChoicesDiv = document.getElementById(`multiple_choices_${questionIndex}`);
+            const yesNoChoicesDiv = document.getElementById(`yes_no_choices_${questionIndex}`);
+
+            // Hide both choices initially
+            choicesDiv.style.display = 'none';
+            multipleChoicesDiv.style.display = 'none';
+            yesNoChoicesDiv.style.display = 'none';
+
+            if (selectElement.value === 'MULTIPLE_CHOICE') {
+                choicesDiv.style.display = 'block';
+                multipleChoicesDiv.style.display = 'block'; // Show multiple choice inputs
+            } else if (selectElement.value === 'YES_NO') {
+                choicesDiv.style.display = 'block';
+                yesNoChoicesDiv.style.display = 'block'; // Show yes/no choices
+            }
+        }
+
         function removeQuestion(button) {
             const questionDiv = button.parentElement;
             questionDiv.remove();
@@ -162,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <div>
             <label for="description">Job Description:</label>
-            <textarea id="description" name="description"></textarea>
+            <textarea id="description" name="description" required></textarea>
         </div>
         <div>
             <label for="openings">Number of Openings:</label>
@@ -171,6 +264,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div>
             <label for="deadline">Application Deadline:</label>
             <input type="date" id="deadline" name="deadline" required>
+        </div>
+        <div>
+            <label for="status">Status:</label>
+            <select id="status" name="status" required>
+                <option value="DRAFT">Draft</option>
+                <option value="ACTIVE">Active</option>
+                <option value="ARCHIVED">Archived</option>
+            </select>
         </div>
         <div>
             <input type="checkbox" id="has_questionnaire" name="has_questionnaire" onchange="document.getElementById('questionnaire-section').style.display = this.checked ? 'block' : 'none';">
@@ -191,9 +292,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </form>
 
+    <!-- Job Postings List -->
+    <h3>Available Job Postings</h3>
+    <?php if (empty($jobs)): ?>
+        <p>No jobs found. Create a new job to get started.</p>
+    <?php else: ?>
+        <table>
+            <thead>
+                <tr>
+                    <th>Job Title</th>
+                    <th>Company</th>
+                    <th>Location</th>
+                    <th>Salary Range</th>
+                    <th>Description</th>
+                    <th>Openings</th>
+                    <th>Status</th>
+                    <th>Application Deadline</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($jobs as $job): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($job['job_title']); ?></td>
+                        <td><?php echo htmlspecialchars($job['company']); ?></td>
+                        <td><?php echo htmlspecialchars($job['location']); ?></td>
+                        <td><?php echo htmlspecialchars($job['min_salary']); ?> - <?php echo htmlspecialchars($job['max_salary']); ?></td>
+                        <td><?php echo htmlspecialchars($job['description']); ?></td>
+                        <td><?php echo htmlspecialchars($job['openings']); ?></td>
+                        <td><?php echo htmlspecialchars($job['status']); ?></td>
+                        <td><?php echo htmlspecialchars($job['deadline']); ?></td>
+                        <td>
+                            <a href="view_job.php?job_id=<?php echo $job['job_id']; ?>">View</a> |
+                            <a href="edit_job.php?job_id=<?php echo $job['job_id']; ?>">Edit</a> |
+                            <a href="job_posting.php?delete_job_id=<?php echo $job['job_id']; ?>" onclick="return confirm('Are you sure you want to delete this job?')">Delete</a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+
 </div>
 
 <?php include 'footer.php'; ?>
 
 </body>
 </html>
+
+<?php
+// Close the database connection
+$conn->close();
+?>
