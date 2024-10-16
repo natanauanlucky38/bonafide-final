@@ -53,10 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
             // Insert questionnaire if applicable
             if ($has_questionnaire) {
                 $questions = $_POST['questions'] ?? [];
-                $question_types = $_POST['question_types'] ?? []; 
+                $question_types = $_POST['question_types'] ?? [];
                 $dealbreakers = $_POST['dealbreakers'] ?? [];
-                $choices = $_POST['choices'] ?? []; 
-                $correct_answers = $_POST['correct_answers'] ?? []; 
+                $choices = $_POST['choices'] ?? [];
+                $correct_answers = $_POST['correct_answers'] ?? [];
 
                 $questionSql = "
                     INSERT INTO questionnaire_template (job_id, question_text, question_type, is_required, is_dealbreaker, choice_a, choice_b, choice_c, choice_d, correct_answer)
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
                 foreach ($questions as $index => $questionText) {
                     $is_dealbreaker = isset($dealbreakers[$index]) ? 1 : 0;
                     $is_required = 1;  
-                    $question_type = $question_types[$index]; 
+                    $question_type = $question_types[$index];
 
                     $choice_a = $choice_b = $choice_c = $choice_d = null;
 
@@ -81,15 +81,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
                     // Correct answer handling
                     $correct_answer = trim($correct_answers[$index] ?? '');
                     if ($question_type === 'YES_NO') {
-                        // Ensure correct answer is stored as YES or NO
                         $correct_answer = strtoupper($correct_answer) === 'YES' ? 'YES' : 'NO';
                     } elseif ($question_type === 'MULTIPLE_CHOICE') {
-                        // Store correct answer as A, B, C, or D
                         $correct_answer = strtoupper($correct_answer);
                     }
 
-                    $questionStmt->bind_param('issiiissss', $job_id, $questionText, $question_type, $is_required, $is_dealbreaker, $choice_a, $choice_b, $choice_c, $choice_d, $correct_answer);
-                    $questionStmt->execute();
+                    // Ensure question text and correct answer are not empty before insertion
+                    if (!empty($questionText) && !empty($correct_answer)) {
+                        $questionStmt->bind_param('issiiissss', $job_id, $questionText, $question_type, $is_required, $is_dealbreaker, $choice_a, $choice_b, $choice_c, $choice_d, $correct_answer);
+                        $questionStmt->execute();
+                    }
                 }
                 $questionStmt->close();
             }
@@ -101,26 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
         $stmt->close();
     }
 }
-
-// Handle job deletion
-if (isset($_GET['delete_job_id'])) {
-    $job_id = intval($_GET['delete_job_id']);
-    $deleteSql = "DELETE FROM job_postings WHERE job_id = ?";
-    $deleteStmt = $conn->prepare($deleteSql);
-    $deleteStmt->bind_param('i', $job_id);
-    if ($deleteStmt->execute()) {
-        $successMessage = "Job deleted successfully!";
-    }
-    $deleteStmt->close();
-}
-
-// Fetch all job postings to display in the job list
-$sql = "SELECT job_id, job_title, company, location, min_salary, max_salary, description, openings, status, deadline FROM job_postings WHERE created_by = ? ORDER BY created_at DESC";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $_SESSION['user_id']);
-$stmt->execute();
-$jobs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -224,13 +205,6 @@ $stmt->close();
         </div>
     <?php endif; ?>
 
-    <!-- Display success message -->
-    <?php if (!empty($successMessage)): ?>
-        <div class="success-message">
-            <?php echo htmlspecialchars($successMessage); ?>
-        </div>
-    <?php endif; ?>
-
     <!-- Job Posting Form -->
     <form method="POST" action="job_posting.php">
         <div>
@@ -273,6 +247,8 @@ $stmt->close();
                 <option value="ARCHIVED">Archived</option>
             </select>
         </div>
+
+        <!-- Include Questionnaire -->
         <div>
             <input type="checkbox" id="has_questionnaire" name="has_questionnaire" onchange="document.getElementById('questionnaire-section').style.display = this.checked ? 'block' : 'none';">
             <label for="has_questionnaire">Include Questionnaire</label>
@@ -291,56 +267,9 @@ $stmt->close();
             <button type="submit">Create Job Posting</button>
         </div>
     </form>
-
-    <!-- Job Postings List -->
-    <h3>Available Job Postings</h3>
-    <?php if (empty($jobs)): ?>
-        <p>No jobs found. Create a new job to get started.</p>
-    <?php else: ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>Job Title</th>
-                    <th>Company</th>
-                    <th>Location</th>
-                    <th>Salary Range</th>
-                    <th>Description</th>
-                    <th>Openings</th>
-                    <th>Status</th>
-                    <th>Application Deadline</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($jobs as $job): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($job['job_title']); ?></td>
-                        <td><?php echo htmlspecialchars($job['company']); ?></td>
-                        <td><?php echo htmlspecialchars($job['location']); ?></td>
-                        <td><?php echo htmlspecialchars($job['min_salary']); ?> - <?php echo htmlspecialchars($job['max_salary']); ?></td>
-                        <td><?php echo htmlspecialchars($job['description']); ?></td>
-                        <td><?php echo htmlspecialchars($job['openings']); ?></td>
-                        <td><?php echo htmlspecialchars($job['status']); ?></td>
-                        <td><?php echo htmlspecialchars($job['deadline']); ?></td>
-                        <td>
-                            <a href="view_job.php?job_id=<?php echo $job['job_id']; ?>">View</a> |
-                            <a href="edit_job.php?job_id=<?php echo $job['job_id']; ?>">Edit</a> |
-                            <a href="job_posting.php?delete_job_id=<?php echo $job['job_id']; ?>" onclick="return confirm('Are you sure you want to delete this job?')">Delete</a>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php endif; ?>
-
 </div>
 
 <?php include 'footer.php'; ?>
 
 </body>
 </html>
-
-<?php
-// Close the database connection
-$conn->close();
-?>

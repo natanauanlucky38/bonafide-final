@@ -46,28 +46,43 @@ while ($row = $questionResult->fetch_assoc()) {
 }
 $questionStmt->close();
 
+// Set has_questionnaire based on existing questions
+$has_questionnaire = !empty($questions) ? 1 : 0;
+
 // Handle form submission for updating the job
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Sanitize and validate form inputs
-    $job_title = trim($_POST['job_title']);
-    $company = trim($_POST['company']);
-    $location = trim($_POST['location']);
+    $job_title = strtoupper(trim($_POST['job_title'])); // Convert to uppercase
+    $company = strtoupper(trim($_POST['company'])); // Convert to uppercase
+    $location = strtoupper(trim($_POST['location'])); // Convert to uppercase
     $min_salary = trim($_POST['min_salary']);
     $max_salary = trim($_POST['max_salary']);
     $description = trim($_POST['description']);
     $openings = intval($_POST['openings']);
     $deadline = trim($_POST['deadline']);
-    $status = trim($_POST['status']); // Get the status from dropdown
-    $has_questionnaire = isset($_POST['has_questionnaire']) ? 1 : 0;
+    $status = trim($_POST['status']);
+    $postedQuestions = $_POST['questions'] ?? [];
+    $dealbreakers = $_POST['dealbreakers'] ?? [];
+    $question_types = $_POST['question_types'] ?? [];
+    $correct_answers = $_POST['correct_answers'] ?? [];
+    $choices = $_POST['choices'] ?? [];
+
+    // Check if at least one question is being submitted
+    $has_questionnaire = !empty($postedQuestions) ? 1 : 0;
 
     // Basic validation for required fields
     if (empty($job_title) || empty($company) || empty($location) || empty($openings) || empty($deadline) || empty($description) || empty($status)) {
         $errors[] = "Please fill in all required fields.";
     }
 
-    // Validate deadline to ensure it is a valid date format
-    if (!preg_match('/\d{4}-\d{2}-\d{2}/', $deadline)) {
-        $errors[] = "Invalid date format for deadline.";
+    // Validate deadline to ensure it is not a past date
+    if (strtotime($deadline) < time()) {
+        $errors[] = "The application deadline cannot be a past date.";
+    }
+
+    // Validate salary range
+    if (!empty($min_salary) && !empty($max_salary) && $min_salary > $max_salary) {
+        $errors[] = "Minimum salary cannot be greater than maximum salary.";
     }
 
     // If no errors, update the database
@@ -80,52 +95,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ";
 
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param('sssssssissii', $job_title, $company, $location, $min_salary, $max_salary, $description, $openings, $deadline, $has_questionnaire, $status, $job_id, $_SESSION['user_id']);
+        $stmt->bind_param('ssssssssisii', $job_title, $company, $location, $min_salary, $max_salary, $description, $openings, $deadline, $has_questionnaire, $status, $job_id, $_SESSION['user_id']);
 
         if ($stmt->execute()) {
             // Update existing questions
             $existingQuestionIds = array_column($questions, 'question_id'); // Get IDs of existing questions
-            $postedQuestions = $_POST['questions'] ?? [];
-            $dealbreakers = $_POST['dealbreakers'] ?? [];
-            $question_types = $_POST['question_types'] ?? [];
-            $correct_answers = $_POST['correct_answers'] ?? [];
+            $postedQuestionIds = $_POST['question_ids'] ?? []; // Get IDs of posted questions
 
             // Loop through posted questions and update or insert
             foreach ($postedQuestions as $index => $questionText) {
                 $is_dealbreaker = isset($dealbreakers[$index]) ? 1 : 0;
+                $question_type = $question_types[$index];
+                $correct_answer = strtoupper(trim($correct_answers[$index] ?? ''));
 
-                // Update existing question or insert new question
-                if (isset($existingQuestionIds[$index])) {
+                // Prepare choice values for multiple choice questions
+                $choice_a = $choice_b = $choice_c = $choice_d = null;
+                if ($question_type === 'MULTIPLE_CHOICE') {
+                    $choice_a = trim($choices[$index]['a'] ?? '');
+                    $choice_b = trim($choices[$index]['b'] ?? '');
+                    $choice_c = trim($choices[$index]['c'] ?? '');
+                    $choice_d = trim($choices[$index]['d'] ?? '');
+                }
+
+                // Check if question exists for updating
+                if (isset($postedQuestionIds[$index]) && !empty($postedQuestionIds[$index])) {
                     // Update existing question
                     $updateQuestionSql = "
                         UPDATE questionnaire_template 
-                        SET question_text = ?, is_dealbreaker = ?, question_type = ?, correct_answer = ?
+                        SET question_text = ?, is_dealbreaker = ?, question_type = ?, correct_answer = ?, choice_a = ?, choice_b = ?, choice_c = ?, choice_d = ?
                         WHERE question_id = ?
                     ";
                     $updateQuestionStmt = $conn->prepare($updateQuestionSql);
-                    $question_type = $question_types[$index];
-                    $correct_answer = strtoupper(trim($correct_answers[$index] ?? ''));
-                    $updateQuestionStmt->bind_param('siisi', $questionText, $is_dealbreaker, $question_type, $correct_answer, $existingQuestionIds[$index]);
+                    $updateQuestionStmt->bind_param('sissssssi', $questionText, $is_dealbreaker, $question_type, $correct_answer, $choice_a, $choice_b, $choice_c, $choice_d, $postedQuestionIds[$index]);
                     $updateQuestionStmt->execute();
                     $updateQuestionStmt->close();
                 } else {
                     // Insert new question
                     $insertQuestionSql = "
-                        INSERT INTO questionnaire_template (job_id, question_text, question_type, is_required, is_dealbreaker, correct_answer)
-                        VALUES (?, ?, ?, ?, ?, ?)
+                        INSERT INTO questionnaire_template (job_id, question_text, question_type, is_required, is_dealbreaker, correct_answer, choice_a, choice_b, choice_c, choice_d)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ";
                     $insertQuestionStmt = $conn->prepare($insertQuestionSql);
                     $is_required = 1; // Assuming all questions are required
-                    $correct_answer = strtoupper(trim($correct_answers[$index] ?? ''));
-                    $insertQuestionStmt->bind_param('issiii', $job_id, $questionText, $question_type, $is_required, $is_dealbreaker, $correct_answer);
+                    $insertQuestionStmt->bind_param('issiiissss', $job_id, $questionText, $question_type, $is_required, $is_dealbreaker, $correct_answer, $choice_a, $choice_b, $choice_c, $choice_d);
                     $insertQuestionStmt->execute();
                     $insertQuestionStmt->close();
                 }
             }
 
-            $successMessage = "Job updated successfully!";
-            header('Location: job_posting.php'); // Redirect to job_posting.php after successful update
-            exit();
+            // Handle deletion of questions that are no longer in the posted questions
+            foreach ($existingQuestionIds as $existingQuestionId) {
+                if (!in_array($existingQuestionId, $postedQuestionIds)) {
+                    // Delete question if it is not in posted questions
+                    $deleteQuestionSql = "
+                        DELETE FROM questionnaire_template 
+                        WHERE question_id = ?
+                    ";
+                    $deleteQuestionStmt = $conn->prepare($deleteQuestionSql);
+                    $deleteQuestionStmt->bind_param('i', $existingQuestionId);
+                    $deleteQuestionStmt->execute();
+                    $deleteQuestionStmt->close();
+                }
+            }
+
+            // Update the job posting again to ensure has_questionnaire is set correctly
+            $updateJobSql = "
+                UPDATE job_postings 
+                SET has_questionnaire = ? 
+                WHERE job_id = ? AND created_by = ?
+            ";
+            $updateJobStmt = $conn->prepare($updateJobSql);
+            $updateJobStmt->bind_param('iii', $has_questionnaire, $job_id, $_SESSION['user_id']);
+            $updateJobStmt->execute();
+            $updateJobStmt->close();
+
+            // Redirect to view_job.php after successful update
+            header("Location: view_job.php?job_id=" . $job_id); // Redirect to view_job.php after successful update
+            exit(); // Ensure no further code is executed after redirection
         } else {
             $errors[] = "Failed to update job. Please try again.";
         }
@@ -202,12 +248,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             multipleChoicesDiv.style.display = 'none';
             yesNoChoicesDiv.style.display = 'none';
 
+            // Show the appropriate choices based on the selected type
             if (selectElement.value === 'MULTIPLE_CHOICE') {
                 choicesDiv.style.display = 'block';
                 multipleChoicesDiv.style.display = 'block'; // Show multiple choice inputs
             } else if (selectElement.value === 'YES_NO') {
                 choicesDiv.style.display = 'block';
                 yesNoChoicesDiv.style.display = 'block'; // Show yes/no choices
+            } else if (selectElement.value === 'TEXT') {
+                choicesDiv.style.display = 'none'; // No choices needed for text input
             }
         }
 
@@ -275,7 +324,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <div>
             <label for="deadline">Application Deadline:</label>
-            <input type="date" id="deadline" name="deadline" value="<?php echo htmlspecialchars($job['deadline']); ?>" required>
+            <input type="date" id="deadline" name="deadline" value="<?php echo htmlspecialchars($job['deadline']); ?>" min="<?php echo date('Y-m-d'); ?>" required>
         </div>
         <div>
             <label for="status">Status:</label>
@@ -328,6 +377,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             <?php endif; ?>
                         </div>
+                        <input type="hidden" name="question_ids[]" value="<?php echo $question['question_id']; ?>">
                         <input type="checkbox" name="dealbreakers[<?php echo $index; ?>]" <?php echo $question['is_dealbreaker'] ? 'checked' : ''; ?>>
                         <label>Dealbreaker</label>
                         <button type="button" onclick="removeQuestion(this)">Remove</button>

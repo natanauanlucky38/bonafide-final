@@ -2,11 +2,14 @@
 // dashboard.php
 include '../db.php';  // Database connection
 
+
 // Check if user is logged in and is an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
     header('Location: login.php');  // Redirect to login page
     exit();
 }
+
+include 'header.php';
 
 // Check if the user has already filled out the profile
 $user_id = $_SESSION['user_id'];
