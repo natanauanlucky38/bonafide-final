@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 16, 2024 at 12:17 PM
+-- Generation Time: Oct 16, 2024 at 11:51 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -83,7 +83,10 @@ CREATE TABLE `job_postings` (
 --
 
 INSERT INTO `job_postings` (`job_id`, `job_title`, `company`, `location`, `min_salary`, `max_salary`, `description`, `openings`, `created_by`, `deadline`, `status`, `filled_date`, `created_at`, `has_questionnaire`) VALUES
-(101, '123', '1231', '23123', 231231.00, 123.00, '123123', 123123123, 4, '2024-11-01', 'DRAFT', NULL, '2024-10-16 18:16:42', 1);
+(178, 'IT ADMIN', 'NEXPERIA', 'PULO', 100.00, 60000.00, 'QWE', 12, 4, '2024-10-31', 'ACTIVE', NULL, '2024-10-17 02:34:31', 1),
+(179, 'SFDSSFA', 'SERCOM', 'CALAMBA', 100.00, 400.00, 'dsgdfg', 12, 4, '2024-10-31', 'ACTIVE', NULL, '2024-10-17 03:46:09', 1),
+(180, 'IT ADMIN', 'INTEARCH', 'CALAMBA', 20000.00, 60000.00, 'None', 5, 4, '2024-10-31', 'ACTIVE', NULL, '2024-10-17 03:53:00', 1),
+(181, 'WEB SECURITY', 'SERCOM', 'CABUYAO', 30000.00, 40000.00, 'None', 10, 4, '2024-10-31', 'ACTIVE', NULL, '2024-10-17 04:03:45', 1);
 
 -- --------------------------------------------------------
 
@@ -114,9 +117,9 @@ CREATE TABLE `profiles` (
 --
 
 INSERT INTO `profiles` (`profile_id`, `user_id`, `fname`, `lname`, `age`, `phone`, `address`, `civil_status`, `linkedin_link`, `facebook_link`, `referral_code`, `education_level`, `school_graduated`, `year_graduated`, `degree`) VALUES
-(3, 3, 'joshua', 'ramos', 20, '0909090909', 'Cabuyao, Laguna', 'WIDOWED', 'linkedinlink', 'fblink', 'ADB320A7', 'TERTIARY', 'perps', '2019', 'BSIT'),
-(4, 5, 'lucky', 'dalts', 55, '3513516351351', 'Cabuyao, Laguna', 'SINGLE', 'linkedinlink', 'fblink', '57844824', 'POSTGRADUATE', 'perps', '2019', 'BSIT'),
-(5, 6, 'lucky', 'dalts', 20, '0909090909', 'Cabuyao, Laguna', 'SINGLE', 'linkedinlink', 'fblink', '755AA20E', 'TERTIARY', 'perps', '2019', 'BSIT');
+(26, 32, '123', '123', 123, '123', '123', 'SINGLE', '123', '123', 'EAC9BBAB', 'PRIMARY', '123', '123', NULL),
+(27, 33, '123', '123', 123, '123', '123', 'SINGLE', '123', '123', '862A26CC', 'TERTIARY', '123', '1232', '2'),
+(28, 34, '22', '22', 22, '22', '22', 'SINGLE', '22', '22', '85ECB172', 'PRIMARY', '22', '22', NULL);
 
 -- --------------------------------------------------------
 
@@ -138,6 +141,17 @@ CREATE TABLE `questionnaire_template` (
   `correct_answer` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `questionnaire_template`
+--
+
+INSERT INTO `questionnaire_template` (`question_id`, `job_id`, `question_text`, `is_required`, `question_type`, `is_dealbreaker`, `choice_a`, `choice_b`, `choice_c`, `choice_d`, `correct_answer`) VALUES
+(322, 178, 'are u flexible?', 1, 'MULTIPLE_CHOICE', 1, '1', '123', 'Maybe', '123', 'B'),
+(323, 178, 'are u flexible?', 1, 'YES_NO', 1, NULL, NULL, NULL, NULL, ''),
+(324, 179, 'are u flexible?', 1, 'YES_NO', 1, NULL, NULL, NULL, NULL, 'NO'),
+(325, 180, 'are u flexible?', 1, 'YES_NO', 1, NULL, NULL, NULL, NULL, 'NO'),
+(326, 181, 'are u flexible?', 1, 'MULTIPLE_CHOICE', 1, 'No', 'Yes', 'Maybe', 'Definitely not', 'D');
+
 -- --------------------------------------------------------
 
 --
@@ -149,8 +163,7 @@ CREATE TABLE `referrals` (
   `referred_user_id` int(11) NOT NULL,
   `referrer_user_id` int(11) NOT NULL,
   `referral_code` varchar(100) DEFAULT NULL,
-  `points` int(11) DEFAULT 0,
-  `status` enum('PENDING','APPROVED','DECLINED') DEFAULT 'PENDING'
+  `points` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -226,12 +239,10 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `email`, `password`, `role`, `last_login`, `registration_date`, `status`) VALUES
-(3, 'j@g.c', '$2y$10$Q70tcXHZeo1jUlhcNPGG8uKupYuOHuJ5E2MLrjVaTyhb34csMffPa', 'APPLICANT', '2024-10-16 14:46:25', '2024-10-15 15:07:45', 'ACTIVE'),
 (4, 'a@g.c', '$2y$10$Q70tcXHZeo1jUlhcNPGG8uKupYuOHuJ5E2MLrjVaTyhb34csMffPa', 'RECRUITER', '2024-10-16 16:44:36', '2024-10-15 15:16:34', 'ACTIVE'),
-(5, 'u@g.c', '$2y$10$vPrXd2zr/uGfLhWSFNJu5OosRACcohBScFfvq9KXQzp0.g.Lg7eRu', 'APPLICANT', '2024-10-15 15:21:37', '2024-10-15 15:18:52', 'ACTIVE'),
-(6, 'luckyd@gmail.com', '$2y$10$G6tnst4FN4BGAVQC4IbwWeHNl1j3FECZ00m.E.sIXChyVBLBYFNna', 'APPLICANT', '2024-10-15 18:42:06', '2024-10-15 18:38:21', 'ACTIVE'),
-(7, 'er@gmail.com', '123123', 'RECRUITER', NULL, '2024-10-15 19:22:55', 'ACTIVE'),
-(8, 'er@gmail.com', '123123', 'RECRUITER', NULL, '2024-10-15 19:23:17', 'ACTIVE');
+(32, '2@g.c', '$2y$10$A.WP1ZdCz/PU7uSAD5RSWeiY8N2KIsqOyg06OkEwlA3rjp/kTbPu.', 'APPLICANT', NULL, '2024-10-17 05:49:07', 'ACTIVE'),
+(33, '5@g.c', '$2y$10$tidlomr/lPVfgnyFmoeF2evA/UHvdC.2/DlwJi5zLl9MTKbs5anhK', 'APPLICANT', NULL, '2024-10-17 05:49:51', 'ACTIVE'),
+(34, '7@g.c', '$2y$10$SkMgOAHFL.KhtxbrfsmswuXRZGLoSOVjub6jLmMLLlO49r5SjUfJy', 'APPLICANT', NULL, '2024-10-17 05:50:48', 'ACTIVE');
 
 --
 -- Indexes for dumped tables
@@ -330,25 +341,25 @@ ALTER TABLE `application_answers`
 -- AUTO_INCREMENT for table `job_postings`
 --
 ALTER TABLE `job_postings`
-  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
+  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=182;
 
 --
 -- AUTO_INCREMENT for table `profiles`
 --
 ALTER TABLE `profiles`
-  MODIFY `profile_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `profile_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `questionnaire_template`
 --
 ALTER TABLE `questionnaire_template`
-  MODIFY `question_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=110;
+  MODIFY `question_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=327;
 
 --
 -- AUTO_INCREMENT for table `referrals`
 --
 ALTER TABLE `referrals`
-  MODIFY `referral_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `referral_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `tbl_job_metrics`
@@ -372,7 +383,7 @@ ALTER TABLE `tbl_user_activity`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- Constraints for dumped tables

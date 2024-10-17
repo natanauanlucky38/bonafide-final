@@ -7,9 +7,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
     exit();
 }
 
+$user_id = $_SESSION['user_id']; // Get the logged-in user's ID
+
 // Fetch all active job postings from the database
 $sql = "SELECT * FROM job_postings WHERE status = 'ACTIVE' ORDER BY created_at DESC";
 $result = $conn->query($sql);
+
 ?>
 
 <!DOCTYPE html>
@@ -42,7 +45,19 @@ $result = $conn->query($sql);
                 </tr>
             </thead>
             <tbody>
-                <?php while ($row = $result->fetch_assoc()): ?>
+                <?php while ($row = $result->fetch_assoc()): 
+                    $job_id = $row['job_id'];
+                    
+                    // Check if the user has already applied for this job
+                    $application_check_sql = "SELECT application_id, application_status FROM applications 
+                                              WHERE job_id = '$job_id' AND profile_id = 
+                                              (SELECT profile_id FROM profiles WHERE user_id = '$user_id') 
+                                              AND application_status != 'WITHDRAWN'";
+                    $application_check_result = $conn->query($application_check_sql);
+
+                    $already_applied = $application_check_result->num_rows > 0;
+                    $application = $application_check_result->fetch_assoc();
+                ?>
                     <tr>
                         <td><?php echo htmlspecialchars($row['job_title']); ?></td>
                         <td><?php echo htmlspecialchars($row['company']); ?></td>
@@ -52,7 +67,15 @@ $result = $conn->query($sql);
                         <td><?php echo htmlspecialchars($row['openings']); ?></td>
                         <td><?php echo htmlspecialchars($row['deadline']); ?></td>
                         <td>
-                            <a href="apply_job.php?job_id=<?php echo $row['job_id']; ?>">Apply Now</a>
+                            <?php if ($already_applied && $application['application_status'] != 'WITHDRAWN'): ?>
+                                <span>Already Applied</span>
+                                <form method="POST" action="withdraw_application.php" style="display:inline;">
+                                    <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
+                                    <button type="submit" onclick="return confirm('Are you sure you want to withdraw your application?')">Withdraw Application</button>
+                                </form>
+                            <?php else: ?>
+                                <a href="apply_job.php?job_id=<?php echo $row['job_id']; ?>">Apply Now</a>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endwhile; ?>
