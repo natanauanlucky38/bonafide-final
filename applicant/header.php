@@ -13,7 +13,7 @@
             <ul>
                 <li><a href="view_job.php">Job Postings</a></li>
                 <li><a href="referrals.php">Referrals</a></li>
-                <li><a href="applications.php">Applications</a></li>
+                <li><a href="application.php">Applications</a></li>
                 <li><a href="profile.php">Profile</a></li>
                 <li><a href="dashboard.php">Dashboard</a></li>
                 <li><a href="logout.php">Logout</a></li> <!-- Assume there's a logout page -->

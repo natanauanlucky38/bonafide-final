@@ -8,6 +8,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
     exit();
 }
 
+include 'sidebar.php';
+
 // Fetch all applications along with applicant details
 $applications_sql = "
     SELECT a.*, p.fname AS applicant_fname, p.lname AS applicant_lname 
@@ -29,18 +31,40 @@ if (!$applications_result) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Applications</title>
     <script>
-        function toggleInterviewFields(selectElement) {
-            var interviewFields = document.getElementById('interviewFields' + selectElement.dataset.applicationId);
-            var rejectionReasonTextarea = document.getElementById('rejectionReason' + selectElement.dataset.applicationId);
+        function toggleFields(selectElement) {
+            var applicationId = selectElement.dataset.applicationId;
+            var interviewFields = document.getElementById('interviewFields' + applicationId);
+            var offerFields = document.getElementById('offerFields' + applicationId);
+            var rejectionReasonTextarea = document.getElementById('rejectionReason' + applicationId);
+
+            // Hide all fields initially
+            interviewFields.style.display = 'none';
+            offerFields.style.display = 'none';
+            rejectionReasonTextarea.style.display = 'none';
+
+            // Remove 'required' attribute from all fields
+            var interviewInputs = interviewFields.querySelectorAll('input, select, textarea');
+            interviewInputs.forEach(function(input) {
+                input.removeAttribute('required');
+            });
+            var offerInputs = offerFields.querySelectorAll('input, select, textarea');
+            offerInputs.forEach(function(input) {
+                input.removeAttribute('required');
+            });
+
+            // Show and require the relevant fields based on the selection
             if (selectElement.value === 'interview') {
                 interviewFields.style.display = 'block';
-                rejectionReasonTextarea.style.display = 'none'; // Hide rejection reason textarea
+                interviewInputs.forEach(function(input) {
+                    input.setAttribute('required', 'required');
+                });
             } else if (selectElement.value === 'reject') {
-                rejectionReasonTextarea.style.display = 'block'; // Show rejection reason textarea
-                interviewFields.style.display = 'none'; // Hide interview fields
-            } else {
-                interviewFields.style.display = 'none'; // Hide interview fields
-                rejectionReasonTextarea.style.display = 'none'; // Hide rejection reason textarea
+                rejectionReasonTextarea.style.display = 'block';
+            } else if (selectElement.value === 'offer') {
+                offerFields.style.display = 'block';
+                offerInputs.forEach(function(input) {
+                    input.setAttribute('required', 'required');
+                });
             }
         }
     </script>
@@ -85,37 +109,60 @@ if (!$applications_result) {
                         echo '<span style="color: green;">Passed</span>';
                     }
                     ?>
+                </td>
+                <td>
                     <form action="process_application.php" method="POST" style="margin-top: 10px;">
                         <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
-                        <select name="decision" required onchange="toggleInterviewFields(this)" data-application-id="<?php echo $application['application_id']; ?>">
+                        <select name="decision" required onchange="toggleFields(this)" data-application-id="<?php echo $application['application_id']; ?>">
                             <option value="">Select Action</option>
                             <option value="reject">Reject</option>
                             <option value="interview">Proceed to Interview</option>
+                            <option value="offer">Proceed to Offer</option>
                         </select>
+
+                        <!-- Rejection reason -->
                         <textarea id="rejectionReason<?php echo $application['application_id']; ?>" name="rejection_reason" placeholder="Enter rejection reason" style="display:none;"></textarea>
+
+                        <!-- Interview fields -->
                         <div id="interviewFields<?php echo $application['application_id']; ?>" style="display:none;">
                             <label for="interview_time">Interview Date & Time:</label>
-                            <input type="datetime-local" name="interview_time" required>
+                            <input type="datetime-local" name="interview_time">
                             
                             <label for="interview_type">Interview Type:</label>
-                            <select name="interview_type" required>
+                            <select name="interview_type">
                                 <option value="">Select Interview Type</option>
                                 <option value="Online">Online</option>
                                 <option value="Face-to-Face">Face-to-Face</option>
                             </select>
                             
                             <label for="meeting_link">Meeting Link:</label>
-                            <input type="text" name="meeting_link" placeholder="Meeting Link" required>
+                            <input type="text" name="meeting_link" placeholder="Meeting Link">
                             
                             <label for="recruiter_phone">Recruiter Phone Number:</label>
-                            <input type="text" name="recruiter_phone" placeholder="Recruiter Phone Number" required>
+                            <input type="text" name="recruiter_phone" placeholder="Recruiter Phone Number">
                             
                             <label for="recruiter_email">Recruiter Email:</label>
-                            <input type="email" name="recruiter_email" placeholder="Recruiter Email" required>
+                            <input type="email" name="recruiter_email" placeholder="Recruiter Email">
                             
                             <label for="remarks">Remarks (Description):</label>
                             <textarea name="remarks" placeholder="Remarks (Description)"></textarea>
                         </div>
+
+                        <!-- Offer fields -->
+                        <div id="offerFields<?php echo $application['application_id']; ?>" style="display:none;">
+                            <label for="salary">Salary:</label>
+                            <input type="number" name="salary" placeholder="Salary" step="0.01">
+
+                            <label for="start_date">Start Date:</label>
+                            <input type="date" name="start_date">
+                            
+                            <label for="benefits">Benefits:</label>
+                            <textarea name="benefits" placeholder="Benefits"></textarea>
+                            
+                            <label for="offer_remarks">Offer Remarks:</label>
+                            <textarea name="offer_remarks" placeholder="Offer Remarks"></textarea>
+                        </div>
+
                         <button type="submit">Submit</button>
                     </form>
                 </td>

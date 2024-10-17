@@ -1,77 +1,102 @@
 <?php
-include '../db.php';
+// Include database connection
+include '../db.php';  // Adjust this path based on your directory structure
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['application_id'], $_POST['decision'])) {
-    $application_id = (int)$_POST['application_id'];
+// Check if the form is submitted
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $application_id = $_POST['application_id'];
     $decision = $_POST['decision'];
 
-    if ($decision === 'reject' && !empty($_POST['rejection_reason'])) {
-        $rejection_reason = $conn->real_escape_string($_POST['rejection_reason']);
+    // Fetch the job_id associated with the application_id
+    $job_id_sql = "SELECT job_id FROM applications WHERE application_id = ?";
+    $job_id_stmt = $conn->prepare($job_id_sql);
+    $job_id_stmt->bind_param("i", $application_id);
+    $job_id_stmt->execute();
+    $job_id_result = $job_id_stmt->get_result();
+    $job_id_row = $job_id_result->fetch_assoc();
+    $job_id = $job_id_row['job_id'];
 
-        // Update application status to REJECTED and add rejection reason
-        $reject_sql = "UPDATE applications SET application_status = 'REJECTED', rejection_reason = '$rejection_reason' WHERE application_id = '$application_id'";
-        if ($conn->query($reject_sql)) {
-            // Update pipeline stage
-            $pipeline_sql = "
-                UPDATE tbl_pipeline_stage 
-                SET stage = 'REJECTED', rejection_reason = '$rejection_reason', rejected_at = NOW(), updated_at = NOW() 
-                WHERE application_id = '$application_id'
-            ";
-            $conn->query($pipeline_sql);
+    // Initialize variables to capture form input
+    $interview_time = isset($_POST['interview_time']) ? $_POST['interview_time'] : null;
+    $interview_type = isset($_POST['interview_type']) ? $_POST['interview_type'] : null;
+    $meeting_link = isset($_POST['meeting_link']) ? $_POST['meeting_link'] : null;
+    $recruiter_phone = isset($_POST['recruiter_phone']) ? $_POST['recruiter_phone'] : null;
+    $recruiter_email = isset($_POST['recruiter_email']) ? $_POST['recruiter_email'] : null;
+    $remarks = isset($_POST['remarks']) ? $_POST['remarks'] : null;
 
-            // Update job metrics
-            $job_id_sql = "SELECT job_id FROM applications WHERE application_id = '$application_id'";
-            $job_id_result = $conn->query($job_id_sql);
-            $job_row = $job_id_result->fetch_assoc();
-            $job_id = $job_row['job_id'];
-            $metrics_sql = "UPDATE tbl_job_metrics SET rejected_applicants = rejected_applicants + 1 WHERE job_id = '$job_id'";
-            $conn->query($metrics_sql);
-            
-            echo "Application rejected successfully.";
-        } else {
-            echo "Error rejecting application: " . $conn->error;
-        }
-    } elseif ($decision === 'interview') {
-        // Capture interview details
-        $interview_time = $conn->real_escape_string($_POST['interview_time']);
-        $interview_type = $conn->real_escape_string($_POST['interview_type']);
-        $meeting_link = $conn->real_escape_string($_POST['meeting_link']);
-        $recruiter_phone = $conn->real_escape_string($_POST['recruiter_phone']);
-        $recruiter_email = $conn->real_escape_string($_POST['recruiter_email']);
-        $remarks = $conn->real_escape_string($_POST['remarks']);
+    $salary = isset($_POST['salary']) ? $_POST['salary'] : null;
+    $start_date = isset($_POST['start_date']) ? $_POST['start_date'] : null;
+    $benefits = isset($_POST['benefits']) ? $_POST['benefits'] : null;
+    $offer_remarks = isset($_POST['offer_remarks']) ? $_POST['offer_remarks'] : null;
 
-        // Update application status to INTERVIEW
-        $interview_sql = "UPDATE applications SET application_status = 'INTERVIEW' WHERE application_id = '$application_id'";
-        if ($conn->query($interview_sql)) {
-            // Insert into tbl_interview
-            $interview_insert_sql = "
-                INSERT INTO tbl_interview (application_id, interview_date, interview_type, meet_link, phone, recruiter_email, remarks) 
-                VALUES ('$application_id', '$interview_time', '$interview_type', '$meeting_link', '$recruiter_phone', '$recruiter_email', '$remarks')
-            ";
-            $conn->query($interview_insert_sql);
+    // Handle "Proceed to Interview" action
+    if ($decision === 'interview') {
+        $interview_sql = "INSERT INTO tbl_interview (application_id, interview_date, interview_type, meet_link, phone, recruiter_email, remarks) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($interview_sql);
 
-            // Update pipeline stage and set the screened_at date
-            $pipeline_sql = "
-                UPDATE tbl_pipeline_stage 
-                SET screened_at = NOW()
-                WHERE application_id = '$application_id'
-            ";
-
-            // Ensure the pipeline update query runs correctly
-            if ($conn->query($pipeline_sql)) {
-                // Also update the stage in applications table
-                $update_stage_sql = "UPDATE applications SET stage = 'INTERVIEW' WHERE application_id = '$application_id'";
-                $conn->query($update_stage_sql);
-                
-                echo "Interview scheduled successfully.";
+        // Check if the statement was prepared successfully
+        if ($stmt) {
+            $stmt->bind_param("issssss", $application_id, $interview_time, $interview_type, $meeting_link, $recruiter_phone, $recruiter_email, $remarks);
+            if ($stmt->execute()) {
+                // Update the application status to 'INTERVIEW'
+                $update_application_sql = "UPDATE applications SET application_status = 'INTERVIEW' WHERE application_id = ?";
+                $stmt_update = $conn->prepare($update_application_sql);
+                if ($stmt_update) {
+                    $stmt_update->bind_param("i", $application_id);
+                    $stmt_update->execute();
+                }
+                header('Location: application.php'); // Redirect back to application.php
+                exit();
             } else {
-                echo "Error updating pipeline stage: " . $conn->error; // This will help debug if it fails again
+                echo "Error executing interview query: " . $stmt->error;
             }
         } else {
-            echo "Error scheduling interview: " . $conn->error;
+            echo "Error preparing interview query: " . $conn->error;
+        }
+
+    // Handle "Proceed to Offer" action
+    } elseif ($decision === 'offer') {
+        // Use job_id instead of application_id
+        $offer_sql = "INSERT INTO tbl_offer_details (job_id, salary, start_date, benefits, remarks) VALUES (?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($offer_sql);
+
+        // Check if the statement was prepared successfully
+        if ($stmt) {
+            $stmt->bind_param("isdss", $job_id, $salary, $start_date, $benefits, $offer_remarks);
+            if ($stmt->execute()) {
+                // Update the application status to 'OFFERED'
+                $update_application_sql = "UPDATE applications SET application_status = 'OFFERED' WHERE application_id = ?";
+                $stmt_update = $conn->prepare($update_application_sql);
+                if ($stmt_update) {
+                    $stmt_update->bind_param("i", $application_id);
+                    $stmt_update->execute();
+                }
+                header('Location: application.php'); // Redirect back to application.php
+                exit();
+            } else {
+                echo "Error executing offer query: " . $stmt->error;
+            }
+        } else {
+            echo "Error preparing offer query: " . $conn->error;
+        }
+
+    // Handle "Reject" action
+    } elseif ($decision === 'reject') {
+        $rejection_reason = $_POST['rejection_reason'];
+        $reject_sql = "UPDATE applications SET application_status = 'REJECTED', rejection_reason = ? WHERE application_id = ?";
+        $stmt = $conn->prepare($reject_sql);
+
+        if ($stmt) {
+            $stmt->bind_param("si", $rejection_reason, $application_id);
+            if ($stmt->execute()) {
+                header('Location: application.php'); // Redirect back to application.php
+                exit();
+            } else {
+                echo "Error executing reject query: " . $stmt->error;
+            }
+        } else {
+            echo "Error preparing reject query: " . $conn->error;
         }
     }
 }
-
-$conn->close();
 ?>
