@@ -12,7 +12,6 @@ $user_id = $_SESSION['user_id']; // Get the logged-in user's ID
 // Fetch all active job postings from the database
 $sql = "SELECT * FROM job_postings WHERE status = 'ACTIVE' ORDER BY created_at DESC";
 $result = $conn->query($sql);
-
 ?>
 
 <!DOCTYPE html>
@@ -69,10 +68,8 @@ $result = $conn->query($sql);
                         <td>
                             <?php if ($already_applied && $application['application_status'] != 'WITHDRAWN'): ?>
                                 <span>Already Applied</span>
-                                <form method="POST" action="withdraw_application.php" style="display:inline;">
-                                    <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
-                                    <button type="submit" onclick="return confirm('Are you sure you want to withdraw your application?')">Withdraw Application</button>
-                                </form>
+                                <a href="withdraw_application.php?application_id=<?php echo $application['application_id']; ?>" 
+                                   onclick="return confirm('Are you sure you want to withdraw your application?')">Withdraw Application</a>
                             <?php else: ?>
                                 <a href="apply_job.php?job_id=<?php echo $row['job_id']; ?>">Apply Now</a>
                             <?php endif; ?>

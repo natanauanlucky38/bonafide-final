@@ -1,6 +1,4 @@
 <?php
-// Start the session and connect to the database
-session_start();
 include '../db.php';
 
 // Check if the user is logged in as an applicant
@@ -41,13 +39,22 @@ if ($profile_result->num_rows > 0) {
     exit();
 }
 
-// Check if the user has already applied for this job
-$existing_application_sql = "SELECT * FROM applications WHERE job_id = '$job_id' AND profile_id = '$profile_id' AND application_status != 'WITHDRAWN'";
+// Check if the user has previously applied for this job (including withdrawn applications)
+$existing_application_sql = "SELECT * FROM applications WHERE job_id = '$job_id' AND profile_id = '$profile_id'";
 $existing_application_result = $conn->query($existing_application_sql);
+$existing_application = $existing_application_result->fetch_assoc();
 
-if ($existing_application_result->num_rows > 0) {
-    echo "You have already applied for this job. You cannot apply again unless your application is withdrawn.";
-    exit();
+$reapplying = false; // To check if the user is reapplying after withdrawal
+
+if ($existing_application) {
+    if ($existing_application['application_status'] == 'WITHDRAWN') {
+        // If the user previously withdrew their application, allow them to re-apply by updating the existing application
+        $reapplying = true;
+    } else {
+        // If the user already applied and didn't withdraw, show an error message
+        echo "You have already applied for this job. You cannot apply again unless your application is withdrawn.";
+        exit();
+    }
 }
 
 // Fetch the questionnaire for the job (if any)
@@ -78,15 +85,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $skills = $conn->real_escape_string($_POST['skills']);
     $work_experience = $conn->real_escape_string($_POST['work_experience']);
 
-    // Start a transaction to ensure atomicity of the insert operations
+    // Start a transaction to ensure atomicity of the insert/update operations
     $conn->begin_transaction();
 
     try {
-        // Insert into the applications table
-        $insert_application_sql = "INSERT INTO applications (job_id, profile_id, resume, application_status, time_applied, recruiter_id, referral_source, qualifications, skills, work_experience)
-                                   VALUES ('$job_id', '$profile_id', '{$_SESSION['resume_file']}', 'APPLIED', NOW(), (SELECT created_by FROM job_postings WHERE job_id = '$job_id'), '$referral_source', '$qualifications', '$skills', '$work_experience')";
-        $conn->query($insert_application_sql);
-        $application_id = $conn->insert_id;
+        if ($reapplying) {
+            // Update the withdrawn application with the new details
+            $application_id = $existing_application['application_id'];
+            $update_application_sql = "UPDATE applications 
+                                       SET application_status = 'APPLIED', 
+                                           resume = '{$_SESSION['resume_file']}', 
+                                           time_applied = NOW(),
+                                           referral_source = '$referral_source', 
+                                           qualifications = '$qualifications', 
+                                           skills = '$skills', 
+                                           work_experience = '$work_experience' 
+                                       WHERE application_id = '$application_id'";
+            $conn->query($update_application_sql);
+
+            // Delete any previous answers and insert new ones
+            $delete_answers_sql = "DELETE FROM application_answers WHERE application_id = '$application_id'";
+            $conn->query($delete_answers_sql);
+        } else {
+            // Insert into the applications table (new application)
+            $insert_application_sql = "INSERT INTO applications (job_id, profile_id, resume, application_status, time_applied, recruiter_id, referral_source, qualifications, skills, work_experience)
+                                       VALUES ('$job_id', '$profile_id', '{$_SESSION['resume_file']}', 'APPLIED', NOW(), (SELECT created_by FROM job_postings WHERE job_id = '$job_id'), '$referral_source', '$qualifications', '$skills', '$work_experience')";
+            $conn->query($insert_application_sql);
+            $application_id = $conn->insert_id;
+        }
 
         // Insert answers into the application_answers table
         if (isset($_POST['answers'])) {
@@ -98,22 +124,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
 
-        // Update job metrics in tbl_job_metrics (check if entry exists, then update)
-        $metrics_check_sql = "SELECT * FROM tbl_job_metrics WHERE job_id = '$job_id'";
-        $metrics_check_result = $conn->query($metrics_check_sql);
+        // Update job metrics in tbl_job_metrics
+        if (!$reapplying) {  // Only increase total_applicants for a new application
+            $metrics_check_sql = "SELECT * FROM tbl_job_metrics WHERE job_id = '$job_id'";
+            $metrics_check_result = $conn->query($metrics_check_sql);
 
-        if ($metrics_check_result->num_rows > 0) {
-            // If metrics entry exists, update the total_applicants count
-            $update_metrics_sql = "UPDATE tbl_job_metrics SET total_applicants = total_applicants + 1 WHERE job_id = '$job_id'";
-        } else {
-            // Insert if no entry exists
-            $update_metrics_sql = "INSERT INTO tbl_job_metrics (job_id, total_applicants) VALUES ('$job_id', 1)";
+            if ($metrics_check_result->num_rows > 0) {
+                // If metrics entry exists, update the total_applicants count
+                $update_metrics_sql = "UPDATE tbl_job_metrics SET total_applicants = total_applicants + 1 WHERE job_id = '$job_id'";
+            } else {
+                // Insert if no entry exists
+                $update_metrics_sql = "INSERT INTO tbl_job_metrics (job_id, total_applicants) VALUES ('$job_id', 1)";
+            }
+            $conn->query($update_metrics_sql);
         }
-        $conn->query($update_metrics_sql);
 
-        // Insert into tbl_pipeline_stage
-        $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage (application_id, applied_at) VALUES ('$application_id', NOW())";
-        $conn->query($insert_pipeline_sql);
+        // Check if a pipeline entry already exists for this application
+        $pipeline_check_sql = "SELECT * FROM tbl_pipeline_stage WHERE application_id = '$application_id'";
+        $pipeline_check_result = $conn->query($pipeline_check_sql);
+
+        if ($pipeline_check_result->num_rows > 0) {
+            // If pipeline entry exists, update the applied_at timestamp
+            $update_pipeline_sql = "UPDATE tbl_pipeline_stage SET applied_at = NOW() WHERE application_id = '$application_id'";
+            $conn->query($update_pipeline_sql);
+        } else {
+            // Insert into tbl_pipeline_stage (new pipeline entry)
+            $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage (application_id, applied_at) VALUES ('$application_id', NOW())";
+            $conn->query($insert_pipeline_sql);
+        }
 
         // Commit the transaction
         $conn->commit();

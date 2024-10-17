@@ -66,29 +66,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
 
                 foreach ($questions as $index => $questionText) {
                     $is_dealbreaker = isset($dealbreakers[$index]) ? 1 : 0;
-                    $is_required = 1;  
+                    $is_required = 1;  // Assuming all questions are required
                     $question_type = $question_types[$index];
 
                     $choice_a = $choice_b = $choice_c = $choice_d = null;
+                    $correct_answer = null;
 
                     if ($question_type === 'MULTIPLE_CHOICE') {
+                        // Handle multiple-choice options
                         $choice_a = trim($choices[$index]['a'] ?? '');
                         $choice_b = trim($choices[$index]['b'] ?? '');
                         $choice_c = trim($choices[$index]['c'] ?? '');
                         $choice_d = trim($choices[$index]['d'] ?? '');
+
+                        // Handle the correct answer for multiple-choice questions
+                        $correct_answer = strtoupper(trim($correct_answers[$index] ?? ''));
+
+                        // Ensure the correct answer matches one of the available choices
+                        if (!in_array($correct_answer, ['A', 'B', 'C', 'D'])) {
+                            $correct_answer = ''; // Invalid correct answer, handle it accordingly
+                        }
+                    } elseif ($question_type === 'YES_NO') {
+                        // Handle YES/NO questions
+                        $correct_answer = strtoupper(trim($correct_answers[$index] ?? ''));
+                        $correct_answer = ($correct_answer === 'YES') ? 'YES' : 'NO';
+                    } elseif ($question_type === 'TEXT') {
+                        // No correct answer needed for TEXT type
+                        $correct_answer = null;
                     }
 
-                    // Correct answer handling
-                    $correct_answer = trim($correct_answers[$index] ?? '');
-                    if ($question_type === 'YES_NO') {
-                        $correct_answer = strtoupper($correct_answer) === 'YES' ? 'YES' : 'NO';
-                    } elseif ($question_type === 'MULTIPLE_CHOICE') {
-                        $correct_answer = strtoupper($correct_answer);
-                    }
-
-                    // Ensure question text and correct answer are not empty before insertion
-                    if (!empty($questionText) && !empty($correct_answer)) {
-                        $questionStmt->bind_param('issiiissss', $job_id, $questionText, $question_type, $is_required, $is_dealbreaker, $choice_a, $choice_b, $choice_c, $choice_d, $correct_answer);
+                    // Ensure question text is not empty before insertion
+                    if (!empty($questionText)) {
+                        $questionStmt->bind_param(
+                            'issiiissss',
+                            $job_id, $questionText, $question_type, $is_required, $is_dealbreaker,
+                            $choice_a, $choice_b, $choice_c, $choice_d, $correct_answer
+                        );
                         $questionStmt->execute();
                     }
                 }
@@ -135,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
                             <input type="text" name="choices[${questionIndex}][c]" placeholder="Choice C">
                             <input type="text" name="choices[${questionIndex}][d]" placeholder="Choice D">
                             <label>Correct Answer:</label>
-                            <select name="correct_answers[]">
+                            <select name="correct_answers[${questionIndex}]">
                                 <option value="">Select Correct Answer</option>
                                 <option value="A">A</option>
                                 <option value="B">B</option>
@@ -145,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
                         </div>
                         <div id="yes_no_choices_${questionIndex}" style="display:none;">
                             <label>Correct Answer:</label>
-                            <select name="correct_answers[]">
+                            <select name="correct_answers[${questionIndex}]">
                                 <option value="">Select Correct Answer</option>
                                 <option value="YES">Yes</option>
                                 <option value="NO">No</option>
@@ -273,3 +286,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
 
 </body>
 </html>
+
+<?php
+// Close the database connection
+$conn->close();
+?>
