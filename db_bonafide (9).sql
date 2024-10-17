@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 17, 2024 at 05:51 AM
+-- Generation Time: Oct 17, 2024 at 10:08 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -48,7 +48,8 @@ CREATE TABLE `applications` (
 --
 
 INSERT INTO `applications` (`application_id`, `job_id`, `profile_id`, `resume`, `application_status`, `rejection_reason`, `referral_source`, `time_applied`, `recruiter_id`, `qualifications`, `skills`, `work_experience`, `withdrawn_at`) VALUES
-(27, 210, 29, 'uploads/Natanauan_ACTIVITY 2.pdf', 'INTERVIEW', NULL, 'referral_applicants', '2024-10-17 10:30:01', 4, 'NOne', 'None', 'None', '2024-10-17 10:29:24');
+(29, 212, 29, 'uploads/Reviewer ITP111.pdf', 'WITHDRAWN', NULL, 'referral_applicants', '2024-10-17 14:44:45', 4, 'None', 'None', 'None', '2024-10-17 15:23:45'),
+(30, 213, 29, 'uploads/Prelim AT - Natanauan, Lucky.docx', 'OFFERED', NULL, 'referral_applicants', '2024-10-17 15:30:10', 4, 'zzz', 'zzzz', 'zzzzz', NULL);
 
 -- --------------------------------------------------------
 
@@ -68,9 +69,10 @@ CREATE TABLE `application_answers` (
 --
 
 INSERT INTO `application_answers` (`answer_id`, `application_id`, `question_id`, `answer_text`) VALUES
-(57, 27, 380, '2'),
-(58, 27, 381, 'NO'),
-(59, 27, 382, 'B');
+(71, 29, 385, 'YES'),
+(72, 29, 386, 'B'),
+(73, 30, 387, 'YES'),
+(74, 30, 388, 'B');
 
 -- --------------------------------------------------------
 
@@ -100,7 +102,18 @@ CREATE TABLE `job_postings` (
 --
 
 INSERT INTO `job_postings` (`job_id`, `job_title`, `company`, `location`, `min_salary`, `max_salary`, `description`, `openings`, `created_by`, `deadline`, `status`, `filled_date`, `created_at`, `has_questionnaire`) VALUES
-(210, 'IT ADMIN', 'NEXPERIA', 'PULO', 10000.00, 40000.00, 'None', 10, 4, '2024-10-31', 'ACTIVE', NULL, '2024-10-17 10:09:37', 1);
+(212, 'IT ADMIN', 'NEXPERIA', 'PULO', 10000.00, 40000.00, 'None', 10, 4, '2024-10-18', 'ACTIVE', NULL, '2024-10-17 14:42:41', 1),
+(213, 'WEB DEVELOPER', 'INTEARCH', 'PULO', 10000.00, 40000.00, 'None', 10, 4, '2024-10-30', 'ACTIVE', NULL, '2024-10-17 15:29:17', 1),
+(218, 'Software Developer', 'Tech Innovators', 'New York, NY', 60000.00, 90000.00, 'Develop and maintain software applications.', 5, 4, '2024-11-01', 'ACTIVE', NULL, '2024-10-15 00:00:00', 1),
+(219, 'Marketing Specialist', 'Creative Solutions', 'Los Angeles, CA', 50000.00, 70000.00, 'Handle company marketing campaigns and strategy.', 3, 4, '2024-12-01', 'ACTIVE', NULL, '2024-10-10 00:00:00', 0),
+(220, 'Data Analyst', 'Data Wizards', 'San Francisco, CA', 55000.00, 85000.00, 'Analyze data sets and provide insights.', 2, 4, '2024-11-15', 'ACTIVE', NULL, '2024-10-12 00:00:00', 1),
+(221, 'Project Manager', 'BuildIT Corp.', 'Chicago, IL', 70000.00, 95000.00, 'Oversee project timelines and deliverables.', 1, 4, '2024-10-30', 'ACTIVE', NULL, '2024-10-09 00:00:00', 1),
+(222, 'UI/UX Designer', 'Creative Minds', 'Seattle, WA', 60000.00, 85000.00, 'Design user interfaces and experiences for web and mobile apps.', 2, 4, '2024-12-15', 'ACTIVE', NULL, '2024-10-16 00:00:00', 1),
+(223, 'Network Engineer', 'TechConnect', 'Austin, TX', 65000.00, 90000.00, 'Manage and maintain company network infrastructure.', 4, 4, '2024-11-30', 'ACTIVE', NULL, '2024-10-17 00:00:00', 1),
+(224, 'Human Resources Manager', 'PeopleFirst', 'Denver, CO', 70000.00, 95000.00, 'Oversee recruitment and employee relations for the company.', 1, 4, '2024-12-10', 'ACTIVE', NULL, '2024-10-17 00:00:00', 0),
+(225, 'Sales Executive', 'Global Sales Corp.', 'Miami, FL', 50000.00, 75000.00, 'Drive sales and business development activities in the region.', 3, 4, '2024-11-25', 'ACTIVE', NULL, '2024-10-14 00:00:00', 0),
+(226, 'DevOps Engineer', 'Cloud Solutions', 'San Diego, CA', 75000.00, 110000.00, 'Manage CI/CD pipelines and cloud infrastructure.', 2, 4, '2024-11-20', 'ACTIVE', NULL, '2024-10-13 00:00:00', 1),
+(227, 'Customer Support Specialist', 'Friendly Tech', 'Phoenix, AZ', 40000.00, 60000.00, 'Provide customer support and resolve technical issues.', 5, 4, '2024-11-10', 'ACTIVE', NULL, '2024-10-12 00:00:00', 1);
 
 -- --------------------------------------------------------
 
@@ -159,9 +172,39 @@ CREATE TABLE `questionnaire_template` (
 --
 
 INSERT INTO `questionnaire_template` (`question_id`, `job_id`, `question_text`, `is_required`, `question_type`, `is_dealbreaker`, `choice_a`, `choice_b`, `choice_c`, `choice_d`, `correct_answer`) VALUES
-(380, 210, 'q1', 1, 'TEXT', 0, NULL, NULL, NULL, NULL, 'YES'),
-(381, 210, 'q2', 1, 'YES_NO', 1, NULL, NULL, NULL, NULL, 'B'),
-(382, 210, 'q3', 1, 'MULTIPLE_CHOICE', 1, '1', '2', '3', '4', '');
+(385, 212, 'are u flexible?', 1, 'YES_NO', 1, NULL, NULL, NULL, NULL, 'YES'),
+(386, 212, 'q1', 1, 'MULTIPLE_CHOICE', 0, '1', '2', '3', '4', ''),
+(387, 213, 'are u flexible?', 1, 'YES_NO', 1, NULL, NULL, NULL, NULL, 'YES'),
+(388, 213, 'How r u', 1, 'MULTIPLE_CHOICE', 0, '1', '11', '111', '1111', ''),
+(395, 218, 'What design tools are you proficient with?', 1, 'TEXT', 1, NULL, NULL, NULL, NULL, NULL),
+(396, 218, 'Have you worked on mobile app design before?', 1, 'YES_NO', 0, NULL, NULL, NULL, NULL, 'YES'),
+(397, 218, 'Which design principle is most important for user interfaces?', 1, 'MULTIPLE_CHOICE', 1, 'Consistency', 'Aesthetics', 'Accessibility', 'Responsiveness', 'C'),
+(398, 219, 'What networking certifications do you hold?', 1, 'TEXT', 1, NULL, NULL, NULL, NULL, NULL),
+(399, 219, 'Have you configured a router using BGP?', 1, 'YES_NO', 1, NULL, NULL, NULL, NULL, 'YES'),
+(400, 219, 'Which network security protocol is best for VPNs?', 1, 'MULTIPLE_CHOICE', 0, 'IPSec', 'SSL', 'PPTP', 'IKEv2', 'A'),
+(401, 220, 'What is your experience in handling recruitment?', 1, 'TEXT', 1, NULL, NULL, NULL, NULL, NULL),
+(402, 220, 'Have you handled employee conflicts before?', 1, 'YES_NO', 1, NULL, NULL, NULL, NULL, 'YES'),
+(403, 220, 'What is the most important skill for an HR Manager?', 1, 'MULTIPLE_CHOICE', 1, 'Communication', 'Empathy', 'Negotiation', 'Problem Solving', 'B'),
+(404, 221, 'What is your sales quota achievement from the past year?', 1, 'TEXT', 1, NULL, NULL, NULL, NULL, NULL),
+(405, 221, 'Have you worked with CRM systems before?', 1, 'YES_NO', 0, NULL, NULL, NULL, NULL, 'YES'),
+(406, 221, 'Which sales strategy is the most effective?', 1, 'MULTIPLE_CHOICE', 1, 'Consultative Selling', 'Transactional Selling', 'Solution Selling', 'SPIN Selling', 'C'),
+(407, 222, 'What CI/CD tools are you familiar with?', 1, 'TEXT', 1, NULL, NULL, NULL, NULL, NULL),
+(408, 222, 'Have you deployed applications using Docker?', 1, 'YES_NO', 0, NULL, NULL, NULL, NULL, 'YES'),
+(409, 222, 'Which cloud provider do you prefer for deploying applications?', 1, 'MULTIPLE_CHOICE', 1, 'AWS', 'Azure', 'Google Cloud', 'DigitalOcean', 'A'),
+(410, 223, 'Do you have experience with helpdesk software?', 1, 'YES_NO', 0, NULL, NULL, NULL, NULL, 'YES'),
+(411, 223, 'Which skill is most important for customer support?', 1, 'MULTIPLE_CHOICE', 1, 'Problem-Solving', 'Communication', 'Technical Knowledge', 'Patience', 'B'),
+(412, 224, 'What marketing tools have you used?', 1, 'TEXT', 1, NULL, NULL, NULL, NULL, NULL),
+(413, 224, 'Have you managed a digital marketing campaign before?', 1, 'YES_NO', 0, NULL, NULL, NULL, NULL, 'YES'),
+(414, 224, 'Which marketing strategy do you find most effective?', 1, 'MULTIPLE_CHOICE', 1, 'Content Marketing', 'Social Media Marketing', 'Email Marketing', 'SEO', 'A'),
+(415, 225, 'What data analysis tools are you familiar with?', 1, 'TEXT', 1, NULL, NULL, NULL, NULL, NULL),
+(416, 225, 'Have you worked with large datasets before?', 1, 'YES_NO', 1, NULL, NULL, NULL, NULL, 'YES'),
+(417, 225, 'Which visualization tool do you prefer for data analysis?', 1, 'MULTIPLE_CHOICE', 1, 'Tableau', 'PowerBI', 'Looker', 'Excel', 'A'),
+(418, 226, 'Have you managed cross-functional teams before?', 1, 'YES_NO', 1, NULL, NULL, NULL, NULL, 'YES'),
+(419, 226, 'What project management software have you used?', 1, 'TEXT', 1, NULL, NULL, NULL, NULL, NULL),
+(420, 226, 'Which project management methodology do you prefer?', 1, 'MULTIPLE_CHOICE', 1, 'Agile', 'Waterfall', 'Scrum', 'Kanban', 'C'),
+(421, 227, 'What programming languages are you proficient in?', 1, 'TEXT', 1, NULL, NULL, NULL, NULL, NULL),
+(422, 227, 'Do you have experience with agile methodologies?', 1, 'YES_NO', 1, NULL, NULL, NULL, NULL, 'YES'),
+(423, 227, 'Which version control tool do you prefer?', 1, 'MULTIPLE_CHOICE', 1, 'Git', 'SVN', 'Mercurial', 'Other', 'A');
 
 -- --------------------------------------------------------
 
@@ -203,6 +246,14 @@ CREATE TABLE `tbl_interview` (
   `remarks` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `tbl_interview`
+--
+
+INSERT INTO `tbl_interview` (`interview_id`, `application_id`, `interview_date`, `interview_type`, `meet_link`, `phone`, `recruiter_email`, `remarks`) VALUES
+(20, 29, '2024-10-31 15:02:00', 'Online', 'dffdsh', '4324', 'a@g.c', 'None'),
+(21, 30, '2024-10-30 15:30:00', 'Online', 'xfgsdff', '123242', 'a@g.c', 'asffsfs');
+
 -- --------------------------------------------------------
 
 --
@@ -227,7 +278,31 @@ CREATE TABLE `tbl_job_metrics` (
 --
 
 INSERT INTO `tbl_job_metrics` (`metric_id`, `job_id`, `time_to_fill`, `total_applicants`, `interviewed_applicants`, `successful_placements`, `referral_applicants`, `social_media_applicants`, `career_site_applicants`, `withdrawn_applicants`) VALUES
-(18, 210, NULL, 1, 0, 0, 0, 0, 0, 1);
+(20, 212, NULL, 1, 0, 0, 0, 0, 0, 1),
+(21, 213, NULL, 1, 0, 0, 0, 0, 0, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tbl_offer_details`
+--
+
+CREATE TABLE `tbl_offer_details` (
+  `offer_id` int(11) NOT NULL,
+  `job_id` int(11) NOT NULL,
+  `salary` decimal(10,2) NOT NULL,
+  `start_date` date NOT NULL,
+  `benefits` varchar(255) DEFAULT NULL,
+  `remarks` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `tbl_offer_details`
+--
+
+INSERT INTO `tbl_offer_details` (`offer_id`, `job_id`, `salary`, `start_date`, `benefits`, `remarks`) VALUES
+(7, 212, 123123.00, '0000-00-00', '123123', '123123'),
+(8, 213, 40000.00, '0000-00-00', 'None', 'None');
 
 -- --------------------------------------------------------
 
@@ -255,7 +330,8 @@ CREATE TABLE `tbl_pipeline_stage` (
 --
 
 INSERT INTO `tbl_pipeline_stage` (`stage_id`, `application_id`, `applied_at`, `screened_at`, `interviewed_at`, `offered_at`, `hired_at`, `rejected_at`, `withdrawn_at`, `days_in_applied_stage`, `days_in_screened_stage`, `days_in_interviewed_stage`) VALUES
-(29, 27, '2024-10-17 10:30:02', NULL, NULL, NULL, NULL, NULL, '2024-10-17 10:29:24', 0, 0, 0);
+(31, 29, '2024-10-17 14:44:45', NULL, NULL, NULL, NULL, NULL, '2024-10-17 15:23:45', 0, 0, 0),
+(32, 30, '2024-10-17 15:30:10', NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -360,6 +436,13 @@ ALTER TABLE `tbl_job_metrics`
   ADD KEY `job_id` (`job_id`);
 
 --
+-- Indexes for table `tbl_offer_details`
+--
+ALTER TABLE `tbl_offer_details`
+  ADD PRIMARY KEY (`offer_id`),
+  ADD KEY `job_id` (`job_id`);
+
+--
 -- Indexes for table `tbl_pipeline_stage`
 --
 ALTER TABLE `tbl_pipeline_stage`
@@ -387,19 +470,19 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `applications`
 --
 ALTER TABLE `applications`
-  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `application_answers`
 --
 ALTER TABLE `application_answers`
-  MODIFY `answer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
+  MODIFY `answer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
 
 --
 -- AUTO_INCREMENT for table `job_postings`
 --
 ALTER TABLE `job_postings`
-  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=211;
+  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=228;
 
 --
 -- AUTO_INCREMENT for table `profiles`
@@ -411,7 +494,7 @@ ALTER TABLE `profiles`
 -- AUTO_INCREMENT for table `questionnaire_template`
 --
 ALTER TABLE `questionnaire_template`
-  MODIFY `question_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=383;
+  MODIFY `question_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=424;
 
 --
 -- AUTO_INCREMENT for table `referrals`
@@ -423,19 +506,25 @@ ALTER TABLE `referrals`
 -- AUTO_INCREMENT for table `tbl_interview`
 --
 ALTER TABLE `tbl_interview`
-  MODIFY `interview_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `interview_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `tbl_job_metrics`
 --
 ALTER TABLE `tbl_job_metrics`
-  MODIFY `metric_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `metric_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+
+--
+-- AUTO_INCREMENT for table `tbl_offer_details`
+--
+ALTER TABLE `tbl_offer_details`
+  MODIFY `offer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `tbl_pipeline_stage`
 --
 ALTER TABLE `tbl_pipeline_stage`
-  MODIFY `stage_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `stage_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT for table `tbl_user_activity`
@@ -504,6 +593,12 @@ ALTER TABLE `tbl_interview`
 --
 ALTER TABLE `tbl_job_metrics`
   ADD CONSTRAINT `tbl_job_metrics_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job_postings` (`job_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `tbl_offer_details`
+--
+ALTER TABLE `tbl_offer_details`
+  ADD CONSTRAINT `tbl_offer_details_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job_postings` (`job_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `tbl_pipeline_stage`
