@@ -72,30 +72,103 @@ $results = $stmt->get_result();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Management</title>
     <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS file -->
-    <script>
-        // Toggle all checkboxes
-        function toggleSelectAll(source) {
-            const checkboxes = document.querySelectorAll('input[name="selected_users[]"]');
-            checkboxes.forEach(checkbox => checkbox.checked = source.checked);
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
         }
 
-        // Uncheck the "Select All" checkbox if any individual checkbox is unchecked
-        function handleCheckboxChange() {
-            const selectAllCheckbox = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('input[name="selected_users[]"]');
-            const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
-
-            selectAllCheckbox.checked = allChecked; // Uncheck 'Select All' if not all checkboxes are checked
+        .content-area {
+            padding: 2rem;
+            margin-left: 220px;
         }
 
-        // Attach event listeners to all individual checkboxes
-        document.addEventListener('DOMContentLoaded', function () {
-            const checkboxes = document.querySelectorAll('input[name="selected_users[]"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', handleCheckboxChange);
-            });
-        });
-    </script>
+        h2 {
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .mass-action {
+            margin: 1.5rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .mass-action select, 
+        .mass-action button {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            margin-right: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .mass-action button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .mass-action button:hover {
+            background-color: #0056b3;
+        }
+
+        input[type="text"] {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            width: 300px;
+        }
+
+        button[type="submit"] {
+            padding: 0.5rem 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f4f4f9;
+        }
+
+        th a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        th a:hover {
+            text-decoration: underline;
+        }
+
+        td input[type="checkbox"] {
+            transform: scale(1.2);
+        }
+    </style>
 </head>
 <body>
 
@@ -126,7 +199,7 @@ $results = $stmt->get_result();
         <table>
             <thead>
                 <tr>
-                    <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"> <!-- Select All Checkbox --></th>
+                    <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"></th>
                     <th><a href="?sort=fname&order=<?php echo ($sortField == 'fname' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">First Name</a></th>
                     <th><a href="?sort=lname&order=<?php echo ($sortField == 'lname' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Last Name</a></th>
                     <th><a href="?sort=email&order=<?php echo ($sortField == 'email' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Email</a></th>
