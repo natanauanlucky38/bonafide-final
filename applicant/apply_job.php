@@ -1,5 +1,5 @@
 <?php
-include '../db.php';
+include '../db.php';  // Database connection
 
 // Check if the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
@@ -61,21 +61,38 @@ if ($existing_application) {
 $question_sql = "SELECT * FROM questionnaire_template WHERE job_id = $job_id";
 $question_result = $conn->query($question_sql);
 
+$target_dir = __DIR__ . "/uploads/";  // Define the upload directory
+
+// Create the directory if it doesn't exist
+if (!is_dir($target_dir)) {
+    mkdir($target_dir, 0777, true); // Create directory with permissions
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // File upload handling
-    if (isset($_FILES['resume']) && $_FILES['resume']['error'] == 0) {
-        $file_tmp = $_FILES['resume']['tmp_name'];
-        $file_name = basename($_FILES['resume']['name']);
-        $upload_dir = 'uploads/';
-        $resume_path = $upload_dir . $file_name;
+    // Handle file upload
+    $file = $_FILES['resume'];
+    $file_name = basename($file['name']);
+    $file_type = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
 
-        // Move the uploaded file to the correct directory
-        if (move_uploaded_file($file_tmp, $resume_path)) {
-            $_SESSION['resume_file'] = $resume_path; // Store resume path in session
+    // Check for valid file type and size
+    $valid_file_types = ['pdf', 'doc', 'docx'];
+    if (!in_array($file_type, $valid_file_types)) {
+        $error_message = "Only PDF, DOC, and DOCX files are allowed.";
+    } elseif ($file['size'] > 5000000) {
+        $error_message = "The file is too large. Maximum size is 5MB.";
+    } else {
+        // Rename the file with the format: user_id-profile_name-timestamp-job_id.extension
+        $timestamp = date('Ymd_His'); // Current timestamp in format Y-m-d_H-i-s
+        $new_file_name = $user_id . '-' . $profile_id . '-' . $timestamp . '-job_' . $job_id . '.' . $file_type;
+        $target_file = $target_dir . $new_file_name; // Full path to the renamed file
+
+        // Move the uploaded file to the target directory
+        if (move_uploaded_file($file['tmp_name'], $target_file)) {
+            $_SESSION['resume_file'] = $target_file; // Store the renamed resume path in session
+            $success_message = "Resume uploaded successfully!";
         } else {
-            echo "Failed to upload resume.";
-            exit();
+            $error_message = "There was an error uploading your resume.";
         }
     }
 
@@ -99,19 +116,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                            referral_source = '$referral_source', 
                                            qualifications = '$qualifications', 
                                            skills = '$skills', 
-                                           work_experience = '$work_experience' 
+                                           work_experience = '$work_experience',
+                                           withdrawn_at = NULL  -- Set withdrawn_at to NULL when reapplying
                                        WHERE application_id = '$application_id'";
             $conn->query($update_application_sql);
 
             // Delete any previous answers and insert new ones
             $delete_answers_sql = "DELETE FROM application_answers WHERE application_id = '$application_id'";
             $conn->query($delete_answers_sql);
+
+            // Decrease withdrawn_applicants in job metrics since user is re-applying
+            $update_metrics_sql = "UPDATE tbl_job_metrics 
+                                   SET withdrawn_applicants = withdrawn_applicants - 1 
+                                   WHERE job_id = '$job_id'";
+            $conn->query($update_metrics_sql);
+
+            // Update pipeline stage: set withdrawn_at to NULL and update applied_at
+            $update_pipeline_sql = "UPDATE tbl_pipeline_stage 
+                                    SET withdrawn_at = NULL, applied_at = NOW() 
+                                    WHERE application_id = '$application_id'";
+            $conn->query($update_pipeline_sql);
         } else {
             // Insert into the applications table (new application)
             $insert_application_sql = "INSERT INTO applications (job_id, profile_id, resume, application_status, time_applied, recruiter_id, referral_source, qualifications, skills, work_experience)
                                        VALUES ('$job_id', '$profile_id', '{$_SESSION['resume_file']}', 'APPLIED', NOW(), (SELECT created_by FROM job_postings WHERE job_id = '$job_id'), '$referral_source', '$qualifications', '$skills', '$work_experience')";
             $conn->query($insert_application_sql);
             $application_id = $conn->insert_id;
+
+            // Update total_applicants in job metrics
+            $metrics_check_sql = "SELECT * FROM tbl_job_metrics WHERE job_id = '$job_id'";
+            $metrics_check_result = $conn->query($metrics_check_sql);
+
+            if ($metrics_check_result->num_rows > 0) {
+                $update_metrics_sql = "UPDATE tbl_job_metrics 
+                                       SET total_applicants = total_applicants + 1 
+                                       WHERE job_id = '$job_id'";
+            } else {
+                $update_metrics_sql = "INSERT INTO tbl_job_metrics (job_id, total_applicants) VALUES ('$job_id', 1)";
+            }
+            $conn->query($update_metrics_sql);
+
+            // Insert into tbl_pipeline_stage (new pipeline entry)
+            $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage (application_id, applied_at) VALUES ('$application_id', NOW())";
+            $conn->query($insert_pipeline_sql);
         }
 
         // Insert answers into the application_answers table
@@ -124,42 +171,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
 
-        // Update job metrics in tbl_job_metrics
-        if (!$reapplying) {  // Only increase total_applicants for a new application
-            $metrics_check_sql = "SELECT * FROM tbl_job_metrics WHERE job_id = '$job_id'";
-            $metrics_check_result = $conn->query($metrics_check_sql);
-
-            if ($metrics_check_result->num_rows > 0) {
-                // If metrics entry exists, update the total_applicants count
-                $update_metrics_sql = "UPDATE tbl_job_metrics SET total_applicants = total_applicants + 1 WHERE job_id = '$job_id'";
-            } else {
-                // Insert if no entry exists
-                $update_metrics_sql = "INSERT INTO tbl_job_metrics (job_id, total_applicants) VALUES ('$job_id', 1)";
-            }
-            $conn->query($update_metrics_sql);
-        }
-
-        // Check if a pipeline entry already exists for this application
-        $pipeline_check_sql = "SELECT * FROM tbl_pipeline_stage WHERE application_id = '$application_id'";
-        $pipeline_check_result = $conn->query($pipeline_check_sql);
-
-        if ($pipeline_check_result->num_rows > 0) {
-            // If pipeline entry exists, update the applied_at timestamp
-            $update_pipeline_sql = "UPDATE tbl_pipeline_stage SET applied_at = NOW() WHERE application_id = '$application_id'";
-            $conn->query($update_pipeline_sql);
-        } else {
-            // Insert into tbl_pipeline_stage (new pipeline entry)
-            $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage (application_id, applied_at) VALUES ('$application_id', NOW())";
-            $conn->query($insert_pipeline_sql);
-        }
-
         // Commit the transaction
         $conn->commit();
 
         // Redirect to view_jobs.php after successful submission
         header('Location: view_job.php');
         exit();
-
     } catch (Exception $e) {
         // Rollback the transaction on error
         $conn->rollback();
@@ -173,10 +190,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <!-- HTML for the job application form -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Apply for Job</title>
 </head>
+
 <body>
     <h2>Apply for Job: <?php echo htmlspecialchars($job['job_title']); ?></h2>
     <p><strong>Company:</strong> <?php echo htmlspecialchars($job['company']); ?></p>
@@ -241,6 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <button type="submit">Submit Application</button>
     </form>
 </body>
+
 </html>
 
 <?php

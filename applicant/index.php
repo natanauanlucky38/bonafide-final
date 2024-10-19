@@ -2,6 +2,13 @@
 // login.php
 include '../db.php';  // Database connection
 
+// Check if the session is already initialized
+if (isset($_SESSION['email']) && isset($_SESSION['role']) && $_SESSION['role'] == 'APPLICANT') {
+    // If applicant session is already set, redirect to the dashboard
+    header('Location: dashboard.php');
+    exit();
+}
+
 // Check if login form is submitted
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = trim($_POST['email']);
@@ -42,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
     <h2>Applicant Login</h2>
-    <form method="POST" action="login.php">
+    <form method="POST" action="index.php">
         <input type="email" name="email" placeholder="Email" required><br>
         <input type="password" name="password" placeholder="Password" required><br>
         <button type="submit">Login</button>

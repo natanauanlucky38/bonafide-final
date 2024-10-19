@@ -2,6 +2,13 @@
 // login.php for recruiters
 include '../db.php';  // Include database connection
 
+// Check if the session is already initialized
+if (isset($_SESSION['email']) && isset($_SESSION['role']) && $_SESSION['role'] == 'RECRUITER') {
+    // If applicant session is already set, redirect to the dashboard
+    header('Location: dashboard.php');
+    exit();
+}
+
 // Check if login form is submitted
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = trim($_POST['email']);
@@ -32,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Recruiter Login</title>
@@ -122,11 +130,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
         <h2>Bonafide Trainology</h2>
         <h3>Recruiter Login</h3>
-        <form method="POST" action="login.php">
+        <form method="POST" action="index.php">
             <div class="input-group">
                 <input type="email" name="email" placeholder="Email" required>
             </div>
@@ -136,7 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <button type="submit">Login</button>
         </form>
 
-        <?php if (isset($error)) { echo "<p class='error'>$error</p>"; } ?>
+        <?php if (isset($error)) {
+            echo "<p class='error'>$error</p>";
+        } ?>
 
         <div class="login-footer">
             <p>Don't have an account? <a href="signup.php">Sign Up</a></p>
@@ -144,4 +155,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </div>
 </body>
+
 </html>

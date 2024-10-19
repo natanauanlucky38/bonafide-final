@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Handle "Proceed to Interview" action
     if ($decision === 'interview') {
+        // Insert interview details
         $interview_sql = "INSERT INTO tbl_interview (application_id, interview_date, interview_type, meet_link, phone, recruiter_email, remarks) VALUES (?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($interview_sql);
 
@@ -45,6 +46,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $stmt_update->bind_param("i", $application_id);
                     $stmt_update->execute();
                 }
+
+                // Update the screening details in tbl_pipeline_stage
+                $update_screen_sql = "UPDATE tbl_pipeline_stage SET screened_at = NOW(), interviewed_at = ?, days_in_screened_stage = DATEDIFF(NOW(), applied_at) WHERE application_id = ?";
+                $screen_stmt = $conn->prepare($update_screen_sql);
+                if ($screen_stmt) {
+                    $screen_stmt->bind_param("si", $interview_time, $application_id); // Set interviewed_at to the interview_time
+                    $screen_stmt->execute();
+                }
+
+                // Update screened_at in tbl_job_metrics
+                $update_metrics_sql = "UPDATE tbl_job_metrics SET interviewed_applicants = interviewed_applicants + 1 WHERE job_id = ?";
+                $metrics_stmt = $conn->prepare($update_metrics_sql);
+                if ($metrics_stmt) {
+                    $metrics_stmt->bind_param("i", $job_id);
+                    $metrics_stmt->execute();
+                }
+
                 header('Location: application.php'); // Redirect back to application.php
                 exit();
             } else {
@@ -54,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             echo "Error preparing interview query: " . $conn->error;
         }
 
-    // Handle "Proceed to Offer" action
+        // Handle "Proceed to Offer" action
     } elseif ($decision === 'offer') {
         // Use job_id instead of application_id
         $offer_sql = "INSERT INTO tbl_offer_details (job_id, salary, start_date, benefits, remarks) VALUES (?, ?, ?, ?, ?)";
@@ -80,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             echo "Error preparing offer query: " . $conn->error;
         }
 
-    // Handle "Reject" action
+        // Handle "Reject" action
     } elseif ($decision === 'reject') {
         $rejection_reason = $_POST['rejection_reason'];
         $reject_sql = "UPDATE applications SET application_status = 'REJECTED', rejection_reason = ? WHERE application_id = ?";
@@ -99,4 +117,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 }
-?>

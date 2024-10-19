@@ -4,7 +4,7 @@ include '../db.php';  // Adjust this path based on your directory structure
 
 // Check if the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
-    header('Location: login.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -33,7 +33,7 @@ if (!$applications_result) {
 }
 
 // Handle accept or withdraw offer actions
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
     $application_id = $_POST['application_id'];
     $job_id = $_POST['job_id'];
 
@@ -43,33 +43,58 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt = $conn->prepare($accept_sql);
         $stmt->bind_param('i', $application_id);
         if ($stmt->execute()) {
-            echo "Offer accepted!";
+            // Update offered_at in tbl_pipeline_stage
+            $update_pipeline_sql = "UPDATE tbl_pipeline_stage SET offered_at = NOW() WHERE application_id = ?";
+            $pipeline_stmt = $conn->prepare($update_pipeline_sql);
+            $pipeline_stmt->bind_param('i', $application_id);
+            if ($pipeline_stmt->execute()) {
+                echo "Offer accepted and pipeline updated!";
+            } else {
+                echo "Error updating pipeline stage: " . $conn->error;
+            }
         } else {
             echo "Error accepting offer: " . $conn->error;
         }
     }
 
-    if (isset($_POST['withdraw_offer'])) {
-        // Withdraw the offer, update application status to 'WITHDRAWN'
-        $withdraw_sql = "UPDATE applications SET application_status = 'WITHDRAWN', withdrawn_at = NOW() WHERE application_id = ?";
-        $stmt = $conn->prepare($withdraw_sql);
-        $stmt->bind_param('i', $application_id);
-        if ($stmt->execute()) {
-            // Update tbl_pipeline_stage
-            $pipeline_sql = "UPDATE tbl_pipeline_stage SET withdrawn_at = NOW() WHERE application_id = ?";
-            $pipeline_stmt = $conn->prepare($pipeline_sql);
-            $pipeline_stmt->bind_param('i', $application_id);
-            $pipeline_stmt->execute();
+    if (isset($_POST['withdraw_offer']) || isset($_POST['withdraw_application'])) {
+        // Start a transaction
+        $conn->begin_transaction();
 
-            // Update tbl_job_metrics
-            $metrics_sql = "UPDATE tbl_job_metrics SET withdrawn_applicants = withdrawn_applicants + 1 WHERE job_id = ?";
-            $metrics_stmt = $conn->prepare($metrics_sql);
+        try {
+            // Withdraw the application, update application status to 'WITHDRAWN'
+            $withdraw_sql = "UPDATE applications SET application_status = 'WITHDRAWN', withdrawn_at = NOW() WHERE application_id = ?";
+            $stmt = $conn->prepare($withdraw_sql);
+            $stmt->bind_param('i', $application_id);
+            $stmt->execute();
+
+            // Delete associated answers from application_answers table
+            $delete_answers_sql = "DELETE FROM application_answers WHERE application_id = ?";
+            $delete_stmt = $conn->prepare($delete_answers_sql);
+            $delete_stmt->bind_param('i', $application_id);
+            $delete_stmt->execute();
+
+            // Update tbl_job_metrics to increase withdrawn_applicants count
+            $update_metrics_sql = "UPDATE tbl_job_metrics 
+                                   SET withdrawn_applicants = withdrawn_applicants + 1 
+                                   WHERE job_id = ?";
+            $metrics_stmt = $conn->prepare($update_metrics_sql);
             $metrics_stmt->bind_param('i', $job_id);
             $metrics_stmt->execute();
 
-            echo "Offer withdrawn!";
-        } else {
-            echo "Error withdrawing offer: " . $conn->error;
+            // Update tbl_pipeline_stage to set withdrawn_at
+            $update_pipeline_sql = "UPDATE tbl_pipeline_stage SET withdrawn_at = NOW() WHERE application_id = ?";
+            $pipeline_stmt = $conn->prepare($update_pipeline_sql);
+            $pipeline_stmt->bind_param('i', $application_id);
+            $pipeline_stmt->execute();
+
+            // Commit the transaction
+            $conn->commit();
+            echo "Application withdrawn and data updated!";
+        } catch (Exception $e) {
+            // Rollback transaction if something failed
+            $conn->rollback();
+            echo "Error withdrawing application: " . $e->getMessage();
         }
     }
 }
@@ -77,6 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -87,21 +113,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-collapse: collapse;
         }
 
-        table, th, td {
+        table,
+        th,
+        td {
             border: 1px solid black;
         }
 
-        th, td {
+        th,
+        td {
             padding: 10px;
             text-align: left;
         }
 
         th {
             background-color: #f2f2f2;
-        }
-
-        form {
-            margin: 0;
         }
 
         button {
@@ -117,6 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     </style>
 </head>
+
 <body>
     <h1>My Applications</h1>
     <table>
@@ -139,8 +165,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <td><?php echo htmlspecialchars($application['company']); ?></td>
                         <td><?php echo htmlspecialchars($application['location']); ?></td>
                         <td>
-                            <?php 
-                            // Display status based on application_status field
+                            <?php
+                            // Display application status
                             switch ($application['application_status']) {
                                 case 'APPLIED':
                                     echo 'Application Submitted';
@@ -165,15 +191,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <td><?php echo date('F d, Y', strtotime($application['time_applied'])); ?></td>
                         <td>
                             <?php if ($application['application_status'] == 'INTERVIEW'): ?>
-                                <!-- Display interview details if scheduled -->
                                 <p><strong>Interview Date:</strong> <?php echo date('F d, Y h:i A', strtotime($application['interview_date'])); ?></p>
                                 <p><strong>Interview Type:</strong> <?php echo htmlspecialchars($application['interview_type']); ?></p>
                                 <p><strong>Meeting Link:</strong> <a href="<?php echo htmlspecialchars($application['meet_link']); ?>" target="_blank">Join Interview</a></p>
                             <?php elseif ($application['application_status'] == 'REJECTED'): ?>
-                                <!-- Display rejection reason if rejected -->
                                 <p><strong>Rejection Reason:</strong> <?php echo htmlspecialchars($application['rejection_reason']); ?></p>
                             <?php elseif ($application['application_status'] == 'OFFERED'): ?>
-                                <!-- Fetch and display offer details -->
                                 <?php
                                 $offer_sql = "SELECT salary, start_date, benefits, remarks FROM tbl_offer_details WHERE job_id = ?";
                                 $offer_stmt = $conn->prepare($offer_sql);
@@ -188,8 +211,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <p><strong>Start Date:</strong> <?php echo htmlspecialchars($offer['start_date']); ?></p>
                                     <p><strong>Benefits:</strong> <?php echo htmlspecialchars($offer['benefits']); ?></p>
                                     <p><strong>Remarks:</strong> <?php echo htmlspecialchars($offer['remarks']); ?></p>
-                                    <!-- Accept or Withdraw Offer -->
-                                    <form method="POST" action="">
+                                    <form method="POST">
                                         <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
                                         <input type="hidden" name="job_id" value="<?php echo $application['job_id']; ?>">
                                         <button type="submit" name="accept_offer">Accept Offer</button>
@@ -199,19 +221,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <p>No offer details available.</p>
                                 <?php endif; ?>
                             <?php else: ?>
-                                <p><strong>Status:</strong> In progress</p>
+                                <p>No additional details available.</p>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($application['application_status'] != 'WITHDRAWN' && $application['application_status'] != 'ACCEPTED'): ?>
+                                <form method="POST">
+                                    <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
+                                    <input type="hidden" name="job_id" value="<?php echo $application['job_id']; ?>">
+                                    <button type="submit" name="withdraw_application">Withdraw Application</button>
+                                </form>
                             <?php endif; ?>
                         </td>
                     </tr>
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="7">You have not submitted any applications yet.</td>
+                    <td colspan="7">No applications found.</td>
                 </tr>
             <?php endif; ?>
         </tbody>
     </table>
 </body>
+
 </html>
 
 <?php
