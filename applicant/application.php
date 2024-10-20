@@ -32,69 +32,44 @@ if (!$applications_result) {
     die("Error fetching applications: " . $conn->error);
 }
 
-// Handle accept or withdraw offer actions
+// Handle advancement actions based on status
 if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
     $application_id = $_POST['application_id'];
     $job_id = $_POST['job_id'];
 
-    if (isset($_POST['accept_offer'])) {
-        // Accept the offer, update application status to 'ACCEPTED'
-        $accept_sql = "UPDATE applications SET application_status = 'ACCEPTED' WHERE application_id = ?";
-        $stmt = $conn->prepare($accept_sql);
+    // If withdrawing the application
+    if (isset($_POST['withdraw_offer']) && $_POST['current_status'] == 'OFFERED') {
+        // Step 1: Update application status to 'WITHDRAWN'
+        $update_status_sql = "UPDATE applications SET application_status = 'WITHDRAWN', withdrawn_at = NOW() WHERE application_id = ?";
+        $stmt = $conn->prepare($update_status_sql);
+        if (!$stmt) {
+            die("Error preparing application withdrawal query: " . $conn->error);
+        }
         $stmt->bind_param('i', $application_id);
         if ($stmt->execute()) {
-            // Update offered_at in tbl_pipeline_stage
-            $update_pipeline_sql = "UPDATE tbl_pipeline_stage SET offered_at = NOW() WHERE application_id = ?";
-            $pipeline_stmt = $conn->prepare($update_pipeline_sql);
-            $pipeline_stmt->bind_param('i', $application_id);
-            if ($pipeline_stmt->execute()) {
-                echo "Offer accepted and pipeline updated!";
-            } else {
-                echo "Error updating pipeline stage: " . $conn->error;
-            }
-        } else {
-            echo "Error accepting offer: " . $conn->error;
-        }
-    }
-
-    if (isset($_POST['withdraw_offer']) || isset($_POST['withdraw_application'])) {
-        // Start a transaction
-        $conn->begin_transaction();
-
-        try {
-            // Withdraw the application, update application status to 'WITHDRAWN'
-            $withdraw_sql = "UPDATE applications SET application_status = 'WITHDRAWN', withdrawn_at = NOW() WHERE application_id = ?";
-            $stmt = $conn->prepare($withdraw_sql);
-            $stmt->bind_param('i', $application_id);
-            $stmt->execute();
-
-            // Delete associated answers from application_answers table
-            $delete_answers_sql = "DELETE FROM application_answers WHERE application_id = ?";
-            $delete_stmt = $conn->prepare($delete_answers_sql);
-            $delete_stmt->bind_param('i', $application_id);
-            $delete_stmt->execute();
-
-            // Update tbl_job_metrics to increase withdrawn_applicants count
-            $update_metrics_sql = "UPDATE tbl_job_metrics 
-                                   SET withdrawn_applicants = withdrawn_applicants + 1 
-                                   WHERE job_id = ?";
-            $metrics_stmt = $conn->prepare($update_metrics_sql);
-            $metrics_stmt->bind_param('i', $job_id);
-            $metrics_stmt->execute();
-
-            // Update tbl_pipeline_stage to set withdrawn_at
+            // Step 2: Update tbl_pipeline_stage for withdrawal
             $update_pipeline_sql = "UPDATE tbl_pipeline_stage SET withdrawn_at = NOW() WHERE application_id = ?";
             $pipeline_stmt = $conn->prepare($update_pipeline_sql);
+            if (!$pipeline_stmt) {
+                die("Error preparing pipeline stage withdrawal query: " . $conn->error);
+            }
             $pipeline_stmt->bind_param('i', $application_id);
             $pipeline_stmt->execute();
 
-            // Commit the transaction
-            $conn->commit();
-            echo "Application withdrawn and data updated!";
-        } catch (Exception $e) {
-            // Rollback transaction if something failed
-            $conn->rollback();
-            echo "Error withdrawing application: " . $e->getMessage();
+            // Step 3: Update the corresponding record in tbl_offer_details
+            $update_offer_sql = "UPDATE tbl_offer_details SET remarks = 'Offer withdrawn' WHERE job_id = ?";
+            $offer_stmt = $conn->prepare($update_offer_sql);
+            if (!$offer_stmt) {
+                die("Error preparing offer details query: " . $conn->error);
+            }
+            $offer_stmt->bind_param('i', $job_id);
+            if ($offer_stmt->execute()) {
+                echo "Application and offer successfully withdrawn!";
+            } else {
+                echo "Error updating offer details: " . $conn->error;
+            }
+        } else {
+            echo "Error withdrawing application: " . $conn->error;
         }
     }
 }
@@ -180,6 +155,12 @@ if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
                                 case 'OFFERED':
                                     echo 'Offer Made';
                                     break;
+                                case 'ACCEPTED':
+                                    echo 'Offer Accepted';
+                                    break;
+                                case 'DEPLOYED':
+                                    echo 'Deployed';
+                                    break;
                                 case 'REJECTED':
                                     echo 'Rejected';
                                     break;
@@ -198,8 +179,12 @@ if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
                                 <p><strong>Rejection Reason:</strong> <?php echo htmlspecialchars($application['rejection_reason']); ?></p>
                             <?php elseif ($application['application_status'] == 'OFFERED'): ?>
                                 <?php
+                                // Fetch offer details from tbl_offer_details
                                 $offer_sql = "SELECT salary, start_date, benefits, remarks FROM tbl_offer_details WHERE job_id = ?";
                                 $offer_stmt = $conn->prepare($offer_sql);
+                                if (!$offer_stmt) {
+                                    die("Error preparing offer query: " . $conn->error);
+                                }
                                 $offer_stmt->bind_param('i', $application['job_id']);
                                 $offer_stmt->execute();
                                 $offer_result = $offer_stmt->get_result();
@@ -214,8 +199,9 @@ if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
                                     <form method="POST">
                                         <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
                                         <input type="hidden" name="job_id" value="<?php echo $application['job_id']; ?>">
+                                        <input type="hidden" name="current_status" value="OFFERED">
                                         <button type="submit" name="accept_offer">Accept Offer</button>
-                                        <button type="submit" name="withdraw_offer">Withdraw Offer</button>
+                                        <button type="submit" name="withdraw_offer">Withdraw Application</button>
                                     </form>
                                 <?php else: ?>
                                     <p>No offer details available.</p>
@@ -225,11 +211,19 @@ if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($application['application_status'] != 'WITHDRAWN' && $application['application_status'] != 'ACCEPTED'): ?>
+                            <?php if ($application['application_status'] == 'APPLIED'): ?>
                                 <form method="POST">
                                     <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
                                     <input type="hidden" name="job_id" value="<?php echo $application['job_id']; ?>">
-                                    <button type="submit" name="withdraw_application">Withdraw Application</button>
+                                    <input type="hidden" name="current_status" value="APPLIED">
+                                    <button type="submit" name="advance_to_interview">Proceed to Interview</button>
+                                </form>
+                            <?php elseif ($application['application_status'] == 'INTERVIEW'): ?>
+                                <form method="POST">
+                                    <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
+                                    <input type="hidden" name="job_id" value="<?php echo $application['job_id']; ?>">
+                                    <input type="hidden" name="current_status" value="INTERVIEW">
+                                    <button type="submit" name="advance_to_offer">Proceed to Offer</button>
                                 </form>
                             <?php endif; ?>
                         </td>

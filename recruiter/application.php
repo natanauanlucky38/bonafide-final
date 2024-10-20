@@ -36,11 +36,13 @@ if (!$applications_result) {
             var applicationId = selectElement.dataset.applicationId;
             var interviewFields = document.getElementById('interviewFields' + applicationId);
             var offerFields = document.getElementById('offerFields' + applicationId);
+            var deploymentFields = document.getElementById('deploymentFields' + applicationId);
             var rejectionReasonTextarea = document.getElementById('rejectionReason' + applicationId);
 
             // Hide all fields initially
             interviewFields.style.display = 'none';
             offerFields.style.display = 'none';
+            deploymentFields.style.display = 'none';
             rejectionReasonTextarea.style.display = 'none';
 
             // Remove 'required' attribute from all fields
@@ -52,6 +54,10 @@ if (!$applications_result) {
             offerInputs.forEach(function(input) {
                 input.removeAttribute('required');
             });
+            var deploymentInputs = deploymentFields.querySelectorAll('input, select, textarea');
+            deploymentInputs.forEach(function(input) {
+                input.removeAttribute('required');
+            });
 
             // Show and require the relevant fields based on the selection
             if (selectElement.value === 'interview') {
@@ -59,13 +65,18 @@ if (!$applications_result) {
                 interviewInputs.forEach(function(input) {
                     input.setAttribute('required', 'required');
                 });
-            } else if (selectElement.value === 'reject') {
-                rejectionReasonTextarea.style.display = 'block';
             } else if (selectElement.value === 'offer') {
                 offerFields.style.display = 'block';
                 offerInputs.forEach(function(input) {
                     input.setAttribute('required', 'required');
                 });
+            } else if (selectElement.value === 'deployment') {
+                deploymentFields.style.display = 'block';
+                deploymentInputs.forEach(function(input) {
+                    input.setAttribute('required', 'required');
+                });
+            } else if (selectElement.value === 'reject') {
+                rejectionReasonTextarea.style.display = 'block';
             }
         }
     </script>
@@ -131,9 +142,14 @@ if (!$applications_result) {
                             <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
                             <select name="decision" required onchange="toggleFields(this)" data-application-id="<?php echo $application['application_id']; ?>">
                                 <option value="">Select Action</option>
+                                <?php if ($application['application_status'] == 'APPLIED'): ?>
+                                    <option value="interview">Proceed to Interview</option>
+                                <?php elseif ($application['application_status'] == 'INTERVIEW'): ?>
+                                    <option value="offer">Proceed to Offer</option>
+                                <?php elseif ($application['application_status'] == 'OFFERED'): ?>
+                                    <option value="deployment">Proceed to Deployment</option>
+                                <?php endif; ?>
                                 <option value="reject">Reject</option>
-                                <option value="interview">Proceed to Interview</option>
-                                <option value="offer">Proceed to Offer</option>
                             </select>
 
                             <!-- Rejection reason -->
@@ -177,6 +193,12 @@ if (!$applications_result) {
 
                                 <label for="offer_remarks">Offer Remarks:</label>
                                 <textarea name="offer_remarks" placeholder="Offer Remarks"></textarea>
+                            </div>
+
+                            <!-- Deployment fields -->
+                            <div id="deploymentFields<?php echo $application['application_id']; ?>" style="display:none;">
+                                <label for="deployment_remarks">Deployment Remarks:</label>
+                                <textarea name="deployment_remarks" placeholder="Deployment Remarks"></textarea>
                             </div>
 
                             <button type="submit">Submit</button>

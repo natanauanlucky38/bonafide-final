@@ -159,6 +159,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Insert into tbl_pipeline_stage (new pipeline entry)
             $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage (application_id, applied_at) VALUES ('$application_id', NOW())";
             $conn->query($insert_pipeline_sql);
+
+            // Update the referral source counts in tbl_job_metrics
+            if ($referral_source === 'referral_applicants') {
+                $update_referral_sql = "UPDATE tbl_job_metrics 
+                                        SET referral_applicants = referral_applicants + 1 
+                                        WHERE job_id = '$job_id'";
+                $conn->query($update_referral_sql);
+            } elseif ($referral_source === 'social_media_applicants') {
+                $update_social_media_sql = "UPDATE tbl_job_metrics 
+                                            SET social_media_applicants = social_media_applicants + 1 
+                                            WHERE job_id = '$job_id'";
+                $conn->query($update_social_media_sql);
+            } elseif ($referral_source === 'career_site_applicants') {
+                $update_career_site_sql = "UPDATE tbl_job_metrics 
+                                           SET career_site_applicants = career_site_applicants + 1 
+                                           WHERE job_id = '$job_id'";
+                $conn->query($update_career_site_sql);
+            }
         }
 
         // Insert answers into the application_answers table
