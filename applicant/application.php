@@ -12,6 +12,50 @@ include 'header.php';
 
 $user_id = $_SESSION['user_id'];
 
+// Handle withdrawal actions
+if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
+    $application_id = $_POST['application_id'];
+    $job_id = $_POST['job_id'];
+
+    // If withdrawing the application
+    if (isset($_POST['withdraw_offer']) && $_POST['current_status'] != 'REJECTED') {
+        // Update application status to 'WITHDRAWN'
+        $update_status_sql = "UPDATE applications SET application_status = 'WITHDRAWN', withdrawn_at = NOW() WHERE application_id = ?";
+        $stmt = $conn->prepare($update_status_sql);
+        if (!$stmt) {
+            die("Error preparing application withdrawal query: " . $conn->error);
+        }
+        $stmt->bind_param('i', $application_id);
+        if ($stmt->execute()) {
+            // Update tbl_pipeline_stage for withdrawal
+            $update_pipeline_sql = "UPDATE tbl_pipeline_stage SET withdrawn_at = NOW() WHERE application_id = ?";
+            $pipeline_stmt = $conn->prepare($update_pipeline_sql);
+            if (!$pipeline_stmt) {
+                die("Error preparing pipeline stage withdrawal query: " . $conn->error);
+            }
+            $pipeline_stmt->bind_param('i', $application_id);
+            $pipeline_stmt->execute();
+
+            // Update the corresponding record in tbl_offer_details
+            $update_offer_sql = "UPDATE tbl_offer_details SET remarks = 'Offer withdrawn' WHERE job_id = ?";
+            $offer_stmt = $conn->prepare($update_offer_sql);
+            if (!$offer_stmt) {
+                die("Error preparing offer details query: " . $conn->error);
+            }
+            $offer_stmt->bind_param('i', $job_id);
+            if ($offer_stmt->execute()) {
+                // Redirect to refresh the page after withdrawal
+                header('Location: application.php');
+                exit();
+            } else {
+                echo "Error updating offer details: " . $conn->error;
+            }
+        } else {
+            echo "Error withdrawing application: " . $conn->error;
+        }
+    }
+}
+
 // Fetch all active applications submitted by the logged-in applicant
 $applications_sql = "
     SELECT a.application_id, a.application_status, a.rejection_reason, a.time_applied,
@@ -21,58 +65,20 @@ $applications_sql = "
     FROM applications a
     JOIN job_postings j ON a.job_id = j.job_id
     LEFT JOIN tbl_interview i ON a.application_id = i.application_id
-    WHERE a.profile_id = (SELECT profile_id FROM profiles WHERE user_id = $user_id)
+    WHERE a.profile_id = (SELECT profile_id FROM profiles WHERE user_id = ?)
     AND a.application_status != 'WITHDRAWN'
     ORDER BY a.time_applied DESC
 ";
 
-$applications_result = $conn->query($applications_sql);
-
-if (!$applications_result) {
-    die("Error fetching applications: " . $conn->error);
+$applications_stmt = $conn->prepare($applications_sql);
+if (!$applications_stmt) {
+    die("Error preparing applications query: " . $conn->error);
 }
 
-// Handle advancement actions based on status
-if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
-    $application_id = $_POST['application_id'];
-    $job_id = $_POST['job_id'];
+$applications_stmt->bind_param('i', $user_id);
+$applications_stmt->execute();
+$applications_result = $applications_stmt->get_result();
 
-    // If withdrawing the application
-    if (isset($_POST['withdraw_offer']) && $_POST['current_status'] == 'OFFERED') {
-        // Step 1: Update application status to 'WITHDRAWN'
-        $update_status_sql = "UPDATE applications SET application_status = 'WITHDRAWN', withdrawn_at = NOW() WHERE application_id = ?";
-        $stmt = $conn->prepare($update_status_sql);
-        if (!$stmt) {
-            die("Error preparing application withdrawal query: " . $conn->error);
-        }
-        $stmt->bind_param('i', $application_id);
-        if ($stmt->execute()) {
-            // Step 2: Update tbl_pipeline_stage for withdrawal
-            $update_pipeline_sql = "UPDATE tbl_pipeline_stage SET withdrawn_at = NOW() WHERE application_id = ?";
-            $pipeline_stmt = $conn->prepare($update_pipeline_sql);
-            if (!$pipeline_stmt) {
-                die("Error preparing pipeline stage withdrawal query: " . $conn->error);
-            }
-            $pipeline_stmt->bind_param('i', $application_id);
-            $pipeline_stmt->execute();
-
-            // Step 3: Update the corresponding record in tbl_offer_details
-            $update_offer_sql = "UPDATE tbl_offer_details SET remarks = 'Offer withdrawn' WHERE job_id = ?";
-            $offer_stmt = $conn->prepare($update_offer_sql);
-            if (!$offer_stmt) {
-                die("Error preparing offer details query: " . $conn->error);
-            }
-            $offer_stmt->bind_param('i', $job_id);
-            if ($offer_stmt->execute()) {
-                echo "Application and offer successfully withdrawn!";
-            } else {
-                echo "Error updating offer details: " . $conn->error;
-            }
-        } else {
-            echo "Error withdrawing application: " . $conn->error;
-        }
-    }
-}
 ?>
 
 <!DOCTYPE html>
@@ -200,8 +206,6 @@ if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
                                         <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
                                         <input type="hidden" name="job_id" value="<?php echo $application['job_id']; ?>">
                                         <input type="hidden" name="current_status" value="OFFERED">
-                                        <button type="submit" name="accept_offer">Accept Offer</button>
-                                        <button type="submit" name="withdraw_offer">Withdraw Application</button>
                                     </form>
                                 <?php else: ?>
                                     <p>No offer details available.</p>
@@ -211,19 +215,13 @@ if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($application['application_status'] == 'APPLIED'): ?>
+                            <!-- Withdraw button should only be shown if application is NOT rejected -->
+                            <?php if ($application['application_status'] != 'REJECTED' && $application['application_status'] != 'WITHDRAWN'): ?>
                                 <form method="POST">
                                     <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
                                     <input type="hidden" name="job_id" value="<?php echo $application['job_id']; ?>">
-                                    <input type="hidden" name="current_status" value="APPLIED">
-                                    <button type="submit" name="advance_to_interview">Proceed to Interview</button>
-                                </form>
-                            <?php elseif ($application['application_status'] == 'INTERVIEW'): ?>
-                                <form method="POST">
-                                    <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
-                                    <input type="hidden" name="job_id" value="<?php echo $application['job_id']; ?>">
-                                    <input type="hidden" name="current_status" value="INTERVIEW">
-                                    <button type="submit" name="advance_to_offer">Proceed to Offer</button>
+                                    <input type="hidden" name="current_status" value="<?php echo $application['application_status']; ?>">
+                                    <button type="submit" name="withdraw_offer">Withdraw Application</button>
                                 </form>
                             <?php endif; ?>
                         </td>

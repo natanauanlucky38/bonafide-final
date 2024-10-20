@@ -9,9 +9,24 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
 
 $user_id = $_SESSION['user_id']; // Get the logged-in user's ID
 
-// Fetch all active job postings from the database
-$sql = "SELECT * FROM job_postings WHERE status = 'ACTIVE' ORDER BY created_at DESC";
-$result = $conn->query($sql);
+// Fetch active job postings excluding the ones the user has been rejected for
+$sql = "
+    SELECT jp.* 
+    FROM job_postings jp
+    LEFT JOIN applications a ON jp.job_id = a.job_id 
+    AND a.profile_id = (SELECT profile_id FROM profiles WHERE user_id = ?)
+    WHERE (a.application_status != 'REJECTED' OR a.application_status IS NULL)
+    AND jp.status = 'ACTIVE'
+    ORDER BY jp.created_at DESC
+";
+
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("Error preparing job postings query: " . $conn->error);
+}
+$stmt->bind_param('i', $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -57,7 +72,6 @@ $result = $conn->query($sql);
                         $application_check_result = $conn->query($application_check_sql);
 
                         $already_applied = $application_check_result->num_rows > 0;
-                        $application = $application_check_result->fetch_assoc();
                     ?>
                         <tr>
                             <td><?php echo htmlspecialchars($row['job_title']); ?></td>
@@ -70,8 +84,6 @@ $result = $conn->query($sql);
                             <td>
                                 <?php if ($already_applied): ?>
                                     <span>Already Applied</span>
-                                    <a href="withdraw_application.php?application_id=<?php echo $application['application_id']; ?>"
-                                        onclick="return confirm('Are you sure you want to withdraw your application?')">Withdraw Application</a>
                                 <?php else: ?>
                                     <a href="apply_job.php?job_id=<?php echo $row['job_id']; ?>">Apply Now</a>
                                 <?php endif; ?>

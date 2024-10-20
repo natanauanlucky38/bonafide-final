@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 20, 2024 at 04:09 AM
+-- Generation Time: Oct 20, 2024 at 03:27 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -37,9 +37,6 @@ CREATE TABLE `applications` (
   `referral_source` enum('referral_applicants','social_media_applicants','career_site_applicants') DEFAULT 'career_site_applicants',
   `time_applied` datetime NOT NULL,
   `recruiter_id` int(11) NOT NULL,
-  `qualifications` text DEFAULT NULL,
-  `skills` text DEFAULT NULL,
-  `work_experience` text DEFAULT NULL,
   `withdrawn_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -47,8 +44,8 @@ CREATE TABLE `applications` (
 -- Dumping data for table `applications`
 --
 
-INSERT INTO `applications` (`application_id`, `job_id`, `profile_id`, `resume`, `application_status`, `rejection_reason`, `referral_source`, `time_applied`, `recruiter_id`, `qualifications`, `skills`, `work_experience`, `withdrawn_at`) VALUES
-(47, 282, 39, 'C:xampphtdocsonafide-finalapplicant/uploads/45-39-20241020_040627-job_282.pdf', 'INTERVIEW', NULL, 'referral_applicants', '2024-10-20 10:06:27', 4, 'none', 'none', 'none', NULL);
+INSERT INTO `applications` (`application_id`, `job_id`, `profile_id`, `resume`, `application_status`, `rejection_reason`, `referral_source`, `time_applied`, `recruiter_id`, `withdrawn_at`) VALUES
+(68, 304, 39, 'C:xampphtdocsonafide-finalapplicant/uploads/45-39-20241020_151655-job_304.pdf', 'OFFERED', NULL, 'referral_applicants', '2024-10-20 21:16:55', 4, NULL);
 
 -- --------------------------------------------------------
 
@@ -68,8 +65,8 @@ CREATE TABLE `application_answers` (
 --
 
 INSERT INTO `application_answers` (`answer_id`, `application_id`, `question_id`, `answer_text`) VALUES
-(187, 47, 530, 'YES'),
-(188, 47, 531, 'Not fine');
+(241, 68, 574, 'YES'),
+(242, 68, 575, 'not');
 
 -- --------------------------------------------------------
 
@@ -99,7 +96,7 @@ CREATE TABLE `job_postings` (
 --
 
 INSERT INTO `job_postings` (`job_id`, `job_title`, `company`, `location`, `min_salary`, `max_salary`, `description`, `openings`, `created_by`, `deadline`, `status`, `filled_date`, `created_at`, `has_questionnaire`) VALUES
-(282, 'IT ADMIN', 'INTEARCH', 'PULO', 10000.00, 60000.00, 'None', 10, 4, '2024-10-31', 'ACTIVE', NULL, '2024-10-20 10:06:06', 1);
+(304, 'IT ADMIN', 'NEXPERIA', 'PULO', 10000.00, 40000.00, 'none', 10, 4, '2024-10-22', 'ACTIVE', NULL, '2024-10-20 21:05:26', 1);
 
 -- --------------------------------------------------------
 
@@ -135,6 +132,30 @@ INSERT INTO `profiles` (`profile_id`, `user_id`, `fname`, `lname`, `age`, `phone
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `profile_details`
+--
+
+CREATE TABLE `profile_details` (
+  `detail_id` int(11) NOT NULL,
+  `profile_id` int(11) NOT NULL,
+  `detail_value` text NOT NULL,
+  `qualifications` varchar(255) NOT NULL,
+  `skills` varchar(255) NOT NULL,
+  `work_experience` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `profile_details`
+--
+
+INSERT INTO `profile_details` (`detail_id`, `profile_id`, `detail_value`, `qualifications`, `skills`, `work_experience`) VALUES
+(48, 39, 'none', 'qualification', '', ''),
+(49, 39, 'none', '', 'skill', ''),
+(50, 39, 'none', '', '', 'work_experience');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `questionnaire_template`
 --
 
@@ -153,8 +174,8 @@ CREATE TABLE `questionnaire_template` (
 --
 
 INSERT INTO `questionnaire_template` (`question_id`, `job_id`, `question_text`, `is_required`, `question_type`, `is_dealbreaker`, `correct_answer`) VALUES
-(530, 282, 'are u flexible?', 1, 'YES_NO', 1, 'YES'),
-(531, 282, 'How r u', 1, 'TEXT', 0, NULL);
+(574, 304, 'are u flexible?', 1, 'YES_NO', 1, 'YES'),
+(575, 304, 'How r u', 1, 'TEXT', 0, NULL);
 
 -- --------------------------------------------------------
 
@@ -199,7 +220,7 @@ CREATE TABLE `tbl_interview` (
 --
 
 INSERT INTO `tbl_interview` (`interview_id`, `application_id`, `interview_date`, `interview_type`, `meet_link`, `phone`, `recruiter_email`, `remarks`) VALUES
-(42, 47, '2024-11-08 10:06:00', 'Online', 'sdvdgteg', '09283772932', 'a@g.c', 'none');
+(66, 68, '2024-10-22 21:17:00', 'Online', 'sdvdgteg', '0934983584', 'a@g.c', 'none');
 
 -- --------------------------------------------------------
 
@@ -227,7 +248,7 @@ CREATE TABLE `tbl_job_metrics` (
 --
 
 INSERT INTO `tbl_job_metrics` (`metric_id`, `job_id`, `time_to_fill`, `total_applicants`, `screened_applicants`, `interviewed_applicants`, `offered_applicants`, `successful_placements`, `referral_applicants`, `social_media_applicants`, `career_site_applicants`, `withdrawn_applicants`) VALUES
-(54, 282, NULL, 1, 0, 0, 0, 0, 0, 0, 0, 0);
+(76, 304, NULL, 1, 1, 1, 1, 0, 1, 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -257,7 +278,7 @@ CREATE TABLE `tbl_pipeline_stage` (
   `screened_at` datetime DEFAULT NULL,
   `interviewed_at` datetime DEFAULT NULL,
   `offered_at` datetime DEFAULT NULL,
-  `hired_at` datetime DEFAULT NULL,
+  `deployed_at` datetime DEFAULT NULL,
   `rejected_at` datetime DEFAULT NULL,
   `withdrawn_at` datetime DEFAULT NULL,
   `duration_applied_to_screened` int(11) DEFAULT 0,
@@ -271,8 +292,8 @@ CREATE TABLE `tbl_pipeline_stage` (
 -- Dumping data for table `tbl_pipeline_stage`
 --
 
-INSERT INTO `tbl_pipeline_stage` (`stage_id`, `application_id`, `applied_at`, `screened_at`, `interviewed_at`, `offered_at`, `hired_at`, `rejected_at`, `withdrawn_at`, `duration_applied_to_screened`, `duration_screened_to_interviewed`, `duration_interviewed_to_offered`, `duration_offered_to_hired`, `total_duration`) VALUES
-(49, 47, '2024-10-20 10:06:27', NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0);
+INSERT INTO `tbl_pipeline_stage` (`stage_id`, `application_id`, `applied_at`, `screened_at`, `interviewed_at`, `offered_at`, `deployed_at`, `rejected_at`, `withdrawn_at`, `duration_applied_to_screened`, `duration_screened_to_interviewed`, `duration_interviewed_to_offered`, `duration_offered_to_hired`, `total_duration`) VALUES
+(72, 68, '2024-10-20 21:16:55', '2024-10-20 21:17:42', '2024-10-22 21:17:00', '2024-10-20 21:18:28', NULL, NULL, NULL, 0, 1, -1, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -308,7 +329,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `email`, `password`, `role`, `last_login`, `registration_date`, `status`) VALUES
-(4, 'a@g.c', '$2y$10$Q70tcXHZeo1jUlhcNPGG8uKupYuOHuJ5E2MLrjVaTyhb34csMffPa', 'RECRUITER', '2024-10-20 02:38:32', '2024-10-15 15:16:34', 'ACTIVE'),
+(4, 'a@g.c', '$2y$10$Q70tcXHZeo1jUlhcNPGG8uKupYuOHuJ5E2MLrjVaTyhb34csMffPa', 'RECRUITER', '2024-10-20 11:56:45', '2024-10-15 15:16:34', 'ACTIVE'),
 (45, '1@g.c', '$2y$10$Hhc/qDLR4t3Tpf5RsdpjkuZdXCSORpGdVVANBo8ZW8Sxh0d3hhx1G', 'APPLICANT', NULL, '2024-10-20 02:40:11', 'ACTIVE');
 
 --
@@ -345,6 +366,13 @@ ALTER TABLE `job_postings`
 ALTER TABLE `profiles`
   ADD PRIMARY KEY (`profile_id`),
   ADD KEY `user_id` (`user_id`);
+
+--
+-- Indexes for table `profile_details`
+--
+ALTER TABLE `profile_details`
+  ADD PRIMARY KEY (`detail_id`),
+  ADD KEY `profile_id` (`profile_id`);
 
 --
 -- Indexes for table `questionnaire_template`
@@ -410,19 +438,19 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `applications`
 --
 ALTER TABLE `applications`
-  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
+  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- AUTO_INCREMENT for table `application_answers`
 --
 ALTER TABLE `application_answers`
-  MODIFY `answer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=189;
+  MODIFY `answer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=243;
 
 --
 -- AUTO_INCREMENT for table `job_postings`
 --
 ALTER TABLE `job_postings`
-  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=283;
+  MODIFY `job_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=305;
 
 --
 -- AUTO_INCREMENT for table `profiles`
@@ -431,10 +459,16 @@ ALTER TABLE `profiles`
   MODIFY `profile_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
+-- AUTO_INCREMENT for table `profile_details`
+--
+ALTER TABLE `profile_details`
+  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+
+--
 -- AUTO_INCREMENT for table `questionnaire_template`
 --
 ALTER TABLE `questionnaire_template`
-  MODIFY `question_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=532;
+  MODIFY `question_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=576;
 
 --
 -- AUTO_INCREMENT for table `referrals`
@@ -446,25 +480,25 @@ ALTER TABLE `referrals`
 -- AUTO_INCREMENT for table `tbl_interview`
 --
 ALTER TABLE `tbl_interview`
-  MODIFY `interview_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
+  MODIFY `interview_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
 
 --
 -- AUTO_INCREMENT for table `tbl_job_metrics`
 --
 ALTER TABLE `tbl_job_metrics`
-  MODIFY `metric_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `metric_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
 
 --
 -- AUTO_INCREMENT for table `tbl_offer_details`
 --
 ALTER TABLE `tbl_offer_details`
-  MODIFY `offer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `offer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT for table `tbl_pipeline_stage`
 --
 ALTER TABLE `tbl_pipeline_stage`
-  MODIFY `stage_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+  MODIFY `stage_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
 
 --
 -- AUTO_INCREMENT for table `tbl_user_activity`
@@ -508,6 +542,12 @@ ALTER TABLE `job_postings`
 --
 ALTER TABLE `profiles`
   ADD CONSTRAINT `profiles_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `profile_details`
+--
+ALTER TABLE `profile_details`
+  ADD CONSTRAINT `profile_details_ibfk_1` FOREIGN KEY (`profile_id`) REFERENCES `profiles` (`profile_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `questionnaire_template`
