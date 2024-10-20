@@ -17,8 +17,8 @@ if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
     $application_id = $_POST['application_id'];
     $job_id = $_POST['job_id'];
 
-    // If withdrawing the application
-    if (isset($_POST['withdraw_offer']) && $_POST['current_status'] != 'REJECTED') {
+    // If withdrawing the application and the current status is not 'REJECTED' or 'DEPLOYED'
+    if (isset($_POST['withdraw_offer']) && $_POST['current_status'] != 'REJECTED' && $_POST['current_status'] != 'DEPLOYED') {
         // Update application status to 'WITHDRAWN'
         $update_status_sql = "UPDATE applications SET application_status = 'WITHDRAWN', withdrawn_at = NOW() WHERE application_id = ?";
         $stmt = $conn->prepare($update_status_sql);
@@ -215,8 +215,8 @@ $applications_result = $applications_stmt->get_result();
                             <?php endif; ?>
                         </td>
                         <td>
-                            <!-- Withdraw button should only be shown if application is NOT rejected -->
-                            <?php if ($application['application_status'] != 'REJECTED' && $application['application_status'] != 'WITHDRAWN'): ?>
+                            <!-- Withdraw button should only be shown if application is NOT rejected or deployed -->
+                            <?php if ($application['application_status'] != 'REJECTED' && $application['application_status'] != 'WITHDRAWN' && $application['application_status'] != 'DEPLOYED'): ?>
                                 <form method="POST">
                                     <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
                                     <input type="hidden" name="job_id" value="<?php echo $application['job_id']; ?>">
