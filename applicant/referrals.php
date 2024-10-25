@@ -2,6 +2,7 @@
 // Include database connection and start session
 include '../db.php';  // Adjust this path based on your directory structure
 include 'header.php';  // Include header
+include 'sidebar.php';
 
 // Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {

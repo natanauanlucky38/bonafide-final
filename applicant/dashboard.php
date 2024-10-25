@@ -1,7 +1,7 @@
 <?php
 // dashboard.php
 include '../db.php';  // Database connection
-
+include 'sidebar.php';
 
 // Check if user is logged in and is an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {

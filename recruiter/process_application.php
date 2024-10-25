@@ -30,6 +30,13 @@ try {
         throw new Exception("Error: Application not found for application_id $application_id");
     }
 
+    // Fetch the applicant's user_id from their profile
+    $applicant_id_query = "SELECT user_id FROM profiles WHERE profile_id = 
+                           (SELECT profile_id FROM applications WHERE application_id = '$application_id')";
+    $applicant_result = $conn->query($applicant_id_query);
+    $applicant = $applicant_result->fetch_assoc();
+    $applicant_id = $applicant['user_id'];
+
     if ($decision === 'interview') {
         // Gather interview details from the form
         $interview_time = $_POST['interview_time'];
@@ -73,6 +80,16 @@ try {
                                        interviewed_applicants = interviewed_applicants + 1 
                                    WHERE job_id = '$job_id'";
         $conn->query($update_job_metrics_sql);
+
+        // Notify the applicant of the interview
+        $subject = "Application Update: Interview Scheduled";
+        $message = "An interview has been scheduled for your application. Interview Time: $interview_time. Please review the details.";
+        $link = "applicant/application.php?application_id=$application_id";  // Link to the application details page
+
+        // Insert notification for the applicant
+        $insert_notif_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
+                             VALUES ('$applicant_id', 'Interview Scheduled', '$subject', '$link', 0)";
+        $conn->query($insert_notif_sql);
     } elseif ($decision === 'offer') {
         // Gather offer details from the form and validate them
         $salary = $_POST['salary'] ?? null;
@@ -120,19 +137,13 @@ try {
         $conn->query($update_job_metrics_sql);
 
         // Notify the applicant of the offer
-        $applicant_id_query = "SELECT user_id FROM profiles WHERE profile_id = 
-                               (SELECT profile_id FROM applications WHERE application_id = '$application_id')";
-        $applicant_result = $conn->query($applicant_id_query);
-        $applicant = $applicant_result->fetch_assoc();
-        $applicant_id = $applicant['user_id'];
-
         $subject = "Application Update: Offer Made";
         $message = "An offer has been made for your application. Salary: $salary, Start Date: $start_date. Please review the details.";
         $link = "applicant/application.php?application_id=$application_id";  // Link to the application details page
 
         // Insert notification for the applicant
-        $insert_notif_sql = "INSERT INTO notifications (application_id, user_id, subject, message, link)
-                             VALUES ('$application_id', '$applicant_id', '$subject', '$message', '$link')";
+        $insert_notif_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
+                             VALUES ('$applicant_id', 'Offer Made', '$subject', '$link', 0)";
         $conn->query($insert_notif_sql);
     } elseif ($decision === 'deployment') {
         // Handle deployment
@@ -174,19 +185,13 @@ try {
         $conn->query($update_job_metrics_sql);
 
         // Notify applicant about deployment
-        $applicant_id_query = "SELECT user_id FROM profiles WHERE profile_id = 
-                               (SELECT profile_id FROM applications WHERE application_id = '$application_id')";
-        $applicant_result = $conn->query($applicant_id_query);
-        $applicant = $applicant_result->fetch_assoc();
-        $applicant_id = $applicant['user_id'];
-
         $subject = "Application Update: Deployed";
         $message = "Congratulations! You have been deployed. Deployment remarks: $deployment_remarks.";
         $link = "applicant/application.php?application_id=$application_id";  // Link to the application details page
 
         // Insert notification for the applicant
-        $insert_notif_sql = "INSERT INTO notifications (application_id, user_id, subject, message, link)
-                             VALUES ('$application_id', '$applicant_id', '$subject', '$message', '$link')";
+        $insert_notif_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
+                             VALUES ('$applicant_id', 'Deployed', '$subject', '$link', 0)";
         $conn->query($insert_notif_sql);
     } elseif ($decision === 'reject') {
         // Handle rejection
@@ -212,19 +217,13 @@ try {
         $conn->query($update_job_metrics_sql);
 
         // Notify applicant about rejection
-        $applicant_id_query = "SELECT user_id FROM profiles WHERE profile_id = 
-                               (SELECT profile_id FROM applications WHERE application_id = '$application_id')";
-        $applicant_result = $conn->query($applicant_id_query);
-        $applicant = $applicant_result->fetch_assoc();
-        $applicant_id = $applicant['user_id'];
-
         $subject = "Application Update: Rejected";
         $message = "We regret to inform you that your application has been rejected. Reason: $rejection_reason.";
         $link = "applicant/application.php?application_id=$application_id";  // Link to the application details page
 
         // Insert notification for the applicant
-        $insert_notif_sql = "INSERT INTO notifications (application_id, user_id, subject, message, link)
-                             VALUES ('$application_id', '$applicant_id', '$subject', '$message', '$link')";
+        $insert_notif_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
+                             VALUES ('$applicant_id', 'Application Rejected', '$subject', '$link', 0)";
         $conn->query($insert_notif_sql);
     }
 

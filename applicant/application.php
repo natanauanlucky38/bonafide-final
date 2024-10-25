@@ -1,6 +1,7 @@
 <?php
 // Include database connection and start session
 include '../db.php';  // Adjust this path based on your directory structure
+include 'sidebar.php';
 
 // Check if the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {

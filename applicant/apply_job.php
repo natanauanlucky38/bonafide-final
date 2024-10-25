@@ -1,5 +1,6 @@
 <?php
 include '../db.php';  // Database connection
+include 'sidebar.php';
 
 // Check if the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
