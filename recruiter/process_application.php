@@ -16,6 +16,9 @@ if (!isset($_POST['application_id']) || !isset($_POST['decision'])) {
 $application_id = (int)$_POST['application_id']; // Sanitize application_id
 $decision = $_POST['decision'];
 
+// Define the base URL for notifications (assuming this is your base path)
+$base_url = "http://localhost/bonafide-final/applicant/application.php?application_id=";
+
 // Start a transaction to ensure atomicity
 $conn->begin_transaction();
 
@@ -84,7 +87,7 @@ try {
         // Notify the applicant of the interview
         $subject = "Application Update: Interview Scheduled";
         $message = "An interview has been scheduled for your application. Interview Time: $interview_time. Please review the details.";
-        $link = "applicant/application.php?application_id=$application_id";  // Link to the application details page
+        $link = $base_url . $application_id;  // Link to the application details page
 
         // Insert notification for the applicant
         $insert_notif_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
@@ -139,7 +142,7 @@ try {
         // Notify the applicant of the offer
         $subject = "Application Update: Offer Made";
         $message = "An offer has been made for your application. Salary: $salary, Start Date: $start_date. Please review the details.";
-        $link = "applicant/application.php?application_id=$application_id";  // Link to the application details page
+        $link = $base_url . $application_id;  // Link to the application details page
 
         // Insert notification for the applicant
         $insert_notif_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
@@ -187,7 +190,7 @@ try {
         // Notify applicant about deployment
         $subject = "Application Update: Deployed";
         $message = "Congratulations! You have been deployed. Deployment remarks: $deployment_remarks.";
-        $link = "applicant/application.php?application_id=$application_id";  // Link to the application details page
+        $link = $base_url . $application_id;  // Link to the application details page
 
         // Insert notification for the applicant
         $insert_notif_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
@@ -219,7 +222,7 @@ try {
         // Notify applicant about rejection
         $subject = "Application Update: Rejected";
         $message = "We regret to inform you that your application has been rejected. Reason: $rejection_reason.";
-        $link = "applicant/application.php?application_id=$application_id";  // Link to the application details page
+        $link = $base_url . $application_id;  // Link to the application details page
 
         // Insert notification for the applicant
         $insert_notif_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
