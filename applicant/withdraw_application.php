@@ -21,7 +21,7 @@ $conn->begin_transaction();
 try {
     // Step 1: Withdraw the application by updating the `applications` table
     $withdraw_sql = "UPDATE applications 
-                     SET application_status = 'WITHDRAWN', withdrawn_at = NOW() 
+                     SET application_status = 'WITHDRAWN' 
                      WHERE application_id = ? 
                      AND profile_id = (SELECT profile_id FROM profiles WHERE user_id = ?)";
     $stmt = $conn->prepare($withdraw_sql);
@@ -34,6 +34,11 @@ try {
     $stmt->bind_param('ii', $application_id, $user_id);
     $stmt->execute();
 
+    // Check if the update was successful
+    if ($stmt->affected_rows == 0) {
+        throw new Exception("Failed to withdraw the application.");
+    }
+
     // Step 2: Delete answers related to the application from `application_answers`
     $delete_answers_sql = "DELETE FROM application_answers WHERE application_id = ?";
     $delete_stmt = $conn->prepare($delete_answers_sql);
@@ -45,10 +50,13 @@ try {
     $delete_stmt->bind_param('i', $application_id);
     $delete_stmt->execute();
 
-    // Step 3: Update `tbl_pipeline_stage` to set `withdrawn_at`
-    $update_pipeline_sql = "UPDATE tbl_pipeline_stage 
-                            SET withdrawn_at = NOW() 
-                            WHERE application_id = ?";
+    // Step 3: Update `tbl_pipeline_stage` to set `withdrawn_at` and calculate `total_duration`
+    // Calculate the total duration in days between `applied_at` and `withdrawn_at`
+    $update_pipeline_sql = "
+        UPDATE tbl_pipeline_stage 
+        SET withdrawn_at = NOW(), 
+            total_duration = TIMESTAMPDIFF(DAY, applied_at, NOW()) 
+        WHERE application_id = ?";
     $pipeline_stmt = $conn->prepare($update_pipeline_sql);
 
     if (!$pipeline_stmt) {
@@ -59,6 +67,7 @@ try {
     $pipeline_stmt->execute();
 
     // Step 4: Update `tbl_job_metrics` to increase `withdrawn_applicants` by 1
+    // First, retrieve the job ID associated with the application
     $job_id_sql = "SELECT job_id FROM applications WHERE application_id = ?";
     $job_id_stmt = $conn->prepare($job_id_sql);
 
@@ -72,6 +81,7 @@ try {
     $job_id_row = $job_id_result->fetch_assoc();
     $job_id = $job_id_row['job_id'];
 
+    // Now update `withdrawn_applicants` in `tbl_job_metrics`
     $update_metrics_sql = "UPDATE tbl_job_metrics 
                            SET withdrawn_applicants = withdrawn_applicants + 1 
                            WHERE job_id = ?";
@@ -83,6 +93,11 @@ try {
 
     $metrics_stmt->bind_param('i', $job_id);
     $metrics_stmt->execute();
+
+    // Check if the `withdrawn_applicants` update was successful
+    if ($metrics_stmt->affected_rows == 0) {
+        throw new Exception("Failed to update withdrawn_applicants in tbl_job_metrics.");
+    }
 
     // Step 5: Delete from `tbl_interview` if an interview is scheduled
     $delete_interview_sql = "DELETE FROM tbl_interview WHERE application_id = ?";
@@ -111,7 +126,7 @@ try {
     echo "Application and offer successfully withdrawn!";
 
     // Redirect to the job postings or applications page
-    header('Location: view_job.php');
+    header('Location: application.php');
     exit();
 } catch (Exception $e) {
     // Rollback transaction if something fails

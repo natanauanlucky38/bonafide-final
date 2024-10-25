@@ -43,12 +43,11 @@ try {
         $update_application_sql = "UPDATE applications SET application_status = 'INTERVIEW' WHERE application_id = '$application_id'";
         $conn->query($update_application_sql);
 
-        // Check if a record exists in tbl_pipeline_stage for this application_id
+        // Insert or update tbl_pipeline_stage for interview stage details
         $check_pipeline_sql = "SELECT * FROM tbl_pipeline_stage WHERE application_id = '$application_id'";
         $pipeline_result = $conn->query($check_pipeline_sql);
 
         if ($pipeline_result->num_rows > 0) {
-            // Update the existing record with screened_at and interviewed_at, and calculate durations
             $update_pipeline_sql = "UPDATE tbl_pipeline_stage 
                                      SET screened_at = IF(screened_at IS NULL, NOW(), screened_at),
                                          interviewed_at = '$interview_time', 
@@ -57,7 +56,6 @@ try {
                                      WHERE application_id = '$application_id'";
             $conn->query($update_pipeline_sql);
         } else {
-            // Insert a new record in tbl_pipeline_stage
             $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage 
                                     (application_id, applied_at, screened_at, interviewed_at, duration_applied_to_screened, duration_screened_to_interviewed)
                                     VALUES ('$application_id', NOW(), NOW(), '$interview_time', 0, TIMESTAMPDIFF(DAY, NOW(), '$interview_time'))";
@@ -76,11 +74,15 @@ try {
                                    WHERE job_id = '$job_id'";
         $conn->query($update_job_metrics_sql);
     } elseif ($decision === 'offer') {
-        // Gather offer details from the form
-        $salary = $_POST['salary'];
-        $start_date = $_POST['start_date'];
-        $benefits = $_POST['benefits'];
-        $offer_remarks = $_POST['offer_remarks'];
+        // Gather offer details from the form and validate them
+        $salary = $_POST['salary'] ?? null;
+        $start_date = $_POST['start_date'] ?? null;
+        $benefits = $_POST['benefits'] ?? null;
+        $offer_remarks = $_POST['offer_remarks'] ?? null;
+
+        if (!$salary || !$start_date) {
+            throw new Exception("Error: Salary and start date are required to make an offer.");
+        }
 
         // Update the application status to OFFERED
         $update_application_sql = "UPDATE applications SET application_status = 'OFFERED' WHERE application_id = '$application_id'";
@@ -104,54 +106,126 @@ try {
             throw new Exception("Error: Interview data not found for application_id $application_id");
         }
 
-        // Insert offer details into tbl_offer_details
-        $insert_offer_sql = "INSERT INTO tbl_offer_details (application_id, salary, start_date, benefits, remarks)
-                             VALUES ('$application_id', '$salary', '$start_date', '$benefits', '$offer_remarks')";
-        $conn->query($insert_offer_sql);
+        // Insert offer details into tbl_offer_details and check for errors
+        $insert_offer_sql = "INSERT INTO tbl_offer_details (job_id, salary, start_date, benefits, remarks)
+                             VALUES ('$job_id', '$salary', '$start_date', '$benefits', '$offer_remarks')";
+        if (!$conn->query($insert_offer_sql)) {
+            throw new Exception("Error inserting offer details: " . $conn->error);
+        }
 
         // Update job metrics: offered_applicants
         $update_job_metrics_sql = "UPDATE tbl_job_metrics 
                                    SET offered_applicants = offered_applicants + 1 
                                    WHERE job_id = '$job_id'";
         $conn->query($update_job_metrics_sql);
+
+        // Notify the applicant of the offer
+        $applicant_id_query = "SELECT user_id FROM profiles WHERE profile_id = 
+                               (SELECT profile_id FROM applications WHERE application_id = '$application_id')";
+        $applicant_result = $conn->query($applicant_id_query);
+        $applicant = $applicant_result->fetch_assoc();
+        $applicant_id = $applicant['user_id'];
+
+        $subject = "Application Update: Offer Made";
+        $message = "An offer has been made for your application. Salary: $salary, Start Date: $start_date. Please review the details.";
+        $link = "applicant/application.php?application_id=$application_id";  // Link to the application details page
+
+        // Insert notification for the applicant
+        $insert_notif_sql = "INSERT INTO notifications (application_id, user_id, subject, message, link)
+                             VALUES ('$application_id', '$applicant_id', '$subject', '$message', '$link')";
+        $conn->query($insert_notif_sql);
     } elseif ($decision === 'deployment') {
-        // Proceed to deployment
+        // Handle deployment
         $deployment_remarks = $_POST['deployment_remarks'];
 
         // Update the application status to DEPLOYED
         $update_application_sql = "UPDATE applications SET application_status = 'DEPLOYED' WHERE application_id = '$application_id'";
         $conn->query($update_application_sql);
 
-        // Fetch the offered_at date from tbl_pipeline_stage
-        $fetch_pipeline_sql = "SELECT offered_at FROM tbl_pipeline_stage WHERE application_id = '$application_id'";
+        // Fetch the offered_at and applied_at dates from tbl_pipeline_stage
+        $fetch_pipeline_sql = "SELECT applied_at, offered_at FROM tbl_pipeline_stage WHERE application_id = '$application_id'";
         $pipeline_result = $conn->query($fetch_pipeline_sql);
 
         if ($pipeline_result->num_rows > 0) {
             $pipeline_row = $pipeline_result->fetch_assoc();
+            $applied_at = $pipeline_row['applied_at'];
             $offered_at = $pipeline_row['offered_at'];
 
-            // Update deployed_at and calculate the duration between offered_at and deployed_at
+            // Update deployed_at, duration_offered_to_hired, and calculate total_duration
             $update_pipeline_sql = "UPDATE tbl_pipeline_stage 
                                      SET deployed_at = NOW(),
-                                         duration_offered_to_hired = TIMESTAMPDIFF(DAY, offered_at, NOW())
+                                         duration_offered_to_hired = TIMESTAMPDIFF(DAY, offered_at, NOW()),
+                                         total_duration = TIMESTAMPDIFF(DAY, applied_at, NOW())
                                      WHERE application_id = '$application_id'";
             $conn->query($update_pipeline_sql);
         } else {
             throw new Exception("Error: Offer data not found for application_id $application_id");
         }
 
-        // Insert deployment remarks into tbl_deployment_details if needed
+        // Insert deployment details into tbl_deployment_details
         $insert_deployment_sql = "INSERT INTO tbl_deployment_details (application_id, deployment_remarks)
                                   VALUES ('$application_id', '$deployment_remarks')";
         $conn->query($insert_deployment_sql);
 
-        // Update job metrics: successful_applicants
+        // Update job metrics: successful_placements
         $update_job_metrics_sql = "UPDATE tbl_job_metrics 
                                    SET successful_placements = successful_placements + 1 
                                    WHERE job_id = '$job_id'";
         $conn->query($update_job_metrics_sql);
+
+        // Notify applicant about deployment
+        $applicant_id_query = "SELECT user_id FROM profiles WHERE profile_id = 
+                               (SELECT profile_id FROM applications WHERE application_id = '$application_id')";
+        $applicant_result = $conn->query($applicant_id_query);
+        $applicant = $applicant_result->fetch_assoc();
+        $applicant_id = $applicant['user_id'];
+
+        $subject = "Application Update: Deployed";
+        $message = "Congratulations! You have been deployed. Deployment remarks: $deployment_remarks.";
+        $link = "applicant/application.php?application_id=$application_id";  // Link to the application details page
+
+        // Insert notification for the applicant
+        $insert_notif_sql = "INSERT INTO notifications (application_id, user_id, subject, message, link)
+                             VALUES ('$application_id', '$applicant_id', '$subject', '$message', '$link')";
+        $conn->query($insert_notif_sql);
     } elseif ($decision === 'reject') {
-        // Handle rejection logic...
+        // Handle rejection
+        $rejection_reason = $conn->real_escape_string($_POST['rejection_reason']);
+
+        // Update application status to REJECTED and set the rejection reason
+        $update_application_sql = "UPDATE applications 
+                                   SET application_status = 'REJECTED', rejection_reason = '$rejection_reason' 
+                                   WHERE application_id = '$application_id'";
+        $conn->query($update_application_sql);
+
+        // Update tbl_pipeline_stage to set rejected_at and calculate total duration
+        $update_pipeline_sql = "UPDATE tbl_pipeline_stage 
+                                SET rejected_at = NOW(), 
+                                    total_duration = TIMESTAMPDIFF(DAY, applied_at, NOW()) 
+                                WHERE application_id = '$application_id'";
+        $conn->query($update_pipeline_sql);
+
+        // Update job metrics: increment rejected_applicants
+        $update_job_metrics_sql = "UPDATE tbl_job_metrics 
+                                   SET rejected_applicants = rejected_applicants + 1 
+                                   WHERE job_id = '$job_id'";
+        $conn->query($update_job_metrics_sql);
+
+        // Notify applicant about rejection
+        $applicant_id_query = "SELECT user_id FROM profiles WHERE profile_id = 
+                               (SELECT profile_id FROM applications WHERE application_id = '$application_id')";
+        $applicant_result = $conn->query($applicant_id_query);
+        $applicant = $applicant_result->fetch_assoc();
+        $applicant_id = $applicant['user_id'];
+
+        $subject = "Application Update: Rejected";
+        $message = "We regret to inform you that your application has been rejected. Reason: $rejection_reason.";
+        $link = "applicant/application.php?application_id=$application_id";  // Link to the application details page
+
+        // Insert notification for the applicant
+        $insert_notif_sql = "INSERT INTO notifications (application_id, user_id, subject, message, link)
+                             VALUES ('$application_id', '$applicant_id', '$subject', '$message', '$link')";
+        $conn->query($insert_notif_sql);
     }
 
     // Commit the transaction

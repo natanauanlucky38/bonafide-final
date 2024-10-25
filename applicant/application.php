@@ -12,53 +12,9 @@ include 'header.php';
 
 $user_id = $_SESSION['user_id'];
 
-// Handle withdrawal actions
-if (isset($_POST['application_id']) && isset($_POST['job_id'])) {
-    $application_id = $_POST['application_id'];
-    $job_id = $_POST['job_id'];
-
-    // If withdrawing the application and the current status is not 'REJECTED' or 'DEPLOYED'
-    if (isset($_POST['withdraw_offer']) && $_POST['current_status'] != 'REJECTED' && $_POST['current_status'] != 'DEPLOYED') {
-        // Update application status to 'WITHDRAWN'
-        $update_status_sql = "UPDATE applications SET application_status = 'WITHDRAWN', withdrawn_at = NOW() WHERE application_id = ?";
-        $stmt = $conn->prepare($update_status_sql);
-        if (!$stmt) {
-            die("Error preparing application withdrawal query: " . $conn->error);
-        }
-        $stmt->bind_param('i', $application_id);
-        if ($stmt->execute()) {
-            // Update tbl_pipeline_stage for withdrawal
-            $update_pipeline_sql = "UPDATE tbl_pipeline_stage SET withdrawn_at = NOW() WHERE application_id = ?";
-            $pipeline_stmt = $conn->prepare($update_pipeline_sql);
-            if (!$pipeline_stmt) {
-                die("Error preparing pipeline stage withdrawal query: " . $conn->error);
-            }
-            $pipeline_stmt->bind_param('i', $application_id);
-            $pipeline_stmt->execute();
-
-            // Update the corresponding record in tbl_offer_details
-            $update_offer_sql = "UPDATE tbl_offer_details SET remarks = 'Offer withdrawn' WHERE job_id = ?";
-            $offer_stmt = $conn->prepare($update_offer_sql);
-            if (!$offer_stmt) {
-                die("Error preparing offer details query: " . $conn->error);
-            }
-            $offer_stmt->bind_param('i', $job_id);
-            if ($offer_stmt->execute()) {
-                // Redirect to refresh the page after withdrawal
-                header('Location: application.php');
-                exit();
-            } else {
-                echo "Error updating offer details: " . $conn->error;
-            }
-        } else {
-            echo "Error withdrawing application: " . $conn->error;
-        }
-    }
-}
-
-// Fetch all active applications submitted by the logged-in applicant
+// Fetch user's applications, excluding those that are withdrawn
 $applications_sql = "
-    SELECT a.application_id, a.application_status, a.rejection_reason, a.time_applied,
+    SELECT a.application_id, a.application_status, a.rejection_reason, a.resume, a.referral_source,
            j.job_title, j.company, j.location,
            i.interview_date, i.interview_type, i.meet_link,
            a.job_id
@@ -67,7 +23,7 @@ $applications_sql = "
     LEFT JOIN tbl_interview i ON a.application_id = i.application_id
     WHERE a.profile_id = (SELECT profile_id FROM profiles WHERE user_id = ?)
     AND a.application_status != 'WITHDRAWN'
-    ORDER BY a.time_applied DESC
+    ORDER BY a.application_id DESC
 ";
 
 $applications_stmt = $conn->prepare($applications_sql);
@@ -78,7 +34,6 @@ if (!$applications_stmt) {
 $applications_stmt->bind_param('i', $user_id);
 $applications_stmt->execute();
 $applications_result = $applications_stmt->get_result();
-
 ?>
 
 <!DOCTYPE html>
@@ -133,7 +88,7 @@ $applications_result = $applications_stmt->get_result();
                 <th>Company</th>
                 <th>Location</th>
                 <th>Status</th>
-                <th>Date Applied</th>
+                <th>Referral Source</th>
                 <th>Details</th>
                 <th>Actions</th>
             </tr>
@@ -147,7 +102,6 @@ $applications_result = $applications_stmt->get_result();
                         <td><?php echo htmlspecialchars($application['location']); ?></td>
                         <td>
                             <?php
-                            // Display application status
                             switch ($application['application_status']) {
                                 case 'APPLIED':
                                     echo 'Application Submitted';
@@ -161,9 +115,6 @@ $applications_result = $applications_stmt->get_result();
                                 case 'OFFERED':
                                     echo 'Offer Made';
                                     break;
-                                case 'ACCEPTED':
-                                    echo 'Offer Accepted';
-                                    break;
                                 case 'DEPLOYED':
                                     echo 'Deployed';
                                     break;
@@ -175,7 +126,7 @@ $applications_result = $applications_stmt->get_result();
                             }
                             ?>
                         </td>
-                        <td><?php echo date('F d, Y', strtotime($application['time_applied'])); ?></td>
+                        <td><?php echo htmlspecialchars($application['referral_source']); ?></td>
                         <td>
                             <?php if ($application['application_status'] == 'INTERVIEW'): ?>
                                 <p><strong>Interview Date:</strong> <?php echo date('F d, Y h:i A', strtotime($application['interview_date'])); ?></p>
@@ -185,7 +136,6 @@ $applications_result = $applications_stmt->get_result();
                                 <p><strong>Rejection Reason:</strong> <?php echo htmlspecialchars($application['rejection_reason']); ?></p>
                             <?php elseif ($application['application_status'] == 'OFFERED'): ?>
                                 <?php
-                                // Fetch offer details from tbl_offer_details
                                 $offer_sql = "SELECT salary, start_date, benefits, remarks FROM tbl_offer_details WHERE job_id = ?";
                                 $offer_stmt = $conn->prepare($offer_sql);
                                 if (!$offer_stmt) {
@@ -202,26 +152,37 @@ $applications_result = $applications_stmt->get_result();
                                     <p><strong>Start Date:</strong> <?php echo htmlspecialchars($offer['start_date']); ?></p>
                                     <p><strong>Benefits:</strong> <?php echo htmlspecialchars($offer['benefits']); ?></p>
                                     <p><strong>Remarks:</strong> <?php echo htmlspecialchars($offer['remarks']); ?></p>
-                                    <form method="POST">
-                                        <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
-                                        <input type="hidden" name="job_id" value="<?php echo $application['job_id']; ?>">
-                                        <input type="hidden" name="current_status" value="OFFERED">
-                                    </form>
                                 <?php else: ?>
                                     <p>No offer details available.</p>
+                                <?php endif; ?>
+                            <?php elseif ($application['application_status'] == 'DEPLOYED'): ?>
+                                <?php
+                                $deployment_sql = "SELECT deployment_remarks FROM tbl_deployment_details WHERE application_id = ?";
+                                $deployment_stmt = $conn->prepare($deployment_sql);
+                                if (!$deployment_stmt) {
+                                    die("Error preparing deployment query: " . $conn->error);
+                                }
+                                $deployment_stmt->bind_param('i', $application['application_id']);
+                                $deployment_stmt->execute();
+                                $deployment_result = $deployment_stmt->get_result();
+
+                                if ($deployment_result && $deployment_result->num_rows > 0):
+                                    $deployment = $deployment_result->fetch_assoc();
+                                ?>
+                                    <p><strong>Deployment Remarks:</strong> <?php echo htmlspecialchars($deployment['deployment_remarks']); ?></p>
+                                <?php else: ?>
+                                    <p>No deployment details available.</p>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <p>No additional details available.</p>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <!-- Withdraw button should only be shown if application is NOT rejected or deployed -->
                             <?php if ($application['application_status'] != 'REJECTED' && $application['application_status'] != 'WITHDRAWN' && $application['application_status'] != 'DEPLOYED'): ?>
-                                <form method="POST">
+                                <!-- Withdraw button will now redirect to withdraw_application.php -->
+                                <form action="withdraw_application.php" method="GET">
                                     <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
-                                    <input type="hidden" name="job_id" value="<?php echo $application['job_id']; ?>">
-                                    <input type="hidden" name="current_status" value="<?php echo $application['application_status']; ?>">
-                                    <button type="submit" name="withdraw_offer">Withdraw Application</button>
+                                    <button type="submit">Withdraw Application</button>
                                 </form>
                             <?php endif; ?>
                         </td>
@@ -239,6 +200,5 @@ $applications_result = $applications_stmt->get_result();
 </html>
 
 <?php
-// Close the database connection
 $conn->close();
 ?>

@@ -25,13 +25,16 @@ if ($result->num_rows == 0) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Applicant Dashboard</title>
 </head>
+
 <body>
     <h2>Welcome, <?php echo $_SESSION['email']; ?>!</h2>
     <p>This is your applicant dashboard.</p>
     <a href="logout.php">Logout</a>
 </body>
+
 </html>

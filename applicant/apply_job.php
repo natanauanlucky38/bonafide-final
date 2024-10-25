@@ -80,11 +80,90 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Start a transaction to ensure atomicity of the insert/update operations
     $conn->begin_transaction();
     try {
-        // Insert application data
-        $insert_application_sql = "INSERT INTO applications (job_id, profile_id, resume, application_status, time_applied, recruiter_id, referral_source)
-                                   VALUES ('$job_id', '$profile_id', '{$_SESSION['resume_file']}', 'APPLIED', NOW(), (SELECT created_by FROM job_postings WHERE job_id = '$job_id'), '$referral_source')";
-        $conn->query($insert_application_sql);
-        $application_id = $conn->insert_id;
+        // Check if an application already exists, including withdrawn ones
+        $check_application_sql = "SELECT application_id, application_status FROM applications WHERE job_id = ? AND profile_id = ?";
+        $check_application_stmt = $conn->prepare($check_application_sql);
+        $check_application_stmt->bind_param('ii', $job_id, $profile_id);
+        $check_application_stmt->execute();
+        $check_application_stmt->store_result();
+
+        if ($check_application_stmt->num_rows > 0) {
+            // Re-apply (Update existing application)
+            $check_application_stmt->bind_result($application_id, $application_status);
+            $check_application_stmt->fetch();
+
+            // If the previous application was withdrawn, update `withdrawn_applicants`
+            if ($application_status == 'WITHDRAWN') {
+                $update_metrics_sql = "UPDATE tbl_job_metrics 
+                                       SET withdrawn_applicants = withdrawn_applicants - 1 
+                                       WHERE job_id = ?";
+                $metrics_stmt = $conn->prepare($update_metrics_sql);
+                $metrics_stmt->bind_param('i', $job_id);
+                $metrics_stmt->execute();
+            }
+
+            // Update the application and re-apply
+            $update_application_sql = "UPDATE applications 
+                                       SET resume = ?, application_status = 'APPLIED', referral_source = ?, recruiter_id = (SELECT created_by FROM job_postings WHERE job_id = ?)
+                                       WHERE application_id = ?";
+            $update_application_stmt = $conn->prepare($update_application_sql);
+            $update_application_stmt->bind_param('ssii', $_SESSION['resume_file'], $referral_source, $job_id, $application_id);
+            $update_application_stmt->execute();
+
+            // Update the pipeline stage, reset `withdrawn_at` and `total_duration`
+            $update_pipeline_sql = "UPDATE tbl_pipeline_stage 
+                                    SET applied_at = NOW(), withdrawn_at = NULL, total_duration = 0 
+                                    WHERE application_id = ?";
+            $update_pipeline_stmt = $conn->prepare($update_pipeline_sql);
+            $update_pipeline_stmt->bind_param('i', $application_id);
+            $update_pipeline_stmt->execute();
+        } else {
+            // Insert new application
+            $insert_application_sql = "INSERT INTO applications (job_id, profile_id, resume, application_status, recruiter_id, referral_source)
+                                       VALUES (?, ?, ?, 'APPLIED', (SELECT created_by FROM job_postings WHERE job_id = ?), ?)";
+            $insert_application_stmt = $conn->prepare($insert_application_sql);
+            $insert_application_stmt->bind_param('iisis', $job_id, $profile_id, $_SESSION['resume_file'], $job_id, $referral_source);
+            $insert_application_stmt->execute();
+            $application_id = $conn->insert_id;
+
+            // Insert new pipeline stage
+            $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage (application_id, applied_at) 
+                                    VALUES ('$application_id', NOW())";
+            $conn->query($insert_pipeline_sql);
+
+            // Increment total_applicants in tbl_job_metrics for a new application only
+            $metrics_check_sql = "SELECT * FROM tbl_job_metrics WHERE job_id = '$job_id'";
+            $metrics_check_result = $conn->query($metrics_check_sql);
+
+            if ($metrics_check_result->num_rows > 0) {
+                // Update referral-specific applicant counts based on referral source
+                if ($referral_source === 'referral_applicants') {
+                    $update_metrics_sql = "UPDATE tbl_job_metrics 
+                                           SET total_applicants = total_applicants + 1, 
+                                               referral_applicants = referral_applicants + 1 
+                                           WHERE job_id = '$job_id'";
+                } elseif ($referral_source === 'social_media_applicants') {
+                    $update_metrics_sql = "UPDATE tbl_job_metrics 
+                                           SET total_applicants = total_applicants + 1, 
+                                               social_media_applicants = social_media_applicants + 1 
+                                           WHERE job_id = '$job_id'";
+                } elseif ($referral_source === 'career_site_applicants') {
+                    $update_metrics_sql = "UPDATE tbl_job_metrics 
+                                           SET total_applicants = total_applicants + 1, 
+                                               career_site_applicants = career_site_applicants + 1 
+                                           WHERE job_id = '$job_id'";
+                }
+                $conn->query($update_metrics_sql);
+            } else {
+                // First applicant for the job; insert the initial metric values
+                $update_metrics_sql = "INSERT INTO tbl_job_metrics (job_id, total_applicants, referral_applicants, social_media_applicants, career_site_applicants)
+                                       VALUES ('$job_id', 1, 
+                                       IF('$referral_source' = 'referral_applicants', 1, 0), 
+                                       IF('$referral_source' = 'social_media_applicants', 1, 0), 
+                                       IF('$referral_source' = 'career_site_applicants', 1, 0))";
+                $conn->query($update_metrics_sql);
+            }
+        }
 
         // Insert qualifications, skills, and work experience into `profile_details`
         foreach ($qualifications as $qualification) {
@@ -117,42 +196,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $conn->query($insert_answer_sql);
             }
         }
-
-        // Insert into tbl_pipeline_stage
-        $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage (application_id, applied_at) VALUES ('$application_id', NOW())";
-        $conn->query($insert_pipeline_sql);
-
-        // Update metrics in tbl_job_metrics
-        $metrics_check_sql = "SELECT * FROM tbl_job_metrics WHERE job_id = '$job_id'";
-        $metrics_check_result = $conn->query($metrics_check_sql);
-
-        if ($metrics_check_result->num_rows > 0) {
-            // Update referral-specific applicant counts based on referral source
-            if ($referral_source === 'referral_applicants') {
-                $update_metrics_sql = "UPDATE tbl_job_metrics 
-                                       SET total_applicants = total_applicants + 1, 
-                                           referral_applicants = referral_applicants + 1 
-                                       WHERE job_id = '$job_id'";
-            } elseif ($referral_source === 'social_media_applicants') {
-                $update_metrics_sql = "UPDATE tbl_job_metrics 
-                                       SET total_applicants = total_applicants + 1, 
-                                           social_media_applicants = social_media_applicants + 1 
-                                       WHERE job_id = '$job_id'";
-            } elseif ($referral_source === 'career_site_applicants') {
-                $update_metrics_sql = "UPDATE tbl_job_metrics 
-                                       SET total_applicants = total_applicants + 1, 
-                                           career_site_applicants = career_site_applicants + 1 
-                                       WHERE job_id = '$job_id'";
-            }
-        } else {
-            // First applicant for the job; insert the initial metric values
-            $update_metrics_sql = "INSERT INTO tbl_job_metrics (job_id, total_applicants, referral_applicants, social_media_applicants, career_site_applicants)
-                                   VALUES ('$job_id', 1, 
-                                   IF('$referral_source' = 'referral_applicants', 1, 0), 
-                                   IF('$referral_source' = 'social_media_applicants', 1, 0), 
-                                   IF('$referral_source' = 'career_site_applicants', 1, 0))";
-        }
-        $conn->query($update_metrics_sql);
 
         // Commit the transaction
         $conn->commit();
@@ -206,7 +249,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <form action="apply_job.php?job_id=<?php echo $job_id; ?>" method="POST" enctype="multipart/form-data">
         <label for="resume">Upload Resume:</label>
-        <input type="file" name="resume" id="resume" required><br>
+        <input type="file" name="resume" id="resume" required accept=".pdf,.doc,.docx"><br>
 
         <!-- Dropdown for referral source -->
         <label for="referral_source">How did you hear about this job?</label>
