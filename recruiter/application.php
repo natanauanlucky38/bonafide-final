@@ -1,6 +1,7 @@
 <?php
 // Include database connection and start session
 include '../db.php';  // Adjust this path based on your directory structure
+include 'header.php';
 
 // Check if the user is logged in as a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {

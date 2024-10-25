@@ -1,6 +1,7 @@
 <?php
 // Include necessary files
 include '../db.php';  // Include database connection
+include 'header.php';
 
 // Check if user is logged in and is a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
@@ -67,6 +68,7 @@ $results = $stmt->get_result();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -97,7 +99,7 @@ $results = $stmt->get_result();
             align-items: center;
         }
 
-        .mass-action select, 
+        .mass-action select,
         .mass-action button {
             padding: 0.5rem 1rem;
             font-size: 1rem;
@@ -146,7 +148,8 @@ $results = $stmt->get_result();
             margin-top: 1.5rem;
         }
 
-        th, td {
+        th,
+        td {
             padding: 1rem;
             text-align: left;
             border-bottom: 1px solid #ddd;
@@ -170,81 +173,83 @@ $results = $stmt->get_result();
         }
     </style>
 </head>
+
 <body>
 
-<?php include 'header.php'; ?>
-<?php include 'sidebar.php'; ?>
+    <?php include 'header.php'; ?>
+    <?php include 'sidebar.php'; ?>
 
-<div class="content-area">
-    <h2>User Management - Applicants</h2>
+    <div class="content-area">
+        <h2>User Management - Applicants</h2>
 
-    <!-- Search Form -->
-    <form method="GET" action="user_management.php">
-        <input type="text" name="search" value="<?php echo htmlspecialchars($searchQuery); ?>" placeholder="Search by name, email, or status">
-        <button type="submit">Search</button>
-    </form>
+        <!-- Search Form -->
+        <form method="GET" action="user_management.php">
+            <input type="text" name="search" value="<?php echo htmlspecialchars($searchQuery); ?>" placeholder="Search by name, email, or status">
+            <button type="submit">Search</button>
+        </form>
 
-    <!-- Mass Action Form -->
-    <form method="POST" action="user_management.php">
-        <div class="mass-action">
-            <select name="mass_action">
-                <option value="activate">Activate</option>
-                <option value="deactivate">Deactivate</option>
-                <option value="delete">Delete</option>
-            </select>
-            <button type="submit">Apply</button>
-        </div>
+        <!-- Mass Action Form -->
+        <form method="POST" action="user_management.php">
+            <div class="mass-action">
+                <select name="mass_action">
+                    <option value="activate">Activate</option>
+                    <option value="deactivate">Deactivate</option>
+                    <option value="delete">Delete</option>
+                </select>
+                <button type="submit">Apply</button>
+            </div>
 
-        <!-- Display Applicant Accounts Table -->
-        <table>
-            <thead>
-                <tr>
-                    <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"></th>
-                    <th><a href="?sort=fname&order=<?php echo ($sortField == 'fname' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">First Name</a></th>
-                    <th><a href="?sort=lname&order=<?php echo ($sortField == 'lname' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Last Name</a></th>
-                    <th><a href="?sort=email&order=<?php echo ($sortField == 'email' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Email</a></th>
-                    <th><a href="?sort=age&order=<?php echo ($sortField == 'age' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Age</a></th>
-                    <th><a href="?sort=phone&order=<?php echo ($sortField == 'phone' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Phone</a></th>
-                    <th><a href="?sort=address&order=<?php echo ($sortField == 'address' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Address</a></th>
-                    <th><a href="?sort=civil_status&order=<?php echo ($sortField == 'civil_status' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Civil Status</a></th>
-                    <th><a href="?sort=linkedin_link&order=<?php echo ($sortField == 'linkedin_link' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">LinkedIn</a></th>
-                    <th><a href="?sort=facebook_link&order=<?php echo ($sortField == 'facebook_link' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Facebook</a></th>
-                    <th><a href="?sort=referral_code&order=<?php echo ($sortField == 'referral_code' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Referral Code</a></th>
-                    <th><a href="?sort=education_level&order=<?php echo ($sortField == 'education_level' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Education Level</a></th>
-                    <th><a href="?sort=school_graduated&order=<?php echo ($sortField == 'school_graduated' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">School Graduated</a></th>
-                    <th><a href="?sort=year_graduated&order=<?php echo ($sortField == 'year_graduated' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Year Graduated</a></th>
-                    <th><a href="?sort=last_login&order=<?php echo ($sortField == 'last_login' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Last Login</a></th>
-                    <th><a href="?sort=status&order=<?php echo ($sortField == 'status' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Status</a></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($row = $results->fetch_assoc()) { ?>
-                <tr>
-                    <td><input type="checkbox" name="selected_users[]" value="<?php echo $row['user_id']; ?>"></td> <!-- Checkbox for each row -->
-                    <td><?php echo htmlspecialchars($row['fname']); ?></td>
-                    <td><?php echo htmlspecialchars($row['lname']); ?></td>
-                    <td><?php echo htmlspecialchars($row['email']); ?></td>
-                    <td><?php echo htmlspecialchars($row['age']); ?></td>
-                    <td><?php echo htmlspecialchars($row['phone']); ?></td>
-                    <td><?php echo htmlspecialchars($row['address']); ?></td>
-                    <td><?php echo htmlspecialchars($row['civil_status']); ?></td>
-                    <td><?php echo htmlspecialchars($row['linkedin_link']); ?></td>
-                    <td><?php echo htmlspecialchars($row['facebook_link']); ?></td>
-                    <td><?php echo htmlspecialchars($row['referral_code']); ?></td>
-                    <td><?php echo htmlspecialchars($row['education_level']); ?></td>
-                    <td><?php echo htmlspecialchars($row['school_graduated']); ?></td>
-                    <td><?php echo htmlspecialchars($row['year_graduated']); ?></td>
-                    <td><?php echo htmlspecialchars($row['last_login']); ?></td>
-                    <td><?php echo htmlspecialchars($row['status']); ?></td>
-                </tr>
-                <?php } ?>
-            </tbody>
-        </table>
-    </form>
+            <!-- Display Applicant Accounts Table -->
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"></th>
+                        <th><a href="?sort=fname&order=<?php echo ($sortField == 'fname' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">First Name</a></th>
+                        <th><a href="?sort=lname&order=<?php echo ($sortField == 'lname' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Last Name</a></th>
+                        <th><a href="?sort=email&order=<?php echo ($sortField == 'email' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Email</a></th>
+                        <th><a href="?sort=age&order=<?php echo ($sortField == 'age' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Age</a></th>
+                        <th><a href="?sort=phone&order=<?php echo ($sortField == 'phone' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Phone</a></th>
+                        <th><a href="?sort=address&order=<?php echo ($sortField == 'address' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Address</a></th>
+                        <th><a href="?sort=civil_status&order=<?php echo ($sortField == 'civil_status' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Civil Status</a></th>
+                        <th><a href="?sort=linkedin_link&order=<?php echo ($sortField == 'linkedin_link' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">LinkedIn</a></th>
+                        <th><a href="?sort=facebook_link&order=<?php echo ($sortField == 'facebook_link' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Facebook</a></th>
+                        <th><a href="?sort=referral_code&order=<?php echo ($sortField == 'referral_code' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Referral Code</a></th>
+                        <th><a href="?sort=education_level&order=<?php echo ($sortField == 'education_level' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Education Level</a></th>
+                        <th><a href="?sort=school_graduated&order=<?php echo ($sortField == 'school_graduated' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">School Graduated</a></th>
+                        <th><a href="?sort=year_graduated&order=<?php echo ($sortField == 'year_graduated' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Year Graduated</a></th>
+                        <th><a href="?sort=last_login&order=<?php echo ($sortField == 'last_login' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Last Login</a></th>
+                        <th><a href="?sort=status&order=<?php echo ($sortField == 'status' && $sortOrder == 'ASC') ? 'DESC' : 'ASC'; ?>">Status</a></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($row = $results->fetch_assoc()) { ?>
+                        <tr>
+                            <td><input type="checkbox" name="selected_users[]" value="<?php echo $row['user_id']; ?>"></td> <!-- Checkbox for each row -->
+                            <td><?php echo htmlspecialchars($row['fname']); ?></td>
+                            <td><?php echo htmlspecialchars($row['lname']); ?></td>
+                            <td><?php echo htmlspecialchars($row['email']); ?></td>
+                            <td><?php echo htmlspecialchars($row['age']); ?></td>
+                            <td><?php echo htmlspecialchars($row['phone']); ?></td>
+                            <td><?php echo htmlspecialchars($row['address']); ?></td>
+                            <td><?php echo htmlspecialchars($row['civil_status']); ?></td>
+                            <td><?php echo htmlspecialchars($row['linkedin_link']); ?></td>
+                            <td><?php echo htmlspecialchars($row['facebook_link']); ?></td>
+                            <td><?php echo htmlspecialchars($row['referral_code']); ?></td>
+                            <td><?php echo htmlspecialchars($row['education_level']); ?></td>
+                            <td><?php echo htmlspecialchars($row['school_graduated']); ?></td>
+                            <td><?php echo htmlspecialchars($row['year_graduated']); ?></td>
+                            <td><?php echo htmlspecialchars($row['last_login']); ?></td>
+                            <td><?php echo htmlspecialchars($row['status']); ?></td>
+                        </tr>
+                    <?php } ?>
+                </tbody>
+            </table>
+        </form>
 
-</div>
+    </div>
 
-<?php include 'footer.php'; ?>
+    <?php include 'footer.php'; ?>
 
 </body>
+
 </html>

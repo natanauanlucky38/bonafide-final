@@ -1,6 +1,7 @@
 <?php
 // Include necessary files
 include '../db.php';  // Include database connection
+include 'header.php';
 
 // Check if the user is logged in and is a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {

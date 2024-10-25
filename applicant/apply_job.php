@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Start a transaction to ensure atomicity of the insert/update operations
     $conn->begin_transaction();
     try {
-        // Check if an application already exists, including withdrawn ones
+        // Check if an application already exists
         $check_application_sql = "SELECT application_id, application_status FROM applications WHERE job_id = ? AND profile_id = ?";
         $check_application_stmt = $conn->prepare($check_application_sql);
         $check_application_stmt->bind_param('ii', $job_id, $profile_id);
@@ -129,12 +129,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Insert new pipeline stage
             $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage (application_id, applied_at) 
-                                    VALUES ('$application_id', NOW())";
-            $conn->query($insert_pipeline_sql);
+                                    VALUES (?, NOW())";
+            $insert_pipeline_stmt = $conn->prepare($insert_pipeline_sql);
+            $insert_pipeline_stmt->bind_param('i', $application_id);
+            $insert_pipeline_stmt->execute();
 
             // Increment total_applicants in tbl_job_metrics for a new application only
-            $metrics_check_sql = "SELECT * FROM tbl_job_metrics WHERE job_id = '$job_id'";
-            $metrics_check_result = $conn->query($metrics_check_sql);
+            $metrics_check_sql = "SELECT * FROM tbl_job_metrics WHERE job_id = ?";
+            $metrics_check_stmt = $conn->prepare($metrics_check_sql);
+            $metrics_check_stmt->bind_param('i', $job_id);
+            $metrics_check_stmt->execute();
+            $metrics_check_result = $metrics_check_stmt->get_result();
 
             if ($metrics_check_result->num_rows > 0) {
                 // Update referral-specific applicant counts based on referral source
@@ -142,67 +147,59 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $update_metrics_sql = "UPDATE tbl_job_metrics 
                                            SET total_applicants = total_applicants + 1, 
                                                referral_applicants = referral_applicants + 1 
-                                           WHERE job_id = '$job_id'";
+                                           WHERE job_id = ?";
                 } elseif ($referral_source === 'social_media_applicants') {
                     $update_metrics_sql = "UPDATE tbl_job_metrics 
                                            SET total_applicants = total_applicants + 1, 
                                                social_media_applicants = social_media_applicants + 1 
-                                           WHERE job_id = '$job_id'";
+                                           WHERE job_id = ?";
                 } elseif ($referral_source === 'career_site_applicants') {
                     $update_metrics_sql = "UPDATE tbl_job_metrics 
                                            SET total_applicants = total_applicants + 1, 
                                                career_site_applicants = career_site_applicants + 1 
-                                           WHERE job_id = '$job_id'";
+                                           WHERE job_id = ?";
                 }
-                $conn->query($update_metrics_sql);
+                $update_metrics_stmt = $conn->prepare($update_metrics_sql);
+                $update_metrics_stmt->bind_param('i', $job_id);
+                $update_metrics_stmt->execute();
             } else {
                 // First applicant for the job; insert the initial metric values
-                $update_metrics_sql = "INSERT INTO tbl_job_metrics (job_id, total_applicants, referral_applicants, social_media_applicants, career_site_applicants)
-                                       VALUES ('$job_id', 1, 
-                                       IF('$referral_source' = 'referral_applicants', 1, 0), 
-                                       IF('$referral_source' = 'social_media_applicants', 1, 0), 
-                                       IF('$referral_source' = 'career_site_applicants', 1, 0))";
-                $conn->query($update_metrics_sql);
+                $insert_metrics_sql = "INSERT INTO tbl_job_metrics (job_id, total_applicants, referral_applicants, social_media_applicants, career_site_applicants)
+                                       VALUES (?, 1, 
+                                       IF(? = 'referral_applicants', 1, 0), 
+                                       IF(? = 'social_media_applicants', 1, 0), 
+                                       IF(? = 'career_site_applicants', 1, 0))";
+                $insert_metrics_stmt = $conn->prepare($insert_metrics_sql);
+                $insert_metrics_stmt->bind_param('isss', $job_id, $referral_source, $referral_source, $referral_source);
+                $insert_metrics_stmt->execute();
             }
         }
 
-        // Insert qualifications, skills, and work experience into `profile_details`
-        foreach ($qualifications as $qualification) {
-            $qualification = $conn->real_escape_string($qualification);
-            $insert_qualification_sql = "INSERT INTO profile_details (profile_id, detail_value, qualifications)
-                                         VALUES ('$profile_id', '$qualification', 'qualification')";
-            $conn->query($insert_qualification_sql);
-        }
+        // Fetch recruiter ID for notification
+        $recruiter_id_query = "SELECT created_by FROM job_postings WHERE job_id = ?";
+        $recruiter_stmt = $conn->prepare($recruiter_id_query);
+        $recruiter_stmt->bind_param('i', $job_id);
+        $recruiter_stmt->execute();
+        $recruiter_result = $recruiter_stmt->get_result();
+        $recruiter_data = $recruiter_result->fetch_assoc();
+        $recruiter_id = $recruiter_data['created_by'];
 
-        foreach ($skills as $skill) {
-            $skill = $conn->real_escape_string($skill);
-            $insert_skill_sql = "INSERT INTO profile_details (profile_id, detail_value, skills)
-                                 VALUES ('$profile_id', '$skill', 'skill')";
-            $conn->query($insert_skill_sql);
-        }
+        // Insert notification for recruiter about the new application
+        $notification_title = "New Application Submitted";
+        $notification_subject = "A new application has been submitted for the job: " . $job['job_title'];
+        $notification_link = "recruiter/application.php?application_id=" . $application_id;
 
-        foreach ($work_experience as $experience) {
-            $experience = $conn->real_escape_string($experience);
-            $insert_experience_sql = "INSERT INTO profile_details (profile_id, detail_value, work_experience)
-                                      VALUES ('$profile_id', '$experience', 'work_experience')";
-            $conn->query($insert_experience_sql);
-        }
-
-        // Insert the questionnaire answers into the `application_answers` table
-        if (isset($_POST['answers']) && is_array($_POST['answers'])) {
-            foreach ($_POST['answers'] as $question_id => $answer) {
-                $answer = $conn->real_escape_string($answer);
-                $insert_answer_sql = "INSERT INTO application_answers (application_id, question_id, answer_text)
-                                      VALUES ('$application_id', '$question_id', '$answer')";
-                $conn->query($insert_answer_sql);
-            }
-        }
+        $insert_notification_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
+                                    VALUES (?, ?, ?, ?, 0)";
+        $insert_notification_stmt = $conn->prepare($insert_notification_sql);
+        $insert_notification_stmt->bind_param('isss', $recruiter_id, $notification_title, $notification_subject, $notification_link);
+        $insert_notification_stmt->execute();
 
         // Commit the transaction
         $conn->commit();
 
         // Redirect after successful submission
-        header('Location: view_job.php');
+        header('Location: view_job.php'); // Ensure this points to the correct page
         exit();
     } catch (Exception $e) {
         // Rollback the transaction on error
