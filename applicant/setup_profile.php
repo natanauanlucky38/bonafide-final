@@ -4,7 +4,7 @@ include '../db.php';  // Include database connection
 
 // Check if the user is logged in and is an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
-    header('Location: login.php');  // Redirect to login if not logged in
+    header('Location: index.php');  // Redirect to login if not logged in
     exit();
 }
 
@@ -24,7 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $civil_status = $_POST['civil_status'];  // Civil status selected by the user
 
     // Generate referral code
-    function generateReferralCode($length = 8) {
+    function generateReferralCode($length = 8)
+    {
         return strtoupper(substr(md5(time() . rand()), 0, $length));
     }
 
@@ -46,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Setup Profile</title>
@@ -55,19 +57,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             var educationLevel = document.getElementById('education_level').value;
             var degreeField = document.getElementById('degree_field');
             if (educationLevel === 'TERTIARY' || educationLevel === 'POSTGRADUATE') {
-                degreeField.style.display = 'block';  // Show degree field
+                degreeField.style.display = 'block'; // Show degree field
             } else {
-                degreeField.style.display = 'none';   // Hide degree field
+                degreeField.style.display = 'none'; // Hide degree field
             }
         }
     </script>
 </head>
+
 <body>
     <h2>Setup Your Profile</h2>
 
     <!-- Added form opening tag with method="POST" -->
     <form method="POST" action="setup_profile.php">
-        
+
         <!-- Personal Information Section -->
         <fieldset>
             <legend>Personal Information</legend>
@@ -118,4 +121,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <button type="submit">Submit Profile</button>
     </form>
 </body>
+
 </html>

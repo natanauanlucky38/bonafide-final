@@ -275,7 +275,7 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
                     <?php
                     // Fetch applicants for the current job, including qualifications and skills
                     $applicant_sql = "
-                    SELECT p.fname, p.lname, a.resume, a.referral_source,
+                    SELECT p.fname, p.lname, a.application_id, a.resume, a.referral_source,
                            GROUP_CONCAT(CASE WHEN pd.qualifications = 'qualification' THEN pd.detail_value END) AS qualifications,
                            GROUP_CONCAT(CASE WHEN pd.skills = 'skill' THEN pd.detail_value END) AS skills
                     FROM applications AS a
@@ -293,8 +293,8 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
                     ?>
                         <div class="applicant-details">
                             <div class="applicant-name"><strong>Name:</strong> <?php echo htmlspecialchars($applicant['fname'] . ' ' . $applicant['lname']); ?></div>
-                            <div class="applicant-resume"><strong>Resume:</strong>
-                                <a href="<?php echo htmlspecialchars($applicant['resume']); ?>" target="_blank">View</a>
+                            <div class="applicant-resume"><strong>View Application:</strong>
+                                <a href="view_application.php?application_id=<?php echo htmlspecialchars($applicant['application_id']); ?>">View Application</a>
                             </div>
                             <div class="applicant-referral"><strong>Referral:</strong> <?php echo htmlspecialchars($applicant['referral_source']); ?></div>
                             <div class="applicant-qualifications"><strong>Qualifications:</strong> <?php echo htmlspecialchars($applicant['qualifications']); ?></div>

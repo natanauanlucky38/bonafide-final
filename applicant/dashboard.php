@@ -5,7 +5,7 @@ include 'sidebar.php';
 
 // Check if the user is logged in and is an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
-    header('Location: login.php');  // Redirect to login page
+    header('Location: index.php');  // Redirect to login page
     exit();
 }
 

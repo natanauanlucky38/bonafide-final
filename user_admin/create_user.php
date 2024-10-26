@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create_user'])) {
     $confirm_password = trim($_POST['confirm_password']);
     $role = filter_var(trim($_POST['role']), FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
-    if ($email && !empty($password) && $password === $confirm_password && in_array($role, ['RECRUITER', 'APPLICANT', 'USER_ADMIN'])) {
+    if ($email && !empty($password) && $password === $confirm_password && in_array($role, ['RECRUITER', 'USER_ADMIN'])) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         $status = 'ACTIVE'; // Set default status to ACTIVE
 
@@ -72,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create_user'])) {
                 <label for="role">Role</label>
                 <select name="role" class="form-control" required>
                     <option value="RECRUITER">RECRUITER</option>
-                    <option value="APPLICANT">APPLICANT</option>
                     <?php if ($_SESSION['role'] == 'USER_ADMIN'): ?>
                         <option value="USER_ADMIN">USER_ADMIN</option>
                     <?php endif; ?>

@@ -1,5 +1,4 @@
 <?php
-// login.php
 include '../db.php';  // Database connection
 
 // Check if the session is already initialized
@@ -43,10 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Applicant Login</title>
 </head>
+
 <body>
     <h2>Applicant Login</h2>
     <form method="POST" action="index.php">
@@ -54,10 +55,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="password" name="password" placeholder="Password" required><br>
         <button type="submit">Login</button>
     </form>
-    
+
     <!-- Add the registration link here -->
     <p>Don't have an account? <a href="register.php">Register here</a></p>
 
-    <?php if (isset($error)) { echo "<p style='color:red;'>$error</p>"; } ?>
+    <?php if (isset($error)) {
+        echo "<p style='color:red;'>$error</p>";
+    } ?>
 </body>
+
 </html>

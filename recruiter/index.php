@@ -1,5 +1,4 @@
 <?php
-// login.php for recruiters
 include '../db.php';  // Include database connection
 
 // Check if the session is already initialized

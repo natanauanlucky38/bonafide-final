@@ -4,7 +4,7 @@ include '../db.php';  // Include database connection
 
 // Check if user is logged in and is a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
-    header('Location: login.php');  // Redirect to login page if not a recruiter
+    header('Location: index.php');  // Redirect to login page if not a recruiter
     exit();
 }
 

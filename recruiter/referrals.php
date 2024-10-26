@@ -7,7 +7,7 @@ include 'footer.php';  // Include footer
 
 // Check if the user is logged in as a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
-    header('Location: login.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -40,6 +40,7 @@ if (!$referrals_result) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -50,11 +51,14 @@ if (!$referrals_result) {
             border-collapse: collapse;
         }
 
-        table, th, td {
+        table,
+        th,
+        td {
             border: 1px solid black;
         }
 
-        th, td {
+        th,
+        td {
             padding: 10px;
             text-align: left;
         }
@@ -72,6 +76,7 @@ if (!$referrals_result) {
         }
     </style>
 </head>
+
 <body>
     <h1>All Referrals</h1>
 
@@ -122,6 +127,7 @@ if (!$referrals_result) {
 
     <?php include 'footer.php'; ?>
 </body>
+
 </html>
 
 <?php

@@ -4,7 +4,7 @@ include 'sidebar.php';
 
 // Check if the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
-    header('Location: login.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -60,11 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         $timestamp = date('Ymd_His');
         $new_file_name = $user_id . '-' . $profile_id . '-' . $timestamp . '-job_' . $job_id . '.' . $file_type;
-        $target_file = __DIR__ . "/uploads/" . $new_file_name;
+        $target_file = "applicant/uploads/" . $new_file_name; // Update the path format as required
 
         // Move the uploaded file to the target directory
         if (move_uploaded_file($file['tmp_name'], $target_file)) {
-            $_SESSION['resume_file'] = $target_file;
+            $_SESSION['resume_file'] = $target_file; // Store the relative path
         } else {
             $error_message = "There was an error uploading your resume.";
         }
@@ -172,6 +172,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $insert_metrics_stmt = $conn->prepare($insert_metrics_sql);
                 $insert_metrics_stmt->bind_param('isss', $job_id, $referral_source, $referral_source, $referral_source);
                 $insert_metrics_stmt->execute();
+            }
+        }
+
+        // Insert answers into application_answers
+        if (isset($_POST['answers'])) {
+            $insert_answer_stmt = $conn->prepare("INSERT INTO application_answers (application_id, question_id, answer_text) VALUES (?, ?, ?)");
+
+            foreach ($_POST['answers'] as $question_id => $answer_text) {
+                $insert_answer_stmt->bind_param('iis', $application_id, $question_id, $answer_text);
+                $insert_answer_stmt->execute();
+            }
+
+            $insert_answer_stmt->close();
+        }
+
+        // Insert qualifications, skills, and work experience into profile_details
+        if (!empty($qualifications)) {
+            $insert_qualification_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, 'qualification', '', '')");
+            foreach ($qualifications as $qualification) {
+                $insert_qualification_stmt->bind_param('is', $profile_id, $qualification);
+                $insert_qualification_stmt->execute();
+            }
+        }
+
+        if (!empty($skills)) {
+            $insert_skills_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, '', 'skill', '')");
+            foreach ($skills as $skill) {
+                $insert_skills_stmt->bind_param('is', $profile_id, $skill);
+                $insert_skills_stmt->execute();
+            }
+        }
+
+        if (!empty($work_experience)) {
+            $insert_experience_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, '', '', 'work_experience')");
+            foreach ($work_experience as $experience) {
+                $insert_experience_stmt->bind_param('is', $profile_id, $experience);
+                $insert_experience_stmt->execute();
             }
         }
 
