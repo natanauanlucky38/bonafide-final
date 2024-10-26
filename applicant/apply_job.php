@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $check_application_stmt->bind_result($application_id, $application_status);
             $check_application_stmt->fetch();
 
-            // If the previous application was withdrawn, update `withdrawn_applicants`
+            // If the previous application was withdrawn, update withdrawn_applicants
             if ($application_status == 'WITHDRAWN') {
                 $update_metrics_sql = "UPDATE tbl_job_metrics 
                                        SET withdrawn_applicants = withdrawn_applicants - 1 
@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $update_application_stmt->bind_param('ssii', $_SESSION['resume_file'], $referral_source, $job_id, $application_id);
             $update_application_stmt->execute();
 
-            // Update the pipeline stage, reset `withdrawn_at` and `total_duration`
+            // Update the pipeline stage, reset withdrawn_at and total_duration
             $update_pipeline_sql = "UPDATE tbl_pipeline_stage 
                                     SET applied_at = NOW(), withdrawn_at = NULL, total_duration = 0 
                                     WHERE application_id = ?";
@@ -187,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Insert notification for recruiter about the new application
         $notification_title = "New Application Submitted";
         $notification_subject = "A new application has been submitted for the job: " . $job['job_title'];
-        $notification_link = "recruiter/application.php?application_id=" . $application_id;
+        $notification_link = "view_application.php?application_id=" . $application_id;
 
         $insert_notification_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
                                     VALUES (?, ?, ?, ?, 0)";

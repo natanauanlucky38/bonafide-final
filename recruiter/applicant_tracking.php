@@ -11,7 +11,8 @@ $job_sql = "
            SUM(a.application_status = 'INTERVIEW') AS interview_count,
            SUM(a.application_status = 'OFFERED') AS offered_count,
            SUM(a.application_status = 'DEPLOYED') AS deployed_count,
-           SUM(a.application_status = 'REJECTED') AS rejected_count
+           SUM(a.application_status = 'REJECTED') AS rejected_count,
+           SUM(a.application_status = 'WITHDRAWN') AS withdrawn_count
     FROM job_postings AS jp
     LEFT JOIN applications AS a ON jp.job_id = a.job_id
     WHERE jp.status = 'ACTIVE'
@@ -31,7 +32,8 @@ $total_sql = "
            SUM(application_status = 'INTERVIEW') AS interview_count,
            SUM(application_status = 'OFFERED') AS offered_count,
            SUM(application_status = 'DEPLOYED') AS deployed_count,
-           SUM(application_status = 'REJECTED') AS rejected_count
+           SUM(application_status = 'REJECTED') AS rejected_count,
+           SUM(application_status = 'WITHDRAWN') AS withdrawn_count
     FROM applications;
 ";
 $total_result = $conn->query($total_sql)->fetch_assoc();
@@ -45,6 +47,7 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
     <meta charset="UTF-8">
     <title>Applicant Tracking System</title>
     <style>
+        /* Styles for page layout and elements */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -113,12 +116,18 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
 
         .job-header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            align-items: start;
             font-size: 1.2em;
             font-weight: bold;
             color: #333;
             margin-bottom: 10px;
+        }
+
+        .job-company {
+            font-size: 0.9em;
+            color: #777;
+            margin-top: 5px;
         }
 
         .metrics {
@@ -170,7 +179,8 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
 
         .applicant-name,
         .applicant-resume,
-        .applicant-referral {
+        .applicant-referral,
+        .applicant-qualifications {
             flex: 1;
             padding: 0 10px;
         }
@@ -213,6 +223,10 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
                     <span class="summary-metric-number"><?php echo $total_result['rejected_count']; ?></span>
                     <div class="summary-metric-label">Rejected</div>
                 </div>
+                <div class="summary-metric">
+                    <span class="summary-metric-number"><?php echo $total_result['withdrawn_count']; ?></span>
+                    <div class="summary-metric-label">Withdrawn</div>
+                </div>
             </div>
         </div>
 
@@ -220,7 +234,7 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
             <div class="job-box">
                 <div class="job-header">
                     <span><?php echo htmlspecialchars($job['job_title']); ?></span>
-                    <span style="font-size: 0.9em; color: #777;"><?php echo htmlspecialchars($job['company']); ?></span>
+                    <span class="job-company"><?php echo htmlspecialchars($job['company']); ?></span>
                 </div>
 
                 <div class="metrics">
@@ -248,6 +262,10 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
                         <span class="metric-number"><?php echo $job['rejected_count']; ?></span>
                         <div class="metric-label">Rejected</div>
                     </div>
+                    <div class="metric">
+                        <span class="metric-number"><?php echo $job['withdrawn_count']; ?></span>
+                        <div class="metric-label">Withdrawn</div>
+                    </div>
                 </div>
 
                 <!-- Applicant Information Section -->
@@ -255,12 +273,16 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
                     <h3>Applicant Information</h3>
 
                     <?php
-                    // Fetch applicants for the current job
+                    // Fetch applicants for the current job, including qualifications and skills
                     $applicant_sql = "
-                    SELECT p.fname, p.lname, a.resume, a.referral_source
+                    SELECT p.fname, p.lname, a.resume, a.referral_source,
+                           GROUP_CONCAT(CASE WHEN pd.qualifications = 'qualification' THEN pd.detail_value END) AS qualifications,
+                           GROUP_CONCAT(CASE WHEN pd.skills = 'skill' THEN pd.detail_value END) AS skills
                     FROM applications AS a
                     INNER JOIN profiles AS p ON a.profile_id = p.profile_id
+                    LEFT JOIN profile_details AS pd ON pd.profile_id = p.profile_id
                     WHERE a.job_id = ?
+                    GROUP BY a.application_id
                 ";
                     $applicant_stmt = $conn->prepare($applicant_sql);
                     $applicant_stmt->bind_param("i", $job['job_id']);
@@ -275,6 +297,8 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
                                 <a href="<?php echo htmlspecialchars($applicant['resume']); ?>" target="_blank">View</a>
                             </div>
                             <div class="applicant-referral"><strong>Referral:</strong> <?php echo htmlspecialchars($applicant['referral_source']); ?></div>
+                            <div class="applicant-qualifications"><strong>Qualifications:</strong> <?php echo htmlspecialchars($applicant['qualifications']); ?></div>
+                            <div class="applicant-skills"><strong>Skills:</strong> <?php echo htmlspecialchars($applicant['skills']); ?></div>
                         </div>
                     <?php endwhile; ?>
                 </div>

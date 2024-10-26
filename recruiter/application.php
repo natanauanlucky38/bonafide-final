@@ -11,17 +11,60 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
 
 include 'sidebar.php';
 
-// Fetch all applications along with applicant details
+// Fetch all job posts with their statuses (ACTIVE, ARCHIVED, DRAFT)
+$jobs_sql = "
+    SELECT jp.job_id, jp.job_title, jp.status, jp.company, jp.location, jp.openings, jp.created_at, jp.deadline
+    FROM job_postings jp
+    ORDER BY jp.created_at DESC
+";
+$jobs_result = $conn->query($jobs_sql);
+
+if (!$jobs_result) {
+    echo "Error fetching job postings: " . $conn->error;
+    exit();
+}
+
+// Fetch applications for all statuses, counting `APPLIED` as `SCREENING`
 $applications_sql = "
-    SELECT a.*, p.fname AS applicant_fname, p.lname AS applicant_lname, a.resume AS resume_file, p.profile_id
+    SELECT a.*, 
+           IF(a.application_status = 'APPLIED', 'SCREENING', a.application_status) AS display_status, 
+           p.fname AS applicant_fname, 
+           p.lname AS applicant_lname, 
+           a.resume AS resume_file, 
+           p.profile_id, 
+           jp.job_id, 
+           jp.job_title
     FROM applications a 
     JOIN profiles p ON a.profile_id = p.profile_id
+    JOIN job_postings jp ON a.job_id = jp.job_id
+    ORDER BY jp.job_id, display_status
 ";
 $applications_result = $conn->query($applications_sql);
 
 if (!$applications_result) {
     echo "Error fetching applications: " . $conn->error;
     exit();
+}
+
+// Organize applications by job_id and display_status
+$applications = [];
+while ($row = $applications_result->fetch_assoc()) {
+    $job_id = $row['job_id'];
+    $status = $row['display_status'];
+
+    // Group by job_id and display_status
+    $applications[$job_id]['job_title'] = $row['job_title'];
+    $applications[$job_id]['applications'][$status][] = $row;
+}
+
+// Organize jobs by status (ACTIVE, ARCHIVED, DRAFT)
+$jobs = [
+    'ACTIVE' => [],
+    'ARCHIVED' => [],
+    'DRAFT' => [],
+];
+while ($job = $jobs_result->fetch_assoc()) {
+    $jobs[$job['status']][] = $job;
 }
 ?>
 
@@ -32,204 +75,191 @@ if (!$applications_result) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Applications</title>
+    <style>
+        /* Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            width: 90%;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .sort-dropdown {
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        .status-section {
+            margin-top: 30px;
+        }
+
+        /* Job card styling */
+        .job-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .job-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .job-details {
+            display: flex;
+            justify-content: space-between;
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        /* Application card styling */
+        .application-card {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .applicant-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .no-applications {
+            color: #888;
+            font-style: italic;
+            padding: 15px;
+            text-align: center;
+        }
+    </style>
     <script>
-        function toggleFields(selectElement) {
-            var applicationId = selectElement.dataset.applicationId;
-            var interviewFields = document.getElementById('interviewFields' + applicationId);
-            var offerFields = document.getElementById('offerFields' + applicationId);
-            var deploymentFields = document.getElementById('deploymentFields' + applicationId);
-            var rejectionReasonTextarea = document.getElementById('rejectionReason' + applicationId);
+        // Sorting function
+        function sortCards(sortBy, type) {
+            const container = document.getElementById(type + '-cards');
+            const cards = Array.from(container.getElementsByClassName(type + '-card'));
 
-            // Hide all fields initially
-            interviewFields.style.display = 'none';
-            offerFields.style.display = 'none';
-            deploymentFields.style.display = 'none';
-            rejectionReasonTextarea.style.display = 'none';
+            cards.sort((a, b) => {
+                const aValue = a.getAttribute('data-' + sortBy).toLowerCase();
+                const bValue = b.getAttribute('data-' + sortBy).toLowerCase();
 
-            // Remove 'required' attribute from all fields
-            var interviewInputs = interviewFields.querySelectorAll('input, select, textarea');
-            interviewInputs.forEach(function(input) {
-                input.removeAttribute('required');
-            });
-            var offerInputs = offerFields.querySelectorAll('input, select, textarea');
-            offerInputs.forEach(function(input) {
-                input.removeAttribute('required');
-            });
-            var deploymentInputs = deploymentFields.querySelectorAll('input, select, textarea');
-            deploymentInputs.forEach(function(input) {
-                input.removeAttribute('required');
+                if (aValue < bValue) return -1;
+                if (aValue > bValue) return 1;
+                return 0;
             });
 
-            // Show and require the relevant fields based on the selection
-            if (selectElement.value === 'interview') {
-                interviewFields.style.display = 'block';
-                interviewInputs.forEach(function(input) {
-                    input.setAttribute('required', 'required');
-                });
-            } else if (selectElement.value === 'offer') {
-                offerFields.style.display = 'block';
-                offerInputs.forEach(function(input) {
-                    input.setAttribute('required', 'required');
-                });
-            } else if (selectElement.value === 'deployment') {
-                deploymentFields.style.display = 'block';
-                deploymentInputs.forEach(function(input) {
-                    input.setAttribute('required', 'required');
-                });
-            } else if (selectElement.value === 'reject') {
-                rejectionReasonTextarea.style.display = 'block';
-            }
+            // Clear container and re-append sorted cards
+            container.innerHTML = '';
+            cards.forEach(card => container.appendChild(card));
+        }
+
+        function onSortChange(selectElement, type) {
+            const sortBy = selectElement.value;
+            sortCards(sortBy, type);
+        }
+
+        // Redirect to process.php with application_id
+        function redirectToProcess(applicationId) {
+            window.location.href = 'view_application.php?application_id=' + applicationId;
         }
     </script>
 </head>
 
 <body>
-    <h1>Applications</h1>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Applicant Name</th>
-                <th>Application Status</th>
-                <th>Uploaded File</th>
-                <th>Actions</th>
-                <th>Screening Result</th>
-                <th>Options</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php while ($application = $applications_result->fetch_assoc()): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($application['applicant_fname'] . ' ' . $application['applicant_lname']); ?></td>
-                    <td><?php echo htmlspecialchars($application['application_status']); ?></td>
-                    <td>
-                        <!-- Display uploaded file URL if it exists -->
-                        <?php if (!empty($application['resume_file'])): ?>
-                            <?php
-                            // Construct the full file path to access the uploaded resume file
-                            $uploaded_file_path = '../applicant/uploads/' . htmlspecialchars($application['resume_file']);
-                            ?>
-                            <a href="<?php echo $uploaded_file_path; ?>" target="_blank" download>Download Resume</a>
-                        <?php else: ?>
-                            No file uploaded.
-                        <?php endif; ?>
-                    </td>
-                    <td><a href="view_application.php?application_id=<?php echo $application['application_id']; ?>">View Details</a></td>
-                    <td>
-                        <?php
-                        // Screening logic: Fetch all relevant questions and answers
-                        $screen_sql = "
-                        SELECT q.question_text, aa.answer_text, q.correct_answer, q.question_type
-                        FROM questionnaire_template q 
-                        JOIN application_answers aa ON q.question_id = aa.question_id 
-                        WHERE aa.application_id = '" . $application['application_id'] . "'
-                        ";
-                        $screen_result = $conn->query($screen_sql);
-                        $failed_screening = false;
+    <div class="container">
+        <h1>Job Applications</h1>
 
-                        if (!$screen_result) {
-                            echo "Error screening application: " . $conn->error;
-                        } else {
-                            // Check if there are any incorrect answers for pass/fail determination
-                            while ($row = $screen_result->fetch_assoc()) {
-                                if ($row['question_type'] !== 'TEXT' && $row['answer_text'] !== $row['correct_answer']) {
-                                    $failed_screening = true;
-                                }
-                            }
+        <?php foreach (['ACTIVE', 'ARCHIVED', 'DRAFT'] as $status): ?>
+            <div class="status-section">
+                <h2><?php echo ucfirst(strtolower($status)); ?> Jobs</h2>
 
-                            // Display Pass/Fail indicator
-                            if ($failed_screening) {
-                                echo "<strong style='color: red;'>Failed Screening</strong><br><br>";
-                            } else {
-                                echo "<strong style='color: green;'>Passed Screening</strong><br><br>";
-                            }
+                <!-- Dropdown for Sorting Job Cards in this Section -->
+                <div class="sort-dropdown">
+                    Sort by:
+                    <select onchange="onSortChange(this, 'job-<?php echo strtolower($status); ?>')">
+                        <option value="job_title">Title</option>
+                        <option value="company">Company</option>
+                        <option value="location">Location</option>
+                        <option value="openings">Openings</option>
+                        <option value="created_at">Created Date</option>
+                        <option value="deadline">Deadline</option>
+                    </select>
+                </div>
 
-                            // Display questions and answers
-                            $screen_result->data_seek(0); // Reset result pointer to the start
-                            while ($row = $screen_result->fetch_assoc()) {
-                                echo "<strong>Question:</strong> " . htmlspecialchars($row['question_text']) . "<br>";
-                                echo "<strong>Your Answer:</strong> " . htmlspecialchars($row['answer_text']) . "<br>";
-                                echo "<strong>Correct Answer:</strong> " . htmlspecialchars($row['correct_answer']) . "<br><br>";
-                            }
-                        }
-                        ?>
-                    </td>
+                <div id="job-<?php echo strtolower($status); ?>-cards">
+                    <?php foreach ($jobs[$status] as $job): ?>
+                        <?php $job_id = $job['job_id']; ?>
+                        <div class="job-card job-<?php echo strtolower($status); ?>-card"
+                            data-job_title="<?php echo htmlspecialchars($job['job_title']); ?>"
+                            data-company="<?php echo htmlspecialchars($job['company']); ?>"
+                            data-location="<?php echo htmlspecialchars($job['location']); ?>"
+                            data-openings="<?php echo $job['openings']; ?>"
+                            data-created_at="<?php echo $job['created_at']; ?>"
+                            data-deadline="<?php echo $job['deadline']; ?>">
 
-                    <td>
-                        <?php if ($application['application_status'] == 'DEPLOYED' || $application['application_status'] == 'WITHDRAWN' || $application['application_status'] == 'REJECTED'): ?>
-                            <!-- View-only mode for deployed, withdrawn, and rejected applications -->
-                            <p>No Actions Available</p>
-                        <?php else: ?>
-                            <form action="process_application.php" method="POST" style="margin-top: 10px;">
-                                <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
-                                <select name="decision" required onchange="toggleFields(this)" data-application-id="<?php echo $application['application_id']; ?>">
-                                    <option value="">Select Action</option>
-                                    <?php if ($application['application_status'] == 'APPLIED'): ?>
-                                        <option value="interview">Proceed to Interview</option>
-                                    <?php elseif ($application['application_status'] == 'INTERVIEW'): ?>
-                                        <option value="offer">Proceed to Offer</option>
-                                    <?php elseif ($application['application_status'] == 'OFFERED'): ?>
-                                        <option value="deployment">Proceed to Deployment</option>
-                                    <?php endif; ?>
-                                    <option value="reject">Reject</option>
+                            <div class="job-title"><?php echo htmlspecialchars($job['job_title']); ?></div>
+                            <div class="job-details">
+                                <span>Company: <?php echo htmlspecialchars($job['company']); ?></span>
+                                <span>Location: <?php echo htmlspecialchars($job['location']); ?></span>
+                                <span>Openings: <?php echo $job['openings']; ?></span>
+                                <span>Created: <?php echo $job['created_at']; ?></span>
+                                <span>Deadline: <?php echo $job['deadline']; ?></span>
+                            </div>
+
+                            <!-- Applications for this Job -->
+                            <div class="sort-dropdown">
+                                Sort Applications by:
+                                <select onchange="onSortChange(this, 'application-<?php echo $job_id; ?>')">
+                                    <option value="applicant_name">Applicant Name</option>
+                                    <option value="application_status">Application Status</option>
+                                    <option value="screening_result">Screening Result</option>
                                 </select>
-
-                                <!-- Rejection reason -->
-                                <textarea id="rejectionReason<?php echo $application['application_id']; ?>" name="rejection_reason" placeholder="Enter rejection reason" style="display:none;"></textarea>
-
-                                <!-- Interview fields -->
-                                <div id="interviewFields<?php echo $application['application_id']; ?>" style="display:none;">
-                                    <label for="interview_time">Interview Date & Time:</label>
-                                    <input type="datetime-local" name="interview_time">
-
-                                    <label for="interview_type">Interview Type:</label>
-                                    <select name="interview_type">
-                                        <option value="">Select Interview Type</option>
-                                        <option value="Online">Online</option>
-                                        <option value="Face-to-Face">Face-to-Face</option>
-                                    </select>
-
-                                    <label for="meeting_link">Meeting Link:</label>
-                                    <input type="text" name="meeting_link" placeholder="Meeting Link">
-
-                                    <label for="recruiter_phone">Recruiter Phone Number:</label>
-                                    <input type="text" name="recruiter_phone" placeholder="Recruiter Phone Number">
-
-                                    <label for="recruiter_email">Recruiter Email:</label>
-                                    <input type="email" name="recruiter_email" placeholder="Recruiter Email">
-
-                                    <label for="remarks">Remarks (Description):</label>
-                                    <textarea name="remarks" placeholder="Remarks (Description)"></textarea>
-                                </div>
-
-                                <!-- Offer fields -->
-                                <div id="offerFields<?php echo $application['application_id']; ?>" style="display:none;">
-                                    <label for="salary">Salary:</label>
-                                    <input type="number" name="salary" placeholder="Salary" step="0.01">
-
-                                    <label for="start_date">Start Date:</label>
-                                    <input type="date" name="start_date">
-
-                                    <label for="benefits">Benefits:</label>
-                                    <textarea name="benefits" placeholder="Benefits"></textarea>
-
-                                    <label for="offer_remarks">Offer Remarks:</label>
-                                    <textarea name="offer_remarks" placeholder="Offer Remarks"></textarea>
-                                </div>
-
-                                <!-- Deployment fields -->
-                                <div id="deploymentFields<?php echo $application['application_id']; ?>" style="display:none;">
-                                    <label for="deployment_remarks">Deployment Remarks:</label>
-                                    <textarea name="deployment_remarks" placeholder="Deployment Remarks"></textarea>
-                                </div>
-
-                                <button type="submit">Submit</button>
-                            </form>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-            <?php endwhile; ?>
-        </tbody>
-    </table>
+                            </div>
+                            <div id="application-<?php echo $job_id; ?>-cards">
+                                <?php foreach (['SCREENING', 'INTERVIEW', 'OFFERED', 'DEPLOYED', 'REJECTED', 'WITHDRAWN'] as $appStatus): ?>
+                                    <h4><?php echo ucfirst(strtolower($appStatus)); ?> Applications</h4>
+                                    <?php if (isset($applications[$job_id]['applications'][$appStatus])): ?>
+                                        <?php foreach ($applications[$job_id]['applications'][$appStatus] as $application): ?>
+                                            <div class="application-card application-<?php echo $job_id; ?>-card"
+                                                data-applicant_name="<?php echo htmlspecialchars($application['applicant_fname'] . ' ' . $application['applicant_lname']); ?>"
+                                                data-application_status="<?php echo htmlspecialchars($application['display_status']); ?>"
+                                                data-screening_result="<?php echo $application['screening_result'] ?? 'Pending'; ?>"
+                                                onclick="redirectToProcess(<?php echo $application['application_id']; ?>)">
+                                                <div class="applicant-name">
+                                                    <?php echo htmlspecialchars($application['applicant_fname'] . ' ' . $application['applicant_lname']); ?>
+                                                </div>
+                                                <p>Status: <?php echo htmlspecialchars($application['display_status']); ?></p>
+                                                <p>Screening Result: <?php echo $application['screening_result'] ?? 'Pending'; ?></p>
+                                                <p>
+                                                    Resume:
+                                                    <?php if (!empty($application['resume_file'])): ?>
+                                                        <a href="../applicant/uploads/<?php echo htmlspecialchars($application['resume_file']); ?>" target="_blank" class="download-link">Download Resume</a>
+                                                    <?php else: ?>
+                                                        No file uploaded.
+                                                    <?php endif; ?>
+                                                </p>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <p class="no-applications">No applications available for this status.</p>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
 </body>
 
 </html>

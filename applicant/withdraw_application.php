@@ -39,7 +39,33 @@ try {
         throw new Exception("Failed to withdraw the application.");
     }
 
-    // Step 2: Delete answers related to the application from `application_answers`
+    // Step 2: Create a notification for the recruiter
+    // Retrieve recruiter_id associated with the job
+    $recruiter_sql = "SELECT u.user_id FROM applications a 
+                      JOIN job_postings j ON a.job_id = j.job_id 
+                      JOIN users u ON j.created_by = u.user_id 
+                      WHERE a.application_id = ?";
+    $recruiter_stmt = $conn->prepare($recruiter_sql);
+    $recruiter_stmt->bind_param('i', $application_id);
+    $recruiter_stmt->execute();
+    $recruiter_result = $recruiter_stmt->get_result();
+
+    if ($recruiter_result->num_rows == 0) {
+        throw new Exception("Failed to retrieve recruiter information.");
+    }
+
+    $recruiter_row = $recruiter_result->fetch_assoc();
+    $recruiter_id = $recruiter_row['user_id'];
+
+    // Insert the notification
+    $notification_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
+                         VALUES (?, 'Application Withdrawn', 'Applicant has withdrawn their application.', ?, 0)";
+    $notification_stmt = $conn->prepare($notification_sql);
+    $link = "view_application.php?application_id=" . $application_id; // Create a link to the application view
+    $notification_stmt->bind_param('is', $recruiter_id, $link);
+    $notification_stmt->execute();
+
+    // Step 3: Delete answers related to the application from `application_answers`
     $delete_answers_sql = "DELETE FROM application_answers WHERE application_id = ?";
     $delete_stmt = $conn->prepare($delete_answers_sql);
 
@@ -50,8 +76,7 @@ try {
     $delete_stmt->bind_param('i', $application_id);
     $delete_stmt->execute();
 
-    // Step 3: Update `tbl_pipeline_stage` to set `withdrawn_at` and calculate `total_duration`
-    // Calculate the total duration in days between `applied_at` and `withdrawn_at`
+    // Step 4: Update `tbl_pipeline_stage` to set `withdrawn_at` and calculate `total_duration`
     $update_pipeline_sql = "
         UPDATE tbl_pipeline_stage 
         SET withdrawn_at = NOW(), 
@@ -66,8 +91,7 @@ try {
     $pipeline_stmt->bind_param('i', $application_id);
     $pipeline_stmt->execute();
 
-    // Step 4: Update `tbl_job_metrics` to increase `withdrawn_applicants` by 1
-    // First, retrieve the job ID associated with the application
+    // Step 5: Update `tbl_job_metrics` to increase `withdrawn_applicants` by 1
     $job_id_sql = "SELECT job_id FROM applications WHERE application_id = ?";
     $job_id_stmt = $conn->prepare($job_id_sql);
 
@@ -81,7 +105,6 @@ try {
     $job_id_row = $job_id_result->fetch_assoc();
     $job_id = $job_id_row['job_id'];
 
-    // Now update `withdrawn_applicants` in `tbl_job_metrics`
     $update_metrics_sql = "UPDATE tbl_job_metrics 
                            SET withdrawn_applicants = withdrawn_applicants + 1 
                            WHERE job_id = ?";
@@ -99,7 +122,7 @@ try {
         throw new Exception("Failed to update withdrawn_applicants in tbl_job_metrics.");
     }
 
-    // Step 5: Delete from `tbl_interview` if an interview is scheduled
+    // Step 6: Delete from `tbl_interview` if an interview is scheduled
     $delete_interview_sql = "DELETE FROM tbl_interview WHERE application_id = ?";
     $interview_stmt = $conn->prepare($delete_interview_sql);
 
@@ -110,7 +133,7 @@ try {
     $interview_stmt->bind_param('i', $application_id);
     $interview_stmt->execute();
 
-    // Step 6: Delete the corresponding record from `tbl_offer_details`
+    // Step 7: Delete the corresponding record from `tbl_offer_details`
     $delete_offer_sql = "DELETE FROM tbl_offer_details WHERE job_id = ?";
     $offer_stmt = $conn->prepare($delete_offer_sql);
 
@@ -123,10 +146,10 @@ try {
 
     // Commit the transaction
     $conn->commit();
-    echo "Application and offer successfully withdrawn!";
+    echo "Application successfully withdrawn!";
 
-    // Redirect to the job postings or applications page
-    header('Location: application.php');
+    // Redirect to the applications page
+    header('Location: application.php'); // Redirect to the application page
     exit();
 } catch (Exception $e) {
     // Rollback transaction if something fails
