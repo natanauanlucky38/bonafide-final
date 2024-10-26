@@ -1,7 +1,6 @@
 <?php
 // Include necessary files
 include '../db.php';  // Include database connection
-include 'header.php';
 
 // Check if user is logged in and is a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
@@ -11,8 +10,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
 
 // Default sort and search options
 $searchQuery = '';
-$sortField = 'last_login'; // Default sort field
-$sortOrder = 'DESC'; // Default sort order
+$sortField = 'last_login';
+$sortOrder = 'DESC';
 
 // Handle search
 if (isset($_GET['search'])) {
@@ -23,28 +22,6 @@ if (isset($_GET['search'])) {
 if (isset($_GET['sort']) && isset($_GET['order'])) {
     $sortField = $_GET['sort'];
     $sortOrder = strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
-}
-
-// Handle mass actions (delete, activate, deactivate)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mass_action'])) {
-    $action = $_POST['mass_action'];
-    $selectedUsers = $_POST['selected_users'] ?? [];
-
-    if (!empty($selectedUsers)) {
-        $ids = implode(',', array_map('intval', $selectedUsers));
-
-        // Perform mass action
-        if ($action === 'delete') {
-            $sql = "DELETE FROM users WHERE user_id IN ($ids)";
-        } elseif ($action === 'activate') {
-            $sql = "UPDATE users SET status = 'ACTIVE' WHERE user_id IN ($ids)";
-        } elseif ($action === 'deactivate') {
-            $sql = "UPDATE users SET status = 'INACTIVE' WHERE user_id IN ($ids)";
-        }
-
-        // Execute the action
-        $conn->query($sql);
-    }
 }
 
 // Fetch applicant accounts and profiles
@@ -63,7 +40,6 @@ $sql = "
 $searchTerm = "%$searchQuery%";
 $stmt = prepare_and_execute($conn, $sql, 'sss', $searchTerm, $searchTerm, $searchTerm);
 $results = $stmt->get_result();
-
 ?>
 
 <!DOCTYPE html>
@@ -73,104 +49,9 @@ $results = $stmt->get_result();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Management</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="styles.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-        }
-
-        .content-area {
-            padding: 2rem;
-            margin-left: 220px;
-        }
-
-        h2 {
-            color: #333;
-            font-size: 1.8rem;
-            margin-bottom: 1rem;
-        }
-
-        .mass-action {
-            margin: 1.5rem 0;
-            display: flex;
-            align-items: center;
-        }
-
-        .mass-action select,
-        .mass-action button {
-            padding: 0.5rem 1rem;
-            font-size: 1rem;
-            margin-right: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        .mass-action button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        .mass-action button:hover {
-            background-color: #0056b3;
-        }
-
-        input[type="text"] {
-            padding: 0.5rem 1rem;
-            font-size: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-bottom: 1rem;
-            width: 300px;
-        }
-
-        button[type="submit"] {
-            padding: 0.5rem 1rem;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-
-        button[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1.5rem;
-        }
-
-        th,
-        td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #f4f4f9;
-        }
-
-        th a {
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        th a:hover {
-            text-decoration: underline;
-        }
-
-        td input[type="checkbox"] {
-            transform: scale(1.2);
-        }
+        /* Custom styles */
     </style>
 </head>
 
@@ -188,15 +69,10 @@ $results = $stmt->get_result();
             <button type="submit">Search</button>
         </form>
 
-        <!-- Mass Action Form -->
-        <form method="POST" action="user_management.php">
-            <div class="mass-action">
-                <select name="mass_action">
-                    <option value="activate">Activate</option>
-                    <option value="deactivate">Deactivate</option>
-                    <option value="delete">Delete</option>
-                </select>
-                <button type="submit">Apply</button>
+        <!-- Email Form -->
+        <form method="POST" action="user_management.php" id="emailForm">
+            <div class="email-action">
+                <button type="button" onclick="sendEmail()" class="btn btn-primary">Send Email</button>
             </div>
 
             <!-- Display Applicant Accounts Table -->
@@ -224,7 +100,7 @@ $results = $stmt->get_result();
                 <tbody>
                     <?php while ($row = $results->fetch_assoc()) { ?>
                         <tr>
-                            <td><input type="checkbox" name="selected_users[]" value="<?php echo $row['user_id']; ?>"></td> <!-- Checkbox for each row -->
+                            <td><input type="checkbox" name="selected_emails[]" value="<?php echo htmlspecialchars($row['email']); ?>"></td>
                             <td><?php echo htmlspecialchars($row['fname']); ?></td>
                             <td><?php echo htmlspecialchars($row['lname']); ?></td>
                             <td><?php echo htmlspecialchars($row['email']); ?></td>
@@ -250,6 +126,36 @@ $results = $stmt->get_result();
 
     <?php include 'footer.php'; ?>
 
+    <script>
+        // Toggle select all checkboxes
+        function toggleSelectAll(source) {
+            checkboxes = document.querySelectorAll('input[name="selected_emails[]"]');
+            checkboxes.forEach(checkbox => checkbox.checked = source.checked);
+        }
+
+        // Open default email client with selected emails in recipients
+        function sendEmail() {
+            const selectedEmails = Array.from(document.querySelectorAll('input[name="selected_emails[]"]:checked')).map(checkbox => checkbox.value);
+
+            if (selectedEmails.length > 0) {
+                // Split emails into manageable groups for reliability
+                const maxEmailsPerGroup = 50;
+                const emailGroups = [];
+
+                for (let i = 0; i < selectedEmails.length; i += maxEmailsPerGroup) {
+                    emailGroups.push(selectedEmails.slice(i, i + maxEmailsPerGroup).join(","));
+                }
+
+                // Open each group in the mail client
+                emailGroups.forEach(group => {
+                    const mailtoLink = `mailto:${encodeURIComponent(group)}`;
+                    window.open(mailtoLink, '_blank');
+                });
+            } else {
+                alert("Please select at least one user to email.");
+            }
+        }
+    </script>
 </body>
 
 </html>
