@@ -8,6 +8,7 @@
             <li><a href="applicant_tracking.php">Applicant Tracking System</a></li>
             <li><a href="view_job.php">Job Postings</a></li>
             <li><a href="application.php">Applications</a></li>
+            <li><a href="reports.php">Reports</a></li>
         </ul>
     </nav>
 </aside>
