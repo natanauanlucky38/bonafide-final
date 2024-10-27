@@ -20,8 +20,11 @@ $job_id = (int)$_GET['job_id']; // Sanitize job_id
 $_SESSION['job_id'] = $job_id; // Store job_id in session
 
 // Fetch job details to display
-$job_sql = "SELECT * FROM job_postings WHERE job_id = $job_id";
-$job_result = $conn->query($job_sql);
+$job_sql = "SELECT * FROM job_postings WHERE job_id = ?";
+$job_stmt = $conn->prepare($job_sql);
+$job_stmt->bind_param("i", $job_id);
+$job_stmt->execute();
+$job_result = $job_stmt->get_result();
 if ($job_result->num_rows == 0) {
     echo "Job not found.";
     exit();
@@ -29,8 +32,11 @@ if ($job_result->num_rows == 0) {
 $job = $job_result->fetch_assoc();
 
 // Fetch the user's profile_id
-$profile_sql = "SELECT profile_id FROM profiles WHERE user_id = '$user_id'";
-$profile_result = $conn->query($profile_sql);
+$profile_sql = "SELECT profile_id FROM profiles WHERE user_id = ?";
+$profile_stmt = $conn->prepare($profile_sql);
+$profile_stmt->bind_param("i", $user_id);
+$profile_stmt->execute();
+$profile_result = $profile_stmt->get_result();
 
 if ($profile_result->num_rows > 0) {
     $profile_row = $profile_result->fetch_assoc();
@@ -41,8 +47,11 @@ if ($profile_result->num_rows > 0) {
 }
 
 // Fetch the questionnaire for the job (if any)
-$question_sql = "SELECT * FROM questionnaire_template WHERE job_id = $job_id";
-$question_result = $conn->query($question_sql);
+$question_sql = "SELECT * FROM questionnaire_template WHERE job_id = ?";
+$question_stmt = $conn->prepare($question_sql);
+$question_stmt->bind_param("i", $job_id);
+$question_stmt->execute();
+$question_result = $question_stmt->get_result();
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -51,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $file_name = basename($file['name']);
     $file_type = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
 
-    // Check for valid file type and size
+    // Validate resume file type and size
     $valid_file_types = ['pdf', 'doc', 'docx'];
     if (!in_array($file_type, $valid_file_types)) {
         $error_message = "Only PDF, DOC, and DOCX files are allowed.";
@@ -60,188 +69,172 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         $timestamp = date('Ymd_His');
         $new_file_name = $user_id . '-' . $profile_id . '-' . $timestamp . '-job_' . $job_id . '.' . $file_type;
-        $target_file = "applicant/uploads/" . $new_file_name; // Update the path format as required
+        $target_file = "../applicant/uploads/" . $new_file_name;
 
         // Move the uploaded file to the target directory
         if (move_uploaded_file($file['tmp_name'], $target_file)) {
-            $_SESSION['resume_file'] = $target_file; // Store the relative path
+            $_SESSION['resume_file'] = $target_file; // Store the file path for later database use
         } else {
             $error_message = "There was an error uploading your resume.";
         }
     }
 
-    // Collect qualifications, skills, and work experience from the form
-    $qualifications = $_POST['qualifications'] ?? [];
-    $skills = $_POST['skills'] ?? [];
-    $work_experience = $_POST['work_experience'] ?? [];
+    if (!isset($error_message)) {
+        // Collect additional data from the form
+        $qualifications = $_POST['qualifications'] ?? [];
+        $skills = $_POST['skills'] ?? [];
+        $work_experience = $_POST['work_experience'] ?? [];
+        $referral_source = $_POST['referral_source'];
+        $answers = $_POST['answers'] ?? []; // Store questionnaire answers
 
-    // Get the referral source from the form
-    $referral_source = $_POST['referral_source'];
+        $conn->begin_transaction();
+        try {
+            // Check if an application already exists for this job and user
+            $check_application_sql = "SELECT application_id, application_status FROM applications WHERE job_id = ? AND profile_id = ?";
+            $check_application_stmt = $conn->prepare($check_application_sql);
+            $check_application_stmt->bind_param('ii', $job_id, $profile_id);
+            $check_application_stmt->execute();
+            $check_application_stmt->store_result();
 
-    // Start a transaction to ensure atomicity of the insert/update operations
-    $conn->begin_transaction();
-    try {
-        // Check if an application already exists
-        $check_application_sql = "SELECT application_id, application_status FROM applications WHERE job_id = ? AND profile_id = ?";
-        $check_application_stmt = $conn->prepare($check_application_sql);
-        $check_application_stmt->bind_param('ii', $job_id, $profile_id);
-        $check_application_stmt->execute();
-        $check_application_stmt->store_result();
+            if ($check_application_stmt->num_rows > 0) {
+                // Application exists; re-apply or update
+                $check_application_stmt->bind_result($application_id, $application_status);
+                $check_application_stmt->fetch();
 
-        if ($check_application_stmt->num_rows > 0) {
-            // Re-apply (Update existing application)
-            $check_application_stmt->bind_result($application_id, $application_status);
-            $check_application_stmt->fetch();
-
-            // If the previous application was withdrawn, update withdrawn_applicants
-            if ($application_status == 'WITHDRAWN') {
-                $update_metrics_sql = "UPDATE tbl_job_metrics 
-                                       SET withdrawn_applicants = withdrawn_applicants - 1 
-                                       WHERE job_id = ?";
-                $metrics_stmt = $conn->prepare($update_metrics_sql);
-                $metrics_stmt->bind_param('i', $job_id);
-                $metrics_stmt->execute();
-            }
-
-            // Update the application and re-apply
-            $update_application_sql = "UPDATE applications 
-                                       SET resume = ?, application_status = 'APPLIED', referral_source = ?, recruiter_id = (SELECT created_by FROM job_postings WHERE job_id = ?)
-                                       WHERE application_id = ?";
-            $update_application_stmt = $conn->prepare($update_application_sql);
-            $update_application_stmt->bind_param('ssii', $_SESSION['resume_file'], $referral_source, $job_id, $application_id);
-            $update_application_stmt->execute();
-
-            // Update the pipeline stage, reset withdrawn_at and total_duration
-            $update_pipeline_sql = "UPDATE tbl_pipeline_stage 
-                                    SET applied_at = NOW(), withdrawn_at = NULL, total_duration = 0 
-                                    WHERE application_id = ?";
-            $update_pipeline_stmt = $conn->prepare($update_pipeline_sql);
-            $update_pipeline_stmt->bind_param('i', $application_id);
-            $update_pipeline_stmt->execute();
-        } else {
-            // Insert new application
-            $insert_application_sql = "INSERT INTO applications (job_id, profile_id, resume, application_status, recruiter_id, referral_source)
-                                       VALUES (?, ?, ?, 'APPLIED', (SELECT created_by FROM job_postings WHERE job_id = ?), ?)";
-            $insert_application_stmt = $conn->prepare($insert_application_sql);
-            $insert_application_stmt->bind_param('iisis', $job_id, $profile_id, $_SESSION['resume_file'], $job_id, $referral_source);
-            $insert_application_stmt->execute();
-            $application_id = $conn->insert_id;
-
-            // Insert new pipeline stage
-            $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage (application_id, applied_at) 
-                                    VALUES (?, NOW())";
-            $insert_pipeline_stmt = $conn->prepare($insert_pipeline_sql);
-            $insert_pipeline_stmt->bind_param('i', $application_id);
-            $insert_pipeline_stmt->execute();
-
-            // Increment total_applicants in tbl_job_metrics for a new application only
-            $metrics_check_sql = "SELECT * FROM tbl_job_metrics WHERE job_id = ?";
-            $metrics_check_stmt = $conn->prepare($metrics_check_sql);
-            $metrics_check_stmt->bind_param('i', $job_id);
-            $metrics_check_stmt->execute();
-            $metrics_check_result = $metrics_check_stmt->get_result();
-
-            if ($metrics_check_result->num_rows > 0) {
-                // Update referral-specific applicant counts based on referral source
-                if ($referral_source === 'referral_applicants') {
+                if ($application_status == 'WITHDRAWN') {
                     $update_metrics_sql = "UPDATE tbl_job_metrics 
-                                           SET total_applicants = total_applicants + 1, 
-                                               referral_applicants = referral_applicants + 1 
+                                           SET withdrawn_applicants = withdrawn_applicants - 1 
                                            WHERE job_id = ?";
-                } elseif ($referral_source === 'social_media_applicants') {
-                    $update_metrics_sql = "UPDATE tbl_job_metrics 
-                                           SET total_applicants = total_applicants + 1, 
-                                               social_media_applicants = social_media_applicants + 1 
-                                           WHERE job_id = ?";
-                } elseif ($referral_source === 'career_site_applicants') {
-                    $update_metrics_sql = "UPDATE tbl_job_metrics 
-                                           SET total_applicants = total_applicants + 1, 
-                                               career_site_applicants = career_site_applicants + 1 
-                                           WHERE job_id = ?";
+                    $metrics_stmt = $conn->prepare($update_metrics_sql);
+                    $metrics_stmt->bind_param('i', $job_id);
+                    $metrics_stmt->execute();
                 }
-                $update_metrics_stmt = $conn->prepare($update_metrics_sql);
-                $update_metrics_stmt->bind_param('i', $job_id);
-                $update_metrics_stmt->execute();
+
+                // Update application with new resume and status
+                $update_application_sql = "UPDATE applications 
+                                           SET resume = ?, application_status = 'APPLIED', referral_source = ?, recruiter_id = (SELECT created_by FROM job_postings WHERE job_id = ?)
+                                           WHERE application_id = ?";
+                $update_application_stmt = $conn->prepare($update_application_sql);
+                $update_application_stmt->bind_param('ssii', $_SESSION['resume_file'], $referral_source, $job_id, $application_id);
+                $update_application_stmt->execute();
+
+                // Update pipeline stage
+                $update_pipeline_sql = "UPDATE tbl_pipeline_stage 
+                                        SET applied_at = NOW(), withdrawn_at = NULL, total_duration = 0 
+                                        WHERE application_id = ?";
+                $update_pipeline_stmt = $conn->prepare($update_pipeline_sql);
+                $update_pipeline_stmt->bind_param('i', $application_id);
+                $update_pipeline_stmt->execute();
             } else {
-                // First applicant for the job; insert the initial metric values
-                $insert_metrics_sql = "INSERT INTO tbl_job_metrics (job_id, total_applicants, referral_applicants, social_media_applicants, career_site_applicants)
-                                       VALUES (?, 1, 
-                                       IF(? = 'referral_applicants', 1, 0), 
-                                       IF(? = 'social_media_applicants', 1, 0), 
-                                       IF(? = 'career_site_applicants', 1, 0))";
-                $insert_metrics_stmt = $conn->prepare($insert_metrics_sql);
-                $insert_metrics_stmt->bind_param('isss', $job_id, $referral_source, $referral_source, $referral_source);
-                $insert_metrics_stmt->execute();
-            }
-        }
+                // Insert new application
+                $insert_application_sql = "INSERT INTO applications (job_id, profile_id, resume, application_status, recruiter_id, referral_source)
+                                           VALUES (?, ?, ?, 'APPLIED', (SELECT created_by FROM job_postings WHERE job_id = ?), ?)";
+                $insert_application_stmt = $conn->prepare($insert_application_sql);
+                $insert_application_stmt->bind_param('iisis', $job_id, $profile_id, $_SESSION['resume_file'], $job_id, $referral_source);
+                $insert_application_stmt->execute();
+                $application_id = $conn->insert_id;
 
-        // Insert answers into application_answers
-        if (isset($_POST['answers'])) {
-            $insert_answer_stmt = $conn->prepare("INSERT INTO application_answers (application_id, question_id, answer_text) VALUES (?, ?, ?)");
-
-            foreach ($_POST['answers'] as $question_id => $answer_text) {
-                $insert_answer_stmt->bind_param('iis', $application_id, $question_id, $answer_text);
-                $insert_answer_stmt->execute();
+                // Insert new pipeline stage
+                $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage (application_id, applied_at) 
+                                        VALUES (?, NOW())";
+                $insert_pipeline_stmt = $conn->prepare($insert_pipeline_sql);
+                $insert_pipeline_stmt->bind_param('i', $application_id);
+                $insert_pipeline_stmt->execute();
             }
 
-            $insert_answer_stmt->close();
-        }
-
-        // Insert qualifications, skills, and work experience into profile_details
-        if (!empty($qualifications)) {
-            $insert_qualification_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, 'qualification', '', '')");
-            foreach ($qualifications as $qualification) {
-                $insert_qualification_stmt->bind_param('is', $profile_id, $qualification);
-                $insert_qualification_stmt->execute();
+            // Insert questionnaire answers
+            if (!empty($answers)) {
+                $insert_answer_sql = "INSERT INTO application_answers (application_id, question_id, answer_text) VALUES (?, ?, ?)";
+                $insert_answer_stmt = $conn->prepare($insert_answer_sql);
+                foreach ($answers as $question_id => $answer_text) {
+                    $insert_answer_stmt->bind_param('iis', $application_id, $question_id, $answer_text);
+                    $insert_answer_stmt->execute();
+                }
+                $insert_answer_stmt->close();
             }
-        }
 
-        if (!empty($skills)) {
-            $insert_skills_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, '', 'skill', '')");
-            foreach ($skills as $skill) {
-                $insert_skills_stmt->bind_param('is', $profile_id, $skill);
-                $insert_skills_stmt->execute();
+            // Prevent duplicate qualifications, skills, and work experience in profile_details
+            if (!empty($qualifications)) {
+                foreach ($qualifications as $qualification) {
+                    $check_qualification_stmt = $conn->prepare("SELECT 1 FROM profile_details WHERE profile_id = ? AND detail_value = ? AND qualifications = 'qualification'");
+                    $check_qualification_stmt->bind_param('is', $profile_id, $qualification);
+                    $check_qualification_stmt->execute();
+                    $check_qualification_stmt->store_result();
+
+                    if ($check_qualification_stmt->num_rows == 0) {
+                        $insert_qualification_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, 'qualification', '', '')");
+                        $insert_qualification_stmt->bind_param('is', $profile_id, $qualification);
+                        $insert_qualification_stmt->execute();
+                        $insert_qualification_stmt->close();
+                    }
+                    $check_qualification_stmt->close();
+                }
             }
-        }
 
-        if (!empty($work_experience)) {
-            $insert_experience_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, '', '', 'work_experience')");
-            foreach ($work_experience as $experience) {
-                $insert_experience_stmt->bind_param('is', $profile_id, $experience);
-                $insert_experience_stmt->execute();
+            if (!empty($skills)) {
+                foreach ($skills as $skill) {
+                    $check_skill_stmt = $conn->prepare("SELECT 1 FROM profile_details WHERE profile_id = ? AND detail_value = ? AND skills = 'skill'");
+                    $check_skill_stmt->bind_param('is', $profile_id, $skill);
+                    $check_skill_stmt->execute();
+                    $check_skill_stmt->store_result();
+
+                    if ($check_skill_stmt->num_rows == 0) {
+                        $insert_skills_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, '', 'skill', '')");
+                        $insert_skills_stmt->bind_param('is', $profile_id, $skill);
+                        $insert_skills_stmt->execute();
+                        $insert_skills_stmt->close();
+                    }
+                    $check_skill_stmt->close();
+                }
             }
+
+            if (!empty($work_experience)) {
+                foreach ($work_experience as $experience) {
+                    $check_experience_stmt = $conn->prepare("SELECT 1 FROM profile_details WHERE profile_id = ? AND detail_value = ? AND work_experience = 'work_experience'");
+                    $check_experience_stmt->bind_param('is', $profile_id, $experience);
+                    $check_experience_stmt->execute();
+                    $check_experience_stmt->store_result();
+
+                    if ($check_experience_stmt->num_rows == 0) {
+                        $insert_experience_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, '', '', 'work_experience')");
+                        $insert_experience_stmt->bind_param('is', $profile_id, $experience);
+                        $insert_experience_stmt->execute();
+                        $insert_experience_stmt->close();
+                    }
+                    $check_experience_stmt->close();
+                }
+            }
+
+            // Fetch recruiter ID and send notification
+            $recruiter_id_query = "SELECT created_by FROM job_postings WHERE job_id = ?";
+            $recruiter_stmt = $conn->prepare($recruiter_id_query);
+            $recruiter_stmt->bind_param('i', $job_id);
+            $recruiter_stmt->execute();
+            $recruiter_result = $recruiter_stmt->get_result();
+            $recruiter_data = $recruiter_result->fetch_assoc();
+            $recruiter_id = $recruiter_data['created_by'];
+
+            // Insert notification
+            $notification_title = "New Application Submitted";
+            $notification_subject = "A new application has been submitted for the job: " . $job['job_title'];
+            $notification_link = "view_application.php?application_id=" . $application_id;
+
+            $insert_notification_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
+                                        VALUES (?, ?, ?, ?, 0)";
+            $insert_notification_stmt = $conn->prepare($insert_notification_sql);
+            $insert_notification_stmt->bind_param('isss', $recruiter_id, $notification_title, $notification_subject, $notification_link);
+            $insert_notification_stmt->execute();
+
+            // Commit the transaction
+            $conn->commit();
+
+            // Redirect after successful submission
+            header('Location: view_job.php');
+            exit();
+        } catch (Exception $e) {
+            $conn->rollback();
+            echo "Error processing the application: " . $e->getMessage();
         }
-
-        // Fetch recruiter ID for notification
-        $recruiter_id_query = "SELECT created_by FROM job_postings WHERE job_id = ?";
-        $recruiter_stmt = $conn->prepare($recruiter_id_query);
-        $recruiter_stmt->bind_param('i', $job_id);
-        $recruiter_stmt->execute();
-        $recruiter_result = $recruiter_stmt->get_result();
-        $recruiter_data = $recruiter_result->fetch_assoc();
-        $recruiter_id = $recruiter_data['created_by'];
-
-        // Insert notification for recruiter about the new application
-        $notification_title = "New Application Submitted";
-        $notification_subject = "A new application has been submitted for the job: " . $job['job_title'];
-        $notification_link = "view_application.php?application_id=" . $application_id;
-
-        $insert_notification_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
-                                    VALUES (?, ?, ?, ?, 0)";
-        $insert_notification_stmt = $conn->prepare($insert_notification_sql);
-        $insert_notification_stmt->bind_param('isss', $recruiter_id, $notification_title, $notification_subject, $notification_link);
-        $insert_notification_stmt->execute();
-
-        // Commit the transaction
-        $conn->commit();
-
-        // Redirect after successful submission
-        header('Location: view_job.php'); // Ensure this points to the correct page
-        exit();
-    } catch (Exception $e) {
-        // Rollback the transaction on error
-        $conn->rollback();
-        echo "Error processing the application: " . $e->getMessage();
     }
 }
 ?>
@@ -254,12 +247,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <title>Apply for Job</title>
     <script>
-        // Function to add new input fields for qualifications, skills, and work experience
         function addField(type) {
             let container = document.getElementById(type + '-container');
             let input = document.createElement('input');
             input.type = 'text';
-            input.name = type + '[]'; // Array input
+            input.name = type + '[]';
             input.placeholder = 'Enter ' + type.replace('_', ' ');
             container.appendChild(input);
             container.appendChild(document.createElement('br'));
@@ -268,8 +260,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         function removeField(type) {
             let container = document.getElementById(type + '-container');
             if (container.children.length > 1) {
-                container.removeChild(container.lastChild); // Remove the last input
-                container.removeChild(container.lastChild); // Remove the last <br>
+                container.removeChild(container.lastChild);
+                container.removeChild(container.lastChild);
             }
         }
     </script>
@@ -286,7 +278,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <label for="resume">Upload Resume:</label>
         <input type="file" name="resume" id="resume" required accept=".pdf,.doc,.docx"><br>
 
-        <!-- Dropdown for referral source -->
         <label for="referral_source">How did you hear about this job?</label>
         <select name="referral_source" id="referral_source" required>
             <option value="referral_applicants">Employee Referral</option>
@@ -294,7 +285,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <option value="career_site_applicants">Career Website</option>
         </select><br>
 
-        <!-- Dynamic Qualification input fields -->
         <label for="qualifications">Qualifications:</label>
         <div id="qualifications-container">
             <input type="text" name="qualifications[]" placeholder="Enter qualification"><br>
@@ -302,7 +292,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <button type="button" onclick="addField('qualifications')">Add Qualification</button>
         <button type="button" onclick="removeField('qualifications')">Remove Qualification</button><br>
 
-        <!-- Dynamic Skills input fields -->
         <label for="skills">Skills:</label>
         <div id="skills-container">
             <input type="text" name="skills[]" placeholder="Enter skill"><br>
@@ -310,7 +299,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <button type="button" onclick="addField('skills')">Add Skill</button>
         <button type="button" onclick="removeField('skills')">Remove Skill</button><br>
 
-        <!-- Dynamic Work Experience input fields -->
         <label for="work_experience">Work Experience:</label>
         <div id="work_experience-container">
             <input type="text" name="work_experience[]" placeholder="Enter work experience"><br>
@@ -318,7 +306,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <button type="button" onclick="addField('work_experience')">Add Work Experience</button>
         <button type="button" onclick="removeField('work_experience')">Remove Work Experience</button><br>
 
-        <!-- Job-specific questions (if any) -->
         <?php if ($question_result->num_rows > 0): ?>
             <h3>Job Questionnaire</h3>
             <?php while ($question = $question_result->fetch_assoc()): ?>

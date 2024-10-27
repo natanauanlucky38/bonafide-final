@@ -240,12 +240,6 @@ while ($job = $jobs_result->fetch_assoc()) {
                                                 <p>Status: <?php echo htmlspecialchars($application['display_status']); ?></p>
                                                 <p>Screening Result: <?php echo $application['screening_result'] ?? 'Pending'; ?></p>
                                                 <p>
-                                                    Resume:
-                                                    <?php if (!empty($application['resume_file'])): ?>
-                                                        <a href="../applicant/uploads/<?php echo htmlspecialchars($application['resume_file']); ?>" target="_blank" class="download-link">Download Resume</a>
-                                                    <?php else: ?>
-                                                        No file uploaded.
-                                                    <?php endif; ?>
                                                 </p>
                                             </div>
                                         <?php endforeach; ?>

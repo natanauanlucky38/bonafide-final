@@ -1,16 +1,21 @@
-<!-- header.php -->
 <?php
 require_once '../db.php';
 
-// Fetch unread notifications count for the logged-in user
+// Ensure the user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');  // Redirect to login page if not logged in
+    exit();
+}
+
 $user_id = $_SESSION['user_id']; // Assume the user is logged in
+
+// Fetch unread notifications count
 $unread_notifications_sql = "SELECT COUNT(*) AS unread_count FROM notifications WHERE user_id = ? AND is_read = 0";
 $unread_stmt = $conn->prepare($unread_notifications_sql);
 $unread_stmt->bind_param('i', $user_id);
 $unread_stmt->execute();
 $unread_result = $unread_stmt->get_result();
-$unread_row = $unread_result->fetch_assoc();
-$unread_count = $unread_row['unread_count'];
+$unread_count = ($unread_result->num_rows > 0) ? $unread_result->fetch_assoc()['unread_count'] : 0;
 ?>
 
 <!DOCTYPE html>
@@ -146,7 +151,7 @@ $unread_count = $unread_row['unread_count'];
 
                         if ($notifications_result->num_rows > 0) {
                             while ($notification = $notifications_result->fetch_assoc()) {
-                                echo '<a href="read_notification.php?notification_id=' . $notification['notification_id'] . '">' .
+                                echo '<a href="read_notifications.php?notification_id=' . $notification['notification_id'] . '">' .
                                     '<strong>' . htmlspecialchars($notification['title']) . '</strong><br>' .
                                     htmlspecialchars($notification['subject']) .
                                     '</a>';
