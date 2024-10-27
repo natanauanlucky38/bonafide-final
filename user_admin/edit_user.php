@@ -94,7 +94,6 @@ if (isset($_GET['user_id'])) {
                 <label for="status">Status</label>
                 <select name="status" class="form-control" required>
                     <option value="ACTIVE" <?php echo ($user['status'] == 'ACTIVE') ? 'selected' : ''; ?>>ACTIVE</option>
-                    <option value="INACTIVE" <?php echo ($user['status'] == 'INACTIVE') ? 'selected' : ''; ?>>INACTIVE</option>
                     <option value="BANNED" <?php echo ($user['status'] == 'BANNED') ? 'selected' : ''; ?>>BANNED</option>
                 </select>
             </div>
