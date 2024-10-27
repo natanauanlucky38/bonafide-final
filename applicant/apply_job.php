@@ -140,6 +140,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $insert_pipeline_stmt = $conn->prepare($insert_pipeline_sql);
                 $insert_pipeline_stmt->bind_param('i', $application_id);
                 $insert_pipeline_stmt->execute();
+
+                // Update job metrics to increase total applicants and increment based on referral source
+                $metrics_column = '';
+                switch ($referral_source) {
+                    case 'referral_applicants':
+                        $metrics_column = 'referral_applicants';
+                        break;
+                    case 'social_media_applicants':
+                        $metrics_column = 'social_media_applicants';
+                        break;
+                    case 'career_site_applicants':
+                        $metrics_column = 'career_site_applicants';
+                        break;
+                }
+                $update_metrics_sql = "UPDATE tbl_job_metrics 
+                                       SET total_applicants = total_applicants + 1, $metrics_column = $metrics_column + 1 
+                                       WHERE job_id = ?";
+                $metrics_stmt = $conn->prepare($update_metrics_sql);
+                $metrics_stmt->bind_param('i', $job_id);
+                $metrics_stmt->execute();
             }
 
             // Insert questionnaire answers

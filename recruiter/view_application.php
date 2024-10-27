@@ -97,6 +97,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
                 $pipeline_stmt->bind_param("ssi", $interview_time, $interview_time, $application_id);
                 $pipeline_stmt->execute();
 
+                // Increment screened_applicants and interviewed_applicants in tbl_job_metrics
+                $update_metrics_sql = "UPDATE tbl_job_metrics 
+                                       SET screened_applicants = screened_applicants + 1, 
+                                           interviewed_applicants = interviewed_applicants + 1 
+                                       WHERE job_id = ?";
+                $metrics_stmt = $conn->prepare($update_metrics_sql);
+                $metrics_stmt->bind_param("i", $job_id);
+                $metrics_stmt->execute();
+
                 // Insert interview details
                 $interview_sql = "INSERT INTO tbl_interview (application_id, interview_date, interview_type, meet_link, phone, recruiter_email, remarks) 
                                   VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -133,6 +142,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
                 $pipeline_stmt->bind_param("i", $application_id);
                 $pipeline_stmt->execute();
 
+                // Increment offered_applicants in tbl_job_metrics
+                $update_metrics_sql = "UPDATE tbl_job_metrics 
+                                       SET offered_applicants = offered_applicants + 1 
+                                       WHERE job_id = ?";
+                $metrics_stmt = $conn->prepare($update_metrics_sql);
+                $metrics_stmt->bind_param("i", $job_id);
+                $metrics_stmt->execute();
+
                 // Insert offer details
                 $offer_sql = "INSERT INTO tbl_offer_details (job_id, salary, start_date, benefits, remarks) 
                               VALUES (?, ?, ?, ?, ?)";
@@ -165,6 +182,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
                 $pipeline_stmt = $conn->prepare($pipeline_sql);
                 $pipeline_stmt->bind_param("i", $application_id);
                 $pipeline_stmt->execute();
+
+                // Increment successful_placements in tbl_job_metrics
+                $update_metrics_sql = "UPDATE tbl_job_metrics 
+                                       SET successful_placements = successful_placements + 1 
+                                       WHERE job_id = ?";
+                $metrics_stmt = $conn->prepare($update_metrics_sql);
+                $metrics_stmt->bind_param("i", $job_id);
+                $metrics_stmt->execute();
 
                 // Insert deployment details
                 $deployment_sql = "INSERT INTO tbl_deployment_details (application_id, deployment_date, deployment_remarks) 
@@ -228,7 +253,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
