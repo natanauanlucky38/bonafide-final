@@ -3,6 +3,7 @@
 include '../db.php';  // Database connection
 include 'sidebar.php';
 
+
 // Check if the user is logged in and is an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
     header('Location: index.php');  // Redirect to login page
@@ -34,7 +35,7 @@ if ($profile_result->num_rows > 0) {
 
 // Fetch upcoming interview dates for the applicant
 $interviews_sql = "
-    SELECT i.interview_date, j.job_title 
+    SELECT i.interview_date, j.job_title, a.application_id
     FROM tbl_interview i
     JOIN applications a ON i.application_id = a.application_id
     JOIN job_postings j ON a.job_id = j.job_id
@@ -49,11 +50,19 @@ $interviews_result = $interviews_stmt->get_result();
 
 $interviews = [];
 while ($row = $interviews_result->fetch_assoc()) {
-    $interviews[] = [
-        'title' => $row['job_title'],
-        'start' => $row['interview_date']
-    ];
+    // Ensure application_id is part of the row
+    if (isset($row['application_id'])) {
+        $interviews[] = [
+            'title' => $row['job_title'],
+            'start' => $row['interview_date'],
+            'url' => 'application.php?application_id=' . $row['application_id'] // Link with application_id for highlighting
+        ];
+    } else {
+        // Debug output in case application_id is missing
+        echo "<p>Warning: application_id is missing for interview with job title: " . htmlspecialchars($row['job_title']) . "</p>";
+    }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -66,6 +75,18 @@ while ($row = $interviews_result->fetch_assoc()) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FullCalendar CSS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
+
+    <style>
+        /* Custom CSS to resize the calendar */
+        #calendar {
+            max-width: 600px;
+            /* Adjust the width as needed */
+            height: 400px;
+            /* Adjust the height as needed */
+            margin: 0 auto;
+            /* Center the calendar */
+        }
+    </style>
 </head>
 
 <body>
@@ -73,11 +94,9 @@ while ($row = $interviews_result->fetch_assoc()) {
         <!-- Welcome Message -->
         <h2>Welcome, <?php echo htmlspecialchars($_SESSION['fname']) . ' ' . htmlspecialchars($_SESSION['lname']); ?>!</h2>
         <p>This is your applicant dashboard.</p>
-        <a href="logout.php" class="btn btn-secondary mb-3">Logout</a>
-
         <!-- Calendar Section -->
-        <h3>Upcoming Interviews</h3>
-        <div id="calendar"></div>
+        <h3>Upcoming Events</h3>
+        <div id="calendar" style="max-width: 600px; height: 400px;"></div>
     </div>
 
     <!-- Bootstrap JS and FullCalendar JS -->
@@ -96,7 +115,10 @@ while ($row = $interviews_result->fetch_assoc()) {
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
-                eventColor: '#3788d8' // Set a color for interview events
+                eventColor: '#3788d8', // Set a color for interview events
+                eventClick: function(info) {
+                    window.location.href = 'application.php'; // Redirect to application.php
+                }
             });
             calendar.render();
         });
@@ -105,6 +127,8 @@ while ($row = $interviews_result->fetch_assoc()) {
 
 </html>
 
+
 <?php
 $conn->close();
+include 'footer.php';
 ?>

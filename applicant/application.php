@@ -13,9 +13,12 @@ include 'header.php';
 
 $user_id = $_SESSION['user_id'];
 
+// Get the application ID from the URL to highlight the specific row
+$highlightedApplicationId = isset($_GET['application_id']) ? $_GET['application_id'] : null;
+
 // Fetch user's applications, excluding those that are withdrawn
 $applications_sql = "
-    SELECT a.application_id, a.application_status, a.rejection_reason, a.resume, a.referral_source,
+    SELECT a.application_id, a.application_status, a.rejection_reason, a.resume,
            j.job_title, j.company, j.location,
            i.interview_date, i.interview_type, i.meet_link,
            a.job_id
@@ -77,6 +80,12 @@ $applications_result = $applications_stmt->get_result();
         button:hover {
             background-color: #0056b3;
         }
+
+        .highlight-row {
+            background-color: #32de84;
+            border-left: 4px solid #007bff;
+            transition: background-color 0.5s ease;
+        }
     </style>
 </head>
 
@@ -89,7 +98,6 @@ $applications_result = $applications_stmt->get_result();
                 <th>Company</th>
                 <th>Location</th>
                 <th>Status</th>
-                <th>Referral Source</th>
                 <th>Details</th>
                 <th>Actions</th>
             </tr>
@@ -97,7 +105,7 @@ $applications_result = $applications_stmt->get_result();
         <tbody>
             <?php if ($applications_result->num_rows > 0): ?>
                 <?php while ($application = $applications_result->fetch_assoc()): ?>
-                    <tr>
+                    <tr id="application-<?php echo $application['application_id']; ?>" class="<?php echo ($application['application_id'] == $highlightedApplicationId) ? 'highlight-row' : ''; ?>">
                         <td><?php echo htmlspecialchars($application['job_title']); ?></td>
                         <td><?php echo htmlspecialchars($application['company']); ?></td>
                         <td><?php echo htmlspecialchars($application['location']); ?></td>
@@ -127,7 +135,6 @@ $applications_result = $applications_stmt->get_result();
                             }
                             ?>
                         </td>
-                        <td><?php echo htmlspecialchars($application['referral_source']); ?></td>
                         <td>
                             <?php if ($application['application_status'] == 'INTERVIEW'): ?>
                                 <p><strong>Interview Date:</strong> <?php echo date('F d, Y h:i A', strtotime($application['interview_date'])); ?></p>
@@ -180,8 +187,8 @@ $applications_result = $applications_stmt->get_result();
                         </td>
                         <td>
                             <?php if ($application['application_status'] != 'REJECTED' && $application['application_status'] != 'WITHDRAWN' && $application['application_status'] != 'DEPLOYED'): ?>
-                                <!-- Withdraw button will now redirect to withdraw_application.php -->
-                                <form action="withdraw_application.php" method="GET">
+                                <!-- Withdraw button with confirmation dialog -->
+                                <form action="withdraw_application.php" method="GET" onsubmit="return confirm('Are you sure you want to withdraw this application?');">
                                     <input type="hidden" name="application_id" value="<?php echo $application['application_id']; ?>">
                                     <button type="submit">Withdraw Application</button>
                                 </form>
@@ -196,6 +203,17 @@ $applications_result = $applications_stmt->get_result();
             <?php endif; ?>
         </tbody>
     </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const highlightedRow = document.getElementById('application-<?php echo $highlightedApplicationId; ?>');
+            if (highlightedRow) {
+                setTimeout(() => {
+                    highlightedRow.classList.remove('highlight-row');
+                }, 1000);
+            }
+        });
+    </script>
 </body>
 
 </html>

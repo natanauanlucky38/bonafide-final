@@ -7,15 +7,15 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Fetch unread notifications count for the logged-in recruiter
 $user_id = $_SESSION['user_id']; // Assume the user is logged in
-
-// Fetch unread notifications count
 $unread_notifications_sql = "SELECT COUNT(*) AS unread_count FROM notifications WHERE user_id = ? AND is_read = 0";
 $unread_stmt = $conn->prepare($unread_notifications_sql);
 $unread_stmt->bind_param('i', $user_id);
 $unread_stmt->execute();
 $unread_result = $unread_stmt->get_result();
-$unread_count = ($unread_result->num_rows > 0) ? $unread_result->fetch_assoc()['unread_count'] : 0;
+$unread_row = $unread_result->fetch_assoc();
+$unread_count = $unread_row['unread_count'];
 ?>
 
 <!DOCTYPE html>

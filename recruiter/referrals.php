@@ -83,7 +83,15 @@ while ($row = $referrals_result->fetch_assoc()) {
         .profile-details h3 {
             margin-bottom: 5px;
         }
+
+        .referral-graph {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            margin-top: 30px;
+        }
     </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 
 <body>
@@ -116,6 +124,86 @@ while ($row = $referrals_result->fetch_assoc()) {
     <?php else: ?>
         <p>No referrals found.</p>
     <?php endif; ?>
+
+    <!-- Referral Connection Web -->
+    <h2>Referral Connection Web</h2>
+    <div id="referral-graph" class="referral-graph"></div>
+
+    <script>
+        // Prepare referral data for D3.js visualization
+        const referrals = <?php echo json_encode(array_merge(...array_column($referrals_data, 'referrals'))); ?>;
+
+        // Create nodes and links for D3.js
+        const nodes = {};
+        const links = referrals.map(referral => {
+            nodes[referral.referrer_user_id] = {
+                id: referral.referrer_user_id,
+                name: `${referral.referrer_fname} ${referral.referrer_lname}`
+            };
+            nodes[referral.referred_user_id] = {
+                id: referral.referred_user_id,
+                name: `${referral.referred_fname} ${referral.referred_lname}`
+            };
+            return {
+                source: referral.referrer_user_id,
+                target: referral.referred_user_id
+            };
+        });
+
+        const width = document.getElementById('referral-graph').clientWidth;
+        const height = 600;
+
+        // Create D3 force simulation
+        const svg = d3.select("#referral-graph").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const simulation = d3.forceSimulation(Object.values(nodes))
+            .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+            .force("charge", d3.forceManyBody().strength(-300))
+            .force("center", d3.forceCenter(width / 2, height / 2));
+
+        // Draw links
+        const link = svg.append("g")
+            .selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .attr("stroke", "#999")
+            .attr("stroke-opacity", 0.6)
+            .attr("stroke-width", 1.5);
+
+        // Draw nodes
+        const node = svg.append("g")
+            .selectAll("circle")
+            .data(Object.values(nodes))
+            .enter().append("circle")
+            .attr("r", 8)
+            .attr("fill", "#007BFF");
+
+        // Add labels
+        const label = svg.append("g")
+            .selectAll("text")
+            .data(Object.values(nodes))
+            .enter().append("text")
+            .attr("x", 8)
+            .attr("y", 3)
+            .attr("font-size", "10px")
+            .text(d => d.name);
+
+        // Update positions
+        simulation.on("tick", () => {
+            link.attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node.attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+
+            label.attr("x", d => d.x + 10)
+                .attr("y", d => d.y);
+        });
+    </script>
 
     <?php include 'footer.php'; ?>
 </body>

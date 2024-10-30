@@ -1,6 +1,6 @@
 <?php
-// Include necessary files
 include '../db.php';  // Include database connection
+include 'sidebar.php';
 
 // Check if the user is logged in and is a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
@@ -59,10 +59,17 @@ if (isset($_GET['delete_job_id'])) {
     }
 }
 
-// Fetch all job postings to display in the job list
-$sql = "SELECT job_id, job_title, company, location, min_salary, max_salary, description, openings, status, deadline FROM job_postings WHERE created_by = ? ORDER BY created_at DESC";
+// Search functionality: Check if a search term is provided
+$search_term = isset($_GET['search']) ? '%' . $_GET['search'] . '%' : '%';
+
+// Fetch job postings with search filter
+$sql = "SELECT job_id, job_title, company, location, min_salary, max_salary, description, openings, status, deadline 
+        FROM job_postings 
+        WHERE created_by = ? 
+        AND (job_title LIKE ? OR company LIKE ?)
+        ORDER BY created_at DESC";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $_SESSION['user_id']);
+$stmt->bind_param('iss', $_SESSION['user_id'], $search_term, $search_term);
 $stmt->execute();
 $jobs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
@@ -81,14 +88,20 @@ $stmt->close();
 <body>
 
     <?php include 'header.php'; ?>
-    <?php include 'sidebar.php'; ?>
 
     <div class="content-area">
         <h2>Available Job Postings</h2>
 
+        <!-- Search Bar -->
+        <form method="GET" action="view_job.php" style="margin-bottom: 20px;">
+            <input type="text" name="search" placeholder="Search by job title or company" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+            <button type="submit">Search</button>
+        </form>
+
         <div>
             <a href="job_posting.php" class="button">Create New Job</a>
         </div>
+
         <!-- Display errors -->
         <?php if (!empty($errors)): ?>
             <div class="error-messages">

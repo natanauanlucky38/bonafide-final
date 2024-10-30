@@ -18,22 +18,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $result = $stmt->get_result();
     $user = $result->fetch_assoc();
 
-    if ($user && password_verify($password, $user['password'])) {
-        // Set session and login the user
-        $_SESSION['email'] = $user['email'];
-        $_SESSION['user_id'] = $user['user_id'];
-        $_SESSION['role'] = $user['role'];
-
-        // Update last login time
-        prepare_and_execute($conn, "UPDATE users SET last_login = NOW() WHERE user_id = ?", 'i', $user['user_id']);
-
-        // Redirect based on role
-        if ($user['role'] == 'APPLICANT') {
-            header('Location: dashboard.php');
+    // Check if user exists
+    if ($user) {
+        // Check if user is banned
+        if ($user['status'] === 'BANNED') {
+            $error = "Your account has been banned. Please contact support for assistance.";
         } else {
-            echo "Recruiters are not allowed to login from this page.";
+            // If user is not banned, verify the password
+            if (password_verify($password, $user['password'])) {
+                // Set session and login the user
+                $_SESSION['email'] = $user['email'];
+                $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['role'] = $user['role'];
+
+                // Update last login time
+                prepare_and_execute($conn, "UPDATE users SET last_login = NOW() WHERE user_id = ?", 'i', $user['user_id']);
+
+                // Redirect based on role
+                if ($user['role'] == 'APPLICANT') {
+                    // Check if profile is set up
+                    $profile_check_stmt = prepare_and_execute($conn, "SELECT profile_id FROM profiles WHERE user_id = ?", 'i', $user['user_id']);
+                    $profile_check_result = $profile_check_stmt->get_result();
+
+                    if ($profile_check_result->num_rows == 0) {
+                        // If no profile found, redirect to profile setup page
+                        header('Location: profile_setup.php');
+                    } else {
+                        // Profile exists, proceed to dashboard
+                        header('Location: dashboard.php');
+                    }
+                } else {
+                    echo "Recruiters are not allowed to login from this page.";
+                }
+                exit();
+            } else {
+                $error = "Invalid email or password!";
+            }
         }
-        exit();
     } else {
         $error = "Invalid email or password!";
     }

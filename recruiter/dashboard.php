@@ -135,14 +135,15 @@ function getCalendarEvents($conn)
     return $events;
 }
 
-// Fetch and prepare data for charts
-$monthly_jobs = getTotalJobs($conn, '1 MONTH');
+// Initial data fetch for the default interval
+$default_interval = '1 MONTH';
+$monthly_jobs = getTotalJobs($conn, $default_interval);
 $quarterly_jobs = getTotalJobs($conn, '3 MONTH');
 $yearly_jobs = getTotalJobs($conn, '12 MONTH');
 
 $application_metrics = getApplicationMetrics($conn);
 $referrals = getReferrals($conn);
-$sourcing_analytics = getSourcingAnalytics($conn); // Added sourcing analytics
+$sourcing_analytics = getSourcingAnalytics($conn);
 $pipeline_overview = getPipelineOverview($conn);
 $calendar_events = getCalendarEvents($conn);
 
@@ -171,6 +172,16 @@ $calendar_events = getCalendarEvents($conn);
         <div class="container-fluid">
             <h2>Welcome, <?php echo htmlspecialchars($_SESSION['email']); ?>! You are logged in as a Recruiter.</h2>
             <p>This is your recruiter dashboard where you can manage users, track applicants, and more.</p>
+
+            <!-- Dropdown for selecting the date range -->
+            <div class="form-group">
+                <label for="dateRange">Select Date Range:</label>
+                <select id="dateRange" class="form-control" onchange="updateCharts()">
+                    <option value="1 MONTH">Monthly</option>
+                    <option value="3 MONTH">Quarterly</option>
+                    <option value="12 MONTH">Yearly</option>
+                </select>
+            </div>
 
             <div class="row">
                 <div class="col-md-6 chart-container">
@@ -208,88 +219,95 @@ $calendar_events = getCalendarEvents($conn);
     </div>
 
     <script>
-        // Total Jobs Data
-        const totalJobsData = {
-            labels: ['Monthly', 'Quarterly', 'Yearly'],
-            datasets: [{
-                label: 'Total Jobs',
-                data: [<?php echo $monthly_jobs; ?>, <?php echo $quarterly_jobs; ?>, <?php echo $yearly_jobs; ?>],
-                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
-            }]
-        };
+        let currentInterval = '1 MONTH';
 
-        // Application Metrics Data
-        const applicationMetricsData = {
-            labels: ['Applied', 'Offered', 'Deployed', 'Rejected', 'Withdrawn'],
-            datasets: [{
-                label: 'Application Success Rate',
-                data: [
-                    <?php echo $application_metrics['applied'] ?? 0; ?>,
-                    <?php echo $application_metrics['offered'] ?? 0; ?>,
-                    <?php echo $application_metrics['deployed'] ?? 0; ?>,
-                    <?php echo $application_metrics['rejected'] ?? 0; ?>,
-                    <?php echo $application_metrics['withdrawn'] ?? 0; ?>
-                ],
-                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#e74a3b', '#f6c23e']
-            }]
-        };
+        function updateCharts() {
+            currentInterval = document.getElementById('dateRange').value;
 
-        // Candidate Referrals Data
-        const referralsData = {
-            labels: Object.keys(<?php echo json_encode($referrals); ?>),
-            datasets: [{
-                label: 'Candidate Referrals',
-                data: Object.values(<?php echo json_encode($referrals); ?>),
-                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
-            }]
-        };
+            // Fetch data using AJAX
+            fetch(`get_chart_data.php?interval=${currentInterval}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update charts with new data
+                    updateTotalJobsChart(data.totalJobs);
+                    updateApplicationMetricsChart(data.applicationMetrics);
+                    updateReferralsChart(data.referrals);
+                    updatePipelineChart(data.pipelineOverview);
+                    updateSourcingAnalyticsChart(data.sourcingAnalytics);
+                });
+        }
 
-        // Pipeline Overview Data
-        const pipelineOverviewData = {
-            labels: ['Screened', 'Interviewed', 'Offered', 'Placed', 'Rejected'],
-            datasets: [{
-                label: 'Pipeline Overview',
-                data: [
-                    <?php echo $pipeline_overview['screened'] ?? 0; ?>,
-                    <?php echo $pipeline_overview['interviewed'] ?? 0; ?>,
-                    <?php echo $pipeline_overview['offered'] ?? 0; ?>,
-                    <?php echo $pipeline_overview['placed'] ?? 0; ?>,
-                    <?php echo $pipeline_overview['rejected'] ?? 0; ?>
-                ],
-                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#e74a3b', '#f6c23e']
-            }]
-        };
-
-        // Sourcing Analytics Data
-        const sourcingAnalyticsData = {
-            labels: Object.keys(<?php echo json_encode($sourcing_analytics); ?>),
-            datasets: [{
-                label: 'Sourcing Analytics',
-                data: Object.values(<?php echo json_encode($sourcing_analytics); ?>),
-                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e']
-            }]
-        };
-
-        // Initialize Charts
-        new Chart(document.getElementById('totalJobsChart').getContext('2d'), {
+        // Initialize Charts with initial data
+        const totalJobsChart = new Chart(document.getElementById('totalJobsChart').getContext('2d'), {
             type: 'bar',
-            data: totalJobsData
+            data: {
+                labels: ['Monthly', 'Quarterly', 'Yearly'],
+                datasets: [{
+                    label: 'Total Jobs',
+                    data: [<?php echo $monthly_jobs; ?>, <?php echo $quarterly_jobs; ?>, <?php echo $yearly_jobs; ?>],
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
+                }]
+            }
         });
-        new Chart(document.getElementById('applicationMetricsChart').getContext('2d'), {
+
+        const applicationMetricsChart = new Chart(document.getElementById('applicationMetricsChart').getContext('2d'), {
             type: 'pie',
-            data: applicationMetricsData
+            data: {
+                labels: ['Applied', 'Offered', 'Deployed', 'Rejected', 'Withdrawn'],
+                datasets: [{
+                    label: 'Application Success Rate',
+                    data: [
+                        <?php echo $application_metrics['applied'] ?? 0; ?>,
+                        <?php echo $application_metrics['offered'] ?? 0; ?>,
+                        <?php echo $application_metrics['deployed'] ?? 0; ?>,
+                        <?php echo $application_metrics['rejected'] ?? 0; ?>,
+                        <?php echo $application_metrics['withdrawn'] ?? 0; ?>
+                    ],
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#e74a3b', '#f6c23e']
+                }]
+            }
         });
-        new Chart(document.getElementById('referralsChart').getContext('2d'), {
+
+        const referralsChart = new Chart(document.getElementById('referralsChart').getContext('2d'), {
             type: 'doughnut',
-            data: referralsData
+            data: {
+                labels: Object.keys(<?php echo json_encode($referrals); ?>),
+                datasets: [{
+                    label: 'Candidate Referrals',
+                    data: Object.values(<?php echo json_encode($referrals); ?>),
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
+                }]
+            }
         });
-        new Chart(document.getElementById('pipelineChart').getContext('2d'), {
+
+        const pipelineChart = new Chart(document.getElementById('pipelineChart').getContext('2d'), {
             type: 'bar',
-            data: pipelineOverviewData
+            data: {
+                labels: ['Screened', 'Interviewed', 'Offered', 'Placed', 'Rejected'],
+                datasets: [{
+                    label: 'Pipeline Overview',
+                    data: [
+                        <?php echo $pipeline_overview['screened'] ?? 0; ?>,
+                        <?php echo $pipeline_overview['interviewed'] ?? 0; ?>,
+                        <?php echo $pipeline_overview['offered'] ?? 0; ?>,
+                        <?php echo $pipeline_overview['placed'] ?? 0; ?>,
+                        <?php echo $pipeline_overview['rejected'] ?? 0; ?>
+                    ],
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#e74a3b', '#f6c23e']
+                }]
+            }
         });
-        new Chart(document.getElementById('sourcingAnalyticsChart').getContext('2d'), {
+
+        const sourcingAnalyticsChart = new Chart(document.getElementById('sourcingAnalyticsChart').getContext('2d'), {
             type: 'doughnut',
-            data: sourcingAnalyticsData
+            data: {
+                labels: Object.keys(<?php echo json_encode($sourcing_analytics); ?>),
+                datasets: [{
+                    label: 'Sourcing Analytics',
+                    data: Object.values(<?php echo json_encode($sourcing_analytics); ?>),
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e']
+                }]
+            }
         });
 
         // FullCalendar setup
@@ -301,9 +319,39 @@ $calendar_events = getCalendarEvents($conn);
             });
             calendar.render();
         });
+
+        function updateTotalJobsChart(newData) {
+            totalJobsChart.data.datasets[0].data = newData;
+            totalJobsChart.update();
+        }
+
+        function updateApplicationMetricsChart(newData) {
+            applicationMetricsChart.data.datasets[0].data = newData;
+            applicationMetricsChart.update();
+        }
+
+        function updateReferralsChart(newData) {
+            referralsChart.data.datasets[0].data = newData;
+            referralsChart.update();
+        }
+
+        function updatePipelineChart(newData) {
+            pipelineChart.data.datasets[0].data = newData;
+            pipelineChart.update();
+        }
+
+        function updateSourcingAnalyticsChart(newData) {
+            sourcingAnalyticsChart.data.datasets[0].data = newData;
+            sourcingAnalyticsChart.update();
+        }
     </script>
 
     <?php include 'footer.php'; ?>
 </body>
 
 </html>
+
+<?php
+// Close the database connection
+$conn->close();
+?>

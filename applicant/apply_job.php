@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         $timestamp = date('Ymd_His');
         $new_file_name = $user_id . '-' . $profile_id . '-' . $timestamp . '-job_' . $job_id . '.' . $file_type;
-        $target_file = "../applicant/uploads/" . $new_file_name;
+        $target_file = $uploadDir . $new_file_name;
 
         // Move the uploaded file to the target directory
         if (move_uploaded_file($file['tmp_name'], $target_file)) {

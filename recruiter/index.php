@@ -147,11 +147,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php if (isset($error)) {
             echo "<p class='error'>$error</p>";
         } ?>
-
-        <div class="login-footer">
-            <p>Don't have an account? <a href="signup.php">Sign Up</a></p>
-            <p><a href="forgot_password.php">Forgot Password?</a></p>
-        </div>
     </div>
 </body>
 
