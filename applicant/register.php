@@ -26,9 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Get the last inserted user_id
             $user_id = $conn->insert_id;
 
-            // Automatically create a referral entry for the new user with NULL referrer_id and no points if no referral code is provided
-            $insert_new_user_referral_sql = "INSERT INTO referrals (referred_user_id, referrer_user_id, referral_code, points) VALUES (?, NULL, NULL, 0)";
-            prepare_and_execute($conn, $insert_new_user_referral_sql, 'i', $user_id);
+            // Initialize referral details
+            $referrer_user_id = null;
+            $points = 0;
 
             // Check if a referral code was provided during registration
             if (!empty($referral_code)) {
@@ -41,18 +41,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $referrer_row = $referrer_result->fetch_assoc();
                     $referrer_user_id = $referrer_row['user_id'];
 
-                    // Update the new user's referral record to set the referrer_id and store the referral code
-                    $update_referral_sql = "UPDATE referrals SET referrer_user_id = ?, referral_code = ? WHERE referred_user_id = ?";
-                    prepare_and_execute($conn, $update_referral_sql, 'isi', $referrer_user_id, $referral_code, $user_id);
-
-                    // Increment the points for the referrer in their own referral record
-                    $increment_points_sql = "UPDATE referrals SET points = points + 1 WHERE referred_user_id = ?";
+                    // Increment the points for the referrer
+                    $increment_points_sql = "UPDATE referrals SET points = points + 1 WHERE referrer_user_id = ?";
                     prepare_and_execute($conn, $increment_points_sql, 'i', $referrer_user_id);
+                    $points = 1;
                 } else {
                     $error = "Invalid referral code.";
                 }
             }
 
+            // Insert the referral record for the new user
+            $insert_new_user_referral_sql = "INSERT INTO referrals (referred_user_id, referrer_user_id, referral_code, points) VALUES (?, ?, ?, ?)";
+            prepare_and_execute($conn, $insert_new_user_referral_sql, 'iisi', $user_id, $referrer_user_id, $referral_code, $points);
 
             // Store the session
             $_SESSION['email'] = $email;

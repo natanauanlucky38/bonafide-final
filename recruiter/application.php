@@ -97,6 +97,18 @@ while ($job = $jobs_result->fetch_assoc()) {
             margin-top: 30px;
         }
 
+        /* Toggle Button Styling */
+        .toggle-btn {
+            cursor: pointer;
+            color: #007bff;
+            font-weight: bold;
+            border: none;
+            background: none;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
         /* Job card styling */
         .job-card {
             background: #fff;
@@ -143,8 +155,36 @@ while ($job = $jobs_result->fetch_assoc()) {
         }
     </style>
     <script>
-        // Sorting function
-        function sortCards(sortBy, type) {
+        // Toggle visibility of job sections
+        function toggleSection(status) {
+            const section = document.getElementById(`section-${status.toLowerCase()}`);
+            const toggleBtn = document.getElementById(`toggle-btn-${status.toLowerCase()}`);
+
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                toggleBtn.textContent = 'Hide ' + status + ' Jobs';
+            } else {
+                section.style.display = 'none';
+                toggleBtn.textContent = 'Show ' + status + ' Jobs';
+            }
+        }
+
+        // Toggle visibility of applications within each job using dropdown
+        function toggleApplications(jobId) {
+            const appSection = document.getElementById(`application-section-${jobId}`);
+            const toggleAppBtn = document.getElementById(`toggle-app-btn-${jobId}`);
+
+            if (appSection.style.display === 'none') {
+                appSection.style.display = 'block';
+                toggleAppBtn.textContent = 'Hide Applications';
+            } else {
+                appSection.style.display = 'none';
+                toggleAppBtn.textContent = 'Show Applications';
+            }
+        }
+
+        function onSortChange(selectElement, type) {
+            const sortBy = selectElement.value;
             const container = document.getElementById(type + '-cards');
             const cards = Array.from(container.getElementsByClassName(type + '-card'));
 
@@ -152,9 +192,7 @@ while ($job = $jobs_result->fetch_assoc()) {
                 const aValue = a.getAttribute('data-' + sortBy).toLowerCase();
                 const bValue = b.getAttribute('data-' + sortBy).toLowerCase();
 
-                if (aValue < bValue) return -1;
-                if (aValue > bValue) return 1;
-                return 0;
+                return aValue.localeCompare(bValue);
             });
 
             // Clear container and re-append sorted cards
@@ -162,12 +200,6 @@ while ($job = $jobs_result->fetch_assoc()) {
             cards.forEach(card => container.appendChild(card));
         }
 
-        function onSortChange(selectElement, type) {
-            const sortBy = selectElement.value;
-            sortCards(sortBy, type);
-        }
-
-        // Redirect to process.php with application_id
         function redirectToProcess(applicationId) {
             window.location.href = 'view_application.php?application_id=' + applicationId;
         }
@@ -180,76 +212,76 @@ while ($job = $jobs_result->fetch_assoc()) {
 
         <?php foreach (['ACTIVE', 'ARCHIVED', 'DRAFT'] as $status): ?>
             <div class="status-section">
-                <h2><?php echo ucfirst(strtolower($status)); ?> Jobs</h2>
+                <button id="toggle-btn-<?php echo strtolower($status); ?>" class="toggle-btn" onclick="toggleSection('<?php echo $status; ?>')">
+                    Show <?php echo ucfirst(strtolower($status)); ?> Jobs
+                </button>
+                <div id="section-<?php echo strtolower($status); ?>" style="display: none;">
+                    <h2><?php echo ucfirst(strtolower($status)); ?> Jobs</h2>
 
-                <!-- Dropdown for Sorting Job Cards in this Section -->
-                <div class="sort-dropdown">
-                    Sort by:
-                    <select onchange="onSortChange(this, 'job-<?php echo strtolower($status); ?>')">
-                        <option value="job_title">Title</option>
-                        <option value="company">Company</option>
-                        <option value="location">Location</option>
-                        <option value="openings">Openings</option>
-                        <option value="created_at">Created Date</option>
-                        <option value="deadline">Deadline</option>
-                    </select>
-                </div>
+                    <!-- Dropdown for Sorting Job Cards in this Section -->
+                    <div class="sort-dropdown">
+                        Sort by:
+                        <select onchange="onSortChange(this, 'job-<?php echo strtolower($status); ?>')">
+                            <option value="job_title">Title</option>
+                            <option value="company">Company</option>
+                            <option value="location">Location</option>
+                            <option value="openings">Openings</option>
+                            <option value="created_at">Created Date</option>
+                            <option value="deadline">Deadline</option>
+                        </select>
+                    </div>
 
-                <div id="job-<?php echo strtolower($status); ?>-cards">
-                    <?php foreach ($jobs[$status] as $job): ?>
-                        <?php $job_id = $job['job_id']; ?>
-                        <div class="job-card job-<?php echo strtolower($status); ?>-card"
-                            data-job_title="<?php echo htmlspecialchars($job['job_title']); ?>"
-                            data-company="<?php echo htmlspecialchars($job['company']); ?>"
-                            data-location="<?php echo htmlspecialchars($job['location']); ?>"
-                            data-openings="<?php echo $job['openings']; ?>"
-                            data-created_at="<?php echo $job['created_at']; ?>"
-                            data-deadline="<?php echo $job['deadline']; ?>">
+                    <div id="job-<?php echo strtolower($status); ?>-cards">
+                        <?php foreach ($jobs[$status] as $job): ?>
+                            <?php $job_id = $job['job_id']; ?>
+                            <div class="job-card job-<?php echo strtolower($status); ?>-card"
+                                data-job_title="<?php echo htmlspecialchars($job['job_title']); ?>"
+                                data-company="<?php echo htmlspecialchars($job['company']); ?>"
+                                data-location="<?php echo htmlspecialchars($job['location']); ?>"
+                                data-openings="<?php echo $job['openings']; ?>"
+                                data-created_at="<?php echo $job['created_at']; ?>"
+                                data-deadline="<?php echo $job['deadline']; ?>">
 
-                            <div class="job-title"><?php echo htmlspecialchars($job['job_title']); ?></div>
-                            <div class="job-details">
-                                <span>Company: <?php echo htmlspecialchars($job['company']); ?></span>
-                                <span>Location: <?php echo htmlspecialchars($job['location']); ?></span>
-                                <span>Openings: <?php echo $job['openings']; ?></span>
-                                <span>Created: <?php echo $job['created_at']; ?></span>
-                                <span>Deadline: <?php echo $job['deadline']; ?></span>
-                            </div>
+                                <div class="job-title"><?php echo htmlspecialchars($job['job_title']); ?></div>
+                                <div class="job-details">
+                                    <span>Company: <?php echo htmlspecialchars($job['company']); ?></span>
+                                    <span>Location: <?php echo htmlspecialchars($job['location']); ?></span>
+                                    <span>Openings: <?php echo $job['openings']; ?></span>
+                                    <span>Created: <?php echo $job['created_at']; ?></span>
+                                    <span>Deadline: <?php echo $job['deadline']; ?></span>
+                                </div>
 
-                            <!-- Applications for this Job -->
-                            <div class="sort-dropdown">
-                                Sort Applications by:
-                                <select onchange="onSortChange(this, 'application-<?php echo $job_id; ?>')">
-                                    <option value="applicant_name">Applicant Name</option>
-                                    <option value="application_status">Application Status</option>
-                                    <option value="screening_result">Screening Result</option>
-                                </select>
-                            </div>
-                            <div id="application-<?php echo $job_id; ?>-cards">
-                                <?php foreach (['SCREENING', 'INTERVIEW', 'OFFERED', 'DEPLOYED', 'REJECTED', 'WITHDRAWN'] as $appStatus): ?>
-                                    <h4><?php echo ucfirst(strtolower($appStatus)); ?> Applications</h4>
-                                    <?php if (isset($applications[$job_id]['applications'][$appStatus])): ?>
-                                        <?php foreach ($applications[$job_id]['applications'][$appStatus] as $application): ?>
-                                            <div class="application-card application-<?php echo $job_id; ?>-card"
-                                                data-applicant_name="<?php echo htmlspecialchars($application['applicant_fname'] . ' ' . $application['applicant_lname']); ?>"
-                                                data-application_status="<?php echo htmlspecialchars($application['display_status']); ?>"
-                                                data-screening_result="<?php echo $application['screening_result'] ?? 'Pending'; ?>"
-                                                onclick="redirectToProcess(<?php echo $application['application_id']; ?>)">
-                                                <div class="applicant-name">
-                                                    <?php echo htmlspecialchars($application['applicant_fname'] . ' ' . $application['applicant_lname']); ?>
+                                <!-- Dropdown for Applications -->
+                                <button id="toggle-app-btn-<?php echo $job_id; ?>" class="toggle-btn" onclick="toggleApplications(<?php echo $job_id; ?>)">
+                                    Show Applications
+                                </button>
+
+                                <!-- Applications for this Job -->
+                                <div id="application-section-<?php echo $job_id; ?>" style="display: none;">
+                                    <?php foreach (['SCREENING', 'INTERVIEW', 'OFFERED', 'DEPLOYED', 'REJECTED', 'WITHDRAWN'] as $appStatus): ?>
+                                        <h4><?php echo ucfirst(strtolower($appStatus)); ?> Applications</h4>
+                                        <?php if (isset($applications[$job_id]['applications'][$appStatus])): ?>
+                                            <?php foreach ($applications[$job_id]['applications'][$appStatus] as $application): ?>
+                                                <div class="application-card application-<?php echo $job_id; ?>-card"
+                                                    data-applicant_name="<?php echo htmlspecialchars($application['applicant_fname'] . ' ' . $application['applicant_lname']); ?>"
+                                                    data-application_status="<?php echo htmlspecialchars($application['display_status']); ?>"
+                                                    data-screening_result="<?php echo $application['screening_result'] ?? 'Pending'; ?>"
+                                                    onclick="redirectToProcess(<?php echo $application['application_id']; ?>)">
+                                                    <div class="applicant-name">
+                                                        <?php echo htmlspecialchars($application['applicant_fname'] . ' ' . $application['applicant_lname']); ?>
+                                                    </div>
+                                                    <p>Status: <?php echo htmlspecialchars($application['display_status']); ?></p>
+                                                    <p>Screening Result: <?php echo $application['screening_result'] ?? 'Pending'; ?></p>
                                                 </div>
-                                                <p>Status: <?php echo htmlspecialchars($application['display_status']); ?></p>
-                                                <p>Screening Result: <?php echo $application['screening_result'] ?? 'Pending'; ?></p>
-                                                <p>
-                                                </p>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <p class="no-applications">No applications available for this status.</p>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <p class="no-applications">No applications available for this status.</p>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
-                        </div>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
         <?php endforeach; ?>

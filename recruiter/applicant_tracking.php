@@ -189,7 +189,34 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
             color: #007bff;
             text-decoration: none;
         }
+
+        /* Toggle Button Styling */
+        .toggle-btn {
+            cursor: pointer;
+            color: #007bff;
+            font-weight: bold;
+            border: none;
+            background: none;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        /* Applicant info toggle section */
+        .applicant-info-section {
+            display: none;
+        }
     </style>
+    <script>
+        // Toggle visibility of applicant information for each job
+        function toggleApplicantInfo(jobId) {
+            const appInfoSection = document.getElementById(`applicant-info-section-${jobId}`);
+            if (appInfoSection.style.display === 'none') {
+                appInfoSection.style.display = 'block';
+            } else {
+                appInfoSection.style.display = 'none';
+            }
+        }
+    </script>
 </head>
 
 <body>
@@ -268,39 +295,47 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
                     </div>
                 </div>
 
+                <!-- Toggle Button for Applicant Information -->
+                <button class="toggle-btn" onclick="toggleApplicantInfo(<?php echo $job['job_id']; ?>)">
+                    Show Applicant Information
+                </button>
+
                 <!-- Applicant Information Section -->
-                <div class="applicant-info">
-                    <h3>Applicant Information</h3>
+                <div id="applicant-info-section-<?php echo $job['job_id']; ?>" class="applicant-info-section">
+                    <div class="applicant-info">
+                        <h3>Applicant Information</h3>
 
-                    <?php
-                    // Fetch applicants for the current job, including qualifications and skills
-                    $applicant_sql = "
-                    SELECT p.fname, p.lname, a.application_id, a.resume, a.referral_source,
-                           GROUP_CONCAT(CASE WHEN pd.qualifications = 'qualification' THEN pd.detail_value END) AS qualifications,
-                           GROUP_CONCAT(CASE WHEN pd.skills = 'skill' THEN pd.detail_value END) AS skills
-                    FROM applications AS a
-                    INNER JOIN profiles AS p ON a.profile_id = p.profile_id
-                    LEFT JOIN profile_details AS pd ON pd.profile_id = p.profile_id
-                    WHERE a.job_id = ?
-                    GROUP BY a.application_id
-                ";
-                    $applicant_stmt = $conn->prepare($applicant_sql);
-                    $applicant_stmt->bind_param("i", $job['job_id']);
-                    $applicant_stmt->execute();
-                    $applicant_result = $applicant_stmt->get_result();
+                        <?php
+                        // Fetch applicants for the current job, including qualifications and skills
+                        $applicant_sql = "
+                        SELECT p.fname, p.lname, a.application_id, a.resume, a.referral_source,
+                               GROUP_CONCAT(CASE WHEN pd.qualifications = 'qualification' THEN pd.detail_value END) AS qualifications,
+                               GROUP_CONCAT(CASE WHEN pd.skills = 'skill' THEN pd.detail_value END) AS skills
+                        FROM applications AS a
+                        INNER JOIN profiles AS p ON a.profile_id = p.profile_id
+                        LEFT JOIN profile_details AS pd ON pd.profile_id = p.profile_id
+                        WHERE a.job_id = ?
+                        GROUP BY a.application_id
+                    ";
+                        $applicant_stmt = $conn->prepare($applicant_sql);
+                        $applicant_stmt->bind_param("i", $job['job_id']);
+                        $applicant_stmt->execute();
+                        $applicant_stmt->store_result();
+                        $applicant_stmt->bind_result($fname, $lname, $application_id, $resume, $referral_source, $qualifications, $skills);
 
-                    while ($applicant = $applicant_result->fetch_assoc()):
-                    ?>
-                        <div class="applicant-details">
-                            <div class="applicant-name"><strong>Name:</strong> <?php echo htmlspecialchars($applicant['fname'] . ' ' . $applicant['lname']); ?></div>
-                            <div class="applicant-resume"><strong>View Application:</strong>
-                                <a href="view_application.php?application_id=<?php echo htmlspecialchars($applicant['application_id']); ?>">View Application</a>
+                        while ($applicant_stmt->fetch()):
+                        ?>
+                            <div class="applicant-details">
+                                <div class="applicant-name"><strong>Name:</strong> <?php echo htmlspecialchars($fname . ' ' . $lname); ?></div>
+                                <div class="applicant-resume"><strong>View Application:</strong>
+                                    <a href="view_application.php?application_id=<?php echo htmlspecialchars($application_id); ?>">View Application</a>
+                                </div>
+                                <div class="applicant-referral"><strong>Referral:</strong> <?php echo htmlspecialchars($referral_source); ?></div>
+                                <div class="applicant-qualifications"><strong>Qualifications:</strong> <?php echo htmlspecialchars($qualifications); ?></div>
+                                <div class="applicant-skills"><strong>Skills:</strong> <?php echo htmlspecialchars($skills); ?></div>
                             </div>
-                            <div class="applicant-referral"><strong>Referral:</strong> <?php echo htmlspecialchars($applicant['referral_source']); ?></div>
-                            <div class="applicant-qualifications"><strong>Qualifications:</strong> <?php echo htmlspecialchars($applicant['qualifications']); ?></div>
-                            <div class="applicant-skills"><strong>Skills:</strong> <?php echo htmlspecialchars($applicant['skills']); ?></div>
-                        </div>
-                    <?php endwhile; ?>
+                        <?php endwhile; ?>
+                    </div>
                 </div>
             </div>
         <?php endwhile; ?>

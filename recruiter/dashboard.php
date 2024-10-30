@@ -115,7 +115,8 @@ function getCalendarEvents($conn)
     while ($job = mysqli_fetch_assoc($jobResult)) {
         $events[] = [
             'title' => 'Deadline: ' . $job['title'],
-            'start' => $job['date']
+            'start' => $job['date'],
+            'url' => 'view_job.php?job_title=' . urlencode($job['title'])  // Make this clickable
         ];
     }
 
@@ -128,7 +129,8 @@ function getCalendarEvents($conn)
     while ($interview = mysqli_fetch_assoc($interviewResult)) {
         $events[] = [
             'title' => 'Interview - ' . $interview['type'],
-            'start' => $interview['date']
+            'start' => $interview['date'],
+            'url' => 'view_interview.php?application_id=' . $interview['application_id']  // Make this clickable
         ];
     }
 
@@ -160,9 +162,58 @@ $calendar_events = getCalendarEvents($conn);
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
     <style>
-        .chart-container {
+        /* General Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+        }
+
+        .container-fluid {
             padding: 20px;
-            margin-top: 20px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .content-area {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        /* Chart Container Styling */
+        .chart-container {
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container h4 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        /* Compact Grid for Charts */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .col-md-6 {
+            flex: 1 1 48%;
+            min-width: 320px;
+        }
+
+        /* Calendar Styling */
+        #calendar {
+            padding: 10px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
@@ -171,7 +222,7 @@ $calendar_events = getCalendarEvents($conn);
     <div class="content-area">
         <div class="container-fluid">
             <h2>Welcome, <?php echo htmlspecialchars($_SESSION['email']); ?>! You are logged in as a Recruiter.</h2>
-            <p>This is your recruiter dashboard where you can manage users, track applicants, and more.</p>
+            <p>Manage users, track applicants, and access analytics from your dashboard.</p>
 
             <!-- Dropdown for selecting the date range -->
             <div class="form-group">
@@ -183,6 +234,7 @@ $calendar_events = getCalendarEvents($conn);
                 </select>
             </div>
 
+            <!-- Charts and Calendar in a Compact Grid -->
             <div class="row">
                 <div class="col-md-6 chart-container">
                     <h4>Total Jobs Posted</h4>
@@ -192,9 +244,6 @@ $calendar_events = getCalendarEvents($conn);
                     <h4>Application Success Rate</h4>
                     <canvas id="applicationMetricsChart"></canvas>
                 </div>
-            </div>
-
-            <div class="row">
                 <div class="col-md-6 chart-container">
                     <h4>Candidate Referrals</h4>
                     <canvas id="referralsChart"></canvas>
@@ -203,9 +252,6 @@ $calendar_events = getCalendarEvents($conn);
                     <h4>Pipeline Overview</h4>
                     <canvas id="pipelineChart"></canvas>
                 </div>
-            </div>
-
-            <div class="row">
                 <div class="col-md-6 chart-container">
                     <h4>Sourcing Analytics</h4>
                     <canvas id="sourcingAnalyticsChart"></canvas>
@@ -312,10 +358,14 @@ $calendar_events = getCalendarEvents($conn);
 
         // FullCalendar setup
         document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('calendar');
-            var calendar = new FullCalendar.Calendar(calendarEl, {
+            const calendarEl = document.getElementById('calendar');
+            const calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
-                events: <?php echo json_encode($calendar_events); ?>
+                events: <?php echo json_encode($calendar_events); ?>,
+                eventClick: function(info) {
+                    // Open the URL of the clicked event
+                    window.location.href = info.event.url;
+                }
             });
             calendar.render();
         });

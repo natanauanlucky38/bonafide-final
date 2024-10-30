@@ -20,18 +20,21 @@ if (!isset($_GET['application_id'])) {
 $application_id = (int)$_GET['application_id']; // Sanitize application_id
 
 // Fetch application details with job title, applicant information, user_id, and resume path
-$application_sql = "
-    SELECT a.*, p.user_id, p.fname AS applicant_fname, p.lname AS applicant_lname, j.job_title, j.location, p.profile_id, j.job_id, j.company
+$application_sql = $application_sql = "
+    SELECT a.*, 
+           p.user_id, p.fname AS applicant_fname, p.lname AS applicant_lname, j.job_title, j.location, 
+           p.profile_id, j.job_id, j.company,p.phone, p.address, p.civil_status, p.linkedin_link, p.facebook_link, 
+           p.education_level, p.school_graduated, p.year_graduated, p.degree,u.email
     FROM applications a
     JOIN profiles p ON a.profile_id = p.profile_id
     JOIN job_postings j ON a.job_id = j.job_id
-    WHERE a.application_id = ?
-";
+    JOIN users u ON p.user_id = u.user_id
+    WHERE a.application_id = ?";
+
 $stmt = $conn->prepare($application_sql);
 $stmt->bind_param("i", $application_id);
 $stmt->execute();
 $application_result = $stmt->get_result();
-
 
 if ($application_result->num_rows == 0) {
     echo "Application not found.";
@@ -320,6 +323,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
         <p><strong>Applicant Name:</strong> <?php echo htmlspecialchars($application['applicant_fname'] . ' ' . $application['applicant_lname']); ?></p>
         <p><strong>Application Status:</strong> <?php echo htmlspecialchars($application['application_status']); ?></p>
         <p><strong>Resume:</strong> <a href="../applicant/uploads/<?php echo htmlspecialchars($application['resume']); ?>" download>Download Resume</a></p>
+
+        <h3>Applicant Profile Details</h3>
+        <p><strong>Email:</strong> <?php echo htmlspecialchars($application['email']); ?></p>
+        <p><strong>Phone:</strong> <?php echo htmlspecialchars($application['phone']); ?></p>
+        <p><strong>Address:</strong> <?php echo htmlspecialchars($application['address']); ?></p>
 
         <h3>Questionnaire Responses</h3>
         <table>

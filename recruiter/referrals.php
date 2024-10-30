@@ -14,11 +14,21 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
 // Fetch all referrals, grouping by referrer and excluding duplicate referrer-referred pairs
 $referrals_sql = "
     SELECT DISTINCT r.referral_id, r.referral_code, r.points, 
-           p_referred.user_id AS referred_user_id, p_referred.fname AS referred_fname, p_referred.lname AS referred_lname, 
-           p_referrer.user_id AS referrer_user_id, p_referrer.fname AS referrer_fname, p_referrer.lname AS referrer_lname
+           p_referred.user_id AS referred_user_id, 
+           p_referred.fname AS referred_fname, 
+           p_referred.lname AS referred_lname, 
+           p_referred.phone AS referred_phone,
+           u_referred.email AS referred_email,  
+           p_referrer.user_id AS referrer_user_id, 
+           p_referrer.fname AS referrer_fname, 
+           p_referrer.lname AS referrer_lname,
+           p_referrer.phone AS referrer_phone,
+           u_referrer.email AS referrer_email  
     FROM referrals r
     JOIN profiles p_referred ON r.referred_user_id = p_referred.user_id
     JOIN profiles p_referrer ON r.referrer_user_id = p_referrer.user_id
+    JOIN users u_referred ON u_referred.user_id = p_referred.user_id
+    JOIN users u_referrer ON u_referrer.user_id = p_referrer.user_id
     WHERE r.referred_user_id != r.referrer_user_id
     ORDER BY p_referrer.user_id, r.referral_id DESC
 ";
@@ -35,6 +45,8 @@ $referrals_result = $stmt->get_result();
 $referrals_data = [];
 while ($row = $referrals_result->fetch_assoc()) {
     $referrals_data[$row['referrer_user_id']]['referrer_name'] = $row['referrer_fname'] . ' ' . $row['referrer_lname'];
+    $referrals_data[$row['referrer_user_id']]['referrer_phone'] = $row['referrer_phone'];
+    $referrals_data[$row['referrer_user_id']]['referrer_email'] = $row['referrer_email'];
     $referrals_data[$row['referrer_user_id']]['referrals'][] = $row;
 }
 ?>
@@ -101,10 +113,16 @@ while ($row = $referrals_result->fetch_assoc()) {
         <?php foreach ($referrals_data as $referrer_id => $referrer_data): ?>
             <div class="referrer-section">
                 <h2>Referrer: <?php echo htmlspecialchars($referrer_data['referrer_name']); ?></h2>
+                <div class="profile-details">
+                    <p><strong>Contact Phone:</strong> <?php echo htmlspecialchars($referrer_data['referrer_phone']); ?></p>
+                    <p><strong>Email:</strong> <?php echo htmlspecialchars($referrer_data['referrer_email']); ?></p>
+                </div>
                 <table>
                     <thead>
                         <tr>
                             <th>Referred Person</th>
+                            <th>Contact Phone</th>
+                            <th>Email</th>
                             <th>Referral Code</th>
                             <th>Points Earned</th>
                         </tr>
@@ -113,6 +131,8 @@ while ($row = $referrals_result->fetch_assoc()) {
                         <?php foreach ($referrer_data['referrals'] as $referral): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($referral['referred_fname'] . ' ' . $referral['referred_lname']); ?></td>
+                                <td><?php echo htmlspecialchars($referral['referred_phone']); ?></td>
+                                <td><?php echo htmlspecialchars($referral['referred_email']); ?></td>
                                 <td><?php echo htmlspecialchars($referral['referral_code']); ?></td>
                                 <td><?php echo htmlspecialchars($referral['points']); ?></td>
                             </tr>
