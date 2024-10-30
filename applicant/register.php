@@ -26,39 +26,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Get the last inserted user_id
             $user_id = $conn->insert_id;
 
-            // Automatically create a referral entry for the new user for future use
-            $insert_new_user_referral_sql = "INSERT INTO referrals (referred_user_id, referrer_user_id, points) VALUES (?, ?, 0)";
-            prepare_and_execute($conn, $insert_new_user_referral_sql, 'ii', $user_id, $user_id);
+            // Automatically create a referral entry for the new user with NULL referrer_id and no points if no referral code is provided
+            $insert_new_user_referral_sql = "INSERT INTO referrals (referred_user_id, referrer_user_id, referral_code, points) VALUES (?, NULL, NULL, 0)";
+            prepare_and_execute($conn, $insert_new_user_referral_sql, 'i', $user_id);
 
-            // Insert referral information if a referral code is provided
+            // Check if a referral code was provided during registration
             if (!empty($referral_code)) {
-                // Get the referrer user ID based on referral code
+                // Get the referrer user ID based on the provided referral code
                 $referrer_stmt = prepare_and_execute($conn, "SELECT user_id FROM profiles WHERE referral_code = ?", 's', $referral_code);
                 $referrer_result = $referrer_stmt->get_result();
 
                 if ($referrer_result->num_rows > 0) {
+                    // Referral code is valid
                     $referrer_row = $referrer_result->fetch_assoc();
                     $referrer_user_id = $referrer_row['user_id'];
 
-                    // Check if there is already a record for the referrer in the referrals table
-                    $check_referral_sql = "SELECT * FROM referrals WHERE referrer_user_id = ? AND referral_code = ?";
-                    $check_referral_stmt = prepare_and_execute($conn, $check_referral_sql, 'is', $referrer_user_id, $referral_code);
-                    $check_referral_result = $check_referral_stmt->get_result();
+                    // Update the new user's referral record to set the referrer_id and store the referral code
+                    $update_referral_sql = "UPDATE referrals SET referrer_user_id = ?, referral_code = ? WHERE referred_user_id = ?";
+                    prepare_and_execute($conn, $update_referral_sql, 'isi', $referrer_user_id, $referral_code, $user_id);
 
-                    // If no record exists, create one for this specific referral
-                    if ($check_referral_result->num_rows === 0) {
-                        // Insert new referral record for the referrer
-                        $insert_referral_sql = "INSERT INTO referrals (referred_user_id, referrer_user_id, referral_code, points) VALUES (?, ?, ?, 1)"; // Start with 1 point for the referrer
-                        prepare_and_execute($conn, $insert_referral_sql, 'iis', $user_id, $referrer_user_id, $referral_code);
-                    } else {
-                        // Record exists; just increment the points
-                        $update_points_sql = "UPDATE referrals SET points = points + 1 WHERE referrer_user_id = ? AND referral_code = ?";
-                        prepare_and_execute($conn, $update_points_sql, 'is', $referrer_user_id, $referral_code);
-                    }
+                    // Increment the points for the referrer in their own referral record
+                    $increment_points_sql = "UPDATE referrals SET points = points + 1 WHERE referred_user_id = ?";
+                    prepare_and_execute($conn, $increment_points_sql, 'i', $referrer_user_id);
                 } else {
                     $error = "Invalid referral code.";
                 }
             }
+
 
             // Store the session
             $_SESSION['email'] = $email;
@@ -75,10 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Applicant Registration</title>
 </head>
+
 <body>
     <h2>Applicant Registration</h2>
     <form method="POST" action="register.php">
@@ -88,6 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="text" name="referral_code" placeholder="Referral Code (if any)"><br> <!-- Referral code input -->
         <button type="submit">Register</button>
     </form>
-    <?php if (isset($error)) { echo "<p style='color:red;'>$error</p>"; } ?>
+    <?php if (isset($error)) {
+        echo "<p style='color:red;'>$error</p>";
+    } ?>
 </body>
+
 </html>

@@ -143,7 +143,7 @@ $unread_count = ($unread_result->num_rows > 0) ? $unread_result->fetch_assoc()['
                     <div class="notification-list">
                         <?php
                         // Fetch unread notifications
-                        $notifications_sql = "SELECT notification_id, title, subject, link FROM notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC";
+                        $notifications_sql = "SELECT notification_id, title, subject FROM notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC";
                         $notifications_stmt = $conn->prepare($notifications_sql);
                         $notifications_stmt->bind_param('i', $user_id);
                         $notifications_stmt->execute();
@@ -151,7 +151,7 @@ $unread_count = ($unread_result->num_rows > 0) ? $unread_result->fetch_assoc()['
 
                         if ($notifications_result->num_rows > 0) {
                             while ($notification = $notifications_result->fetch_assoc()) {
-                                echo '<a href="read_notifications.php?notification_id=' . $notification['notification_id'] . '">' .
+                                echo '<a href="read_notification.php?notification_id=' . $notification['notification_id'] . '">' .
                                     '<strong>' . htmlspecialchars($notification['title']) . '</strong><br>' .
                                     htmlspecialchars($notification['subject']) .
                                     '</a>';

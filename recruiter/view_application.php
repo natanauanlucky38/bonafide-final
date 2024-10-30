@@ -19,9 +19,9 @@ if (!isset($_GET['application_id'])) {
 
 $application_id = (int)$_GET['application_id']; // Sanitize application_id
 
-// Fetch application details with job title, applicant information, and resume path
+// Fetch application details with job title, applicant information, user_id, and resume path
 $application_sql = "
-    SELECT a.*, p.fname AS applicant_fname, p.lname AS applicant_lname, j.job_title, j.location, p.profile_id, j.job_id, j.company
+    SELECT a.*, p.user_id, p.fname AS applicant_fname, p.lname AS applicant_lname, j.job_title, j.location, p.profile_id, j.job_id, j.company
     FROM applications a
     JOIN profiles p ON a.profile_id = p.profile_id
     JOIN job_postings j ON a.job_id = j.job_id
@@ -31,6 +31,7 @@ $stmt = $conn->prepare($application_sql);
 $stmt->bind_param("i", $application_id);
 $stmt->execute();
 $application_result = $stmt->get_result();
+
 
 if ($application_result->num_rows == 0) {
     echo "Application not found.";
@@ -66,7 +67,7 @@ $is_view_only = in_array($application['application_status'], ['DEPLOYED', 'WITHD
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
     $action = $_POST['decision'];
     $job_id = $application['job_id'];
-    $applicant_id = $application['profile_id'];
+    $applicant_id = $application['user_id'];
 
     $conn->begin_transaction();
 
