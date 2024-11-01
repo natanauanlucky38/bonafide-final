@@ -206,7 +206,16 @@ $applications_result = $applications_stmt->get_result();
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const highlightedRow = document.getElementById('application-<?php echo $highlightedApplicationId; ?>');
+            const highlightedRowId = 'application-<?php echo $highlightedApplicationId; ?>';
+            const highlightedRow = document.getElementById(highlightedRowId);
+
+            // Remove highlight from all rows except the highlighted row
+            document.querySelectorAll('.highlight-row').forEach(row => {
+                if (row.id !== highlightedRowId) {
+                    row.classList.remove('highlight-row');
+                }
+            });
+
             if (highlightedRow) {
                 setTimeout(() => {
                     highlightedRow.classList.remove('highlight-row');

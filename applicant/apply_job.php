@@ -19,6 +19,12 @@ if (!isset($_GET['job_id'])) {
 $job_id = (int)$_GET['job_id']; // Sanitize job_id
 $_SESSION['job_id'] = $job_id; // Store job_id in session
 
+// Define upload directory for resume files
+$uploadDir = realpath(dirname(__FILE__) . '/../uploads') . '/';
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0777, true); // Create directory if it doesn't exist
+}
+
 // Fetch job details to display
 $job_sql = "SELECT * FROM job_postings WHERE job_id = ?";
 $job_stmt = $conn->prepare($job_sql);
@@ -92,6 +98,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Check if an application already exists for this job and user
             $check_application_sql = "SELECT application_id, application_status FROM applications WHERE job_id = ? AND profile_id = ?";
             $check_application_stmt = $conn->prepare($check_application_sql);
+            if (!$check_application_stmt) {
+                throw new Exception("Error preparing statement: " . $conn->error);
+            }
             $check_application_stmt->bind_param('ii', $job_id, $profile_id);
             $check_application_stmt->execute();
             $check_application_stmt->store_result();
@@ -106,6 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                            SET withdrawn_applicants = withdrawn_applicants - 1 
                                            WHERE job_id = ?";
                     $metrics_stmt = $conn->prepare($update_metrics_sql);
+                    if (!$metrics_stmt) {
+                        throw new Exception("Error preparing metrics statement: " . $conn->error);
+                    }
                     $metrics_stmt->bind_param('i', $job_id);
                     $metrics_stmt->execute();
                 }
@@ -115,6 +127,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                            SET resume = ?, application_status = 'APPLIED', referral_source = ?, recruiter_id = (SELECT created_by FROM job_postings WHERE job_id = ?)
                                            WHERE application_id = ?";
                 $update_application_stmt = $conn->prepare($update_application_sql);
+                if (!$update_application_stmt) {
+                    throw new Exception("Error preparing application update statement: " . $conn->error);
+                }
                 $update_application_stmt->bind_param('ssii', $_SESSION['resume_file'], $referral_source, $job_id, $application_id);
                 $update_application_stmt->execute();
 
@@ -123,6 +138,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         SET applied_at = NOW(), withdrawn_at = NULL, total_duration = 0 
                                         WHERE application_id = ?";
                 $update_pipeline_stmt = $conn->prepare($update_pipeline_sql);
+                if (!$update_pipeline_stmt) {
+                    throw new Exception("Error preparing pipeline update statement: " . $conn->error);
+                }
                 $update_pipeline_stmt->bind_param('i', $application_id);
                 $update_pipeline_stmt->execute();
             } else {
@@ -130,6 +148,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $insert_application_sql = "INSERT INTO applications (job_id, profile_id, resume, application_status, recruiter_id, referral_source)
                                            VALUES (?, ?, ?, 'APPLIED', (SELECT created_by FROM job_postings WHERE job_id = ?), ?)";
                 $insert_application_stmt = $conn->prepare($insert_application_sql);
+                if (!$insert_application_stmt) {
+                    throw new Exception("Error preparing application insertion statement: " . $conn->error);
+                }
                 $insert_application_stmt->bind_param('iisis', $job_id, $profile_id, $_SESSION['resume_file'], $job_id, $referral_source);
                 $insert_application_stmt->execute();
                 $application_id = $conn->insert_id;
@@ -138,6 +159,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $insert_pipeline_sql = "INSERT INTO tbl_pipeline_stage (application_id, applied_at) 
                                         VALUES (?, NOW())";
                 $insert_pipeline_stmt = $conn->prepare($insert_pipeline_sql);
+                if (!$insert_pipeline_stmt) {
+                    throw new Exception("Error preparing pipeline insertion statement: " . $conn->error);
+                }
                 $insert_pipeline_stmt->bind_param('i', $application_id);
                 $insert_pipeline_stmt->execute();
 
@@ -158,8 +182,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                        SET total_applicants = total_applicants + 1, $metrics_column = $metrics_column + 1 
                                        WHERE job_id = ?";
                 $metrics_stmt = $conn->prepare($update_metrics_sql);
+                if (!$metrics_stmt) {
+                    throw new Exception("Error preparing metrics update statement: " . $conn->error);
+                }
                 $metrics_stmt->bind_param('i', $job_id);
                 $metrics_stmt->execute();
+            }
+
+            // Automatically fill requirement_tracking with the req_id and application_id
+            $requirements_sql = "SELECT req_id FROM requirement WHERE job_id = ?";
+            $requirements_stmt = $conn->prepare($requirements_sql);
+            if (!$requirements_stmt) {
+                echo "Error preparing requirements selection statement: " . $conn->error;
+                exit();
+            }
+            $requirements_stmt->bind_param('i', $job_id);
+            $requirements_stmt->execute();
+            $requirements_result = $requirements_stmt->get_result();
+
+            // Prepare to insert into requirement_tracking for each requirement
+            $insert_requirements_sql = "INSERT INTO requirement_tracking (req_id, application_id) VALUES (?, ?)";
+            $insert_requirements_stmt = $conn->prepare($insert_requirements_sql);
+            if (!$insert_requirements_stmt) {
+                echo "Error preparing requirement_tracking insertion statement: " . $conn->error;
+            } else {
+                while ($row = $requirements_result->fetch_assoc()) {
+                    $req_id = $row['req_id'];
+                    // Insert into requirement_tracking with req_id and application_id
+                    $insert_requirements_stmt->bind_param('ii', $req_id, $application_id);
+                    $insert_requirements_stmt->execute();
+                }
             }
 
             // Insert questionnaire answers
@@ -173,61 +225,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $insert_answer_stmt->close();
             }
 
-            // Prevent duplicate qualifications, skills, and work experience in profile_details
-            if (!empty($qualifications)) {
-                foreach ($qualifications as $qualification) {
-                    $check_qualification_stmt = $conn->prepare("SELECT 1 FROM profile_details WHERE profile_id = ? AND detail_value = ? AND qualifications = 'qualification'");
-                    $check_qualification_stmt->bind_param('is', $profile_id, $qualification);
-                    $check_qualification_stmt->execute();
-                    $check_qualification_stmt->store_result();
-
-                    if ($check_qualification_stmt->num_rows == 0) {
-                        $insert_qualification_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, 'qualification', '', '')");
-                        $insert_qualification_stmt->bind_param('is', $profile_id, $qualification);
-                        $insert_qualification_stmt->execute();
-                        $insert_qualification_stmt->close();
-                    }
-                    $check_qualification_stmt->close();
-                }
-            }
-
-            if (!empty($skills)) {
-                foreach ($skills as $skill) {
-                    $check_skill_stmt = $conn->prepare("SELECT 1 FROM profile_details WHERE profile_id = ? AND detail_value = ? AND skills = 'skill'");
-                    $check_skill_stmt->bind_param('is', $profile_id, $skill);
-                    $check_skill_stmt->execute();
-                    $check_skill_stmt->store_result();
-
-                    if ($check_skill_stmt->num_rows == 0) {
-                        $insert_skills_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, '', 'skill', '')");
-                        $insert_skills_stmt->bind_param('is', $profile_id, $skill);
-                        $insert_skills_stmt->execute();
-                        $insert_skills_stmt->close();
-                    }
-                    $check_skill_stmt->close();
-                }
-            }
-
-            if (!empty($work_experience)) {
-                foreach ($work_experience as $experience) {
-                    $check_experience_stmt = $conn->prepare("SELECT 1 FROM profile_details WHERE profile_id = ? AND detail_value = ? AND work_experience = 'work_experience'");
-                    $check_experience_stmt->bind_param('is', $profile_id, $experience);
-                    $check_experience_stmt->execute();
-                    $check_experience_stmt->store_result();
-
-                    if ($check_experience_stmt->num_rows == 0) {
-                        $insert_experience_stmt = $conn->prepare("INSERT INTO profile_details (profile_id, detail_value, qualifications, skills, work_experience) VALUES (?, ?, '', '', 'work_experience')");
-                        $insert_experience_stmt->bind_param('is', $profile_id, $experience);
-                        $insert_experience_stmt->execute();
-                        $insert_experience_stmt->close();
-                    }
-                    $check_experience_stmt->close();
-                }
-            }
-
             // Fetch recruiter ID and send notification
             $recruiter_id_query = "SELECT created_by FROM job_postings WHERE job_id = ?";
             $recruiter_stmt = $conn->prepare($recruiter_id_query);
+            if (!$recruiter_stmt) {
+                throw new Exception("Error preparing recruiter ID retrieval statement: " . $conn->error);
+            }
             $recruiter_stmt->bind_param('i', $job_id);
             $recruiter_stmt->execute();
             $recruiter_result = $recruiter_stmt->get_result();
@@ -242,6 +245,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $insert_notification_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
                                         VALUES (?, ?, ?, ?, 0)";
             $insert_notification_stmt = $conn->prepare($insert_notification_sql);
+            if (!$insert_notification_stmt) {
+                throw new Exception("Error preparing notification insertion statement: " . $conn->error);
+            }
             $insert_notification_stmt->bind_param('isss', $recruiter_id, $notification_title, $notification_subject, $notification_link);
             $insert_notification_stmt->execute();
 
@@ -258,6 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
+
 
 <!-- HTML for the job application form -->
 <!DOCTYPE html>

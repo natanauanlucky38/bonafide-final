@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
 $errors = [];
 $successMessage = "";
 
-// Handle form submission for creating a job posting
+// Handle form submission for creating a job posting and requirements
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
     // Sanitize and validate form inputs
     $job_title = trim($_POST['job_title']);
@@ -24,6 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
     $deadline = trim($_POST['deadline']);
     $status = trim($_POST['status']);
     $has_questionnaire = isset($_POST['has_questionnaire']) ? 1 : 0;
+    $requirement_names = $_POST['requirement_names'] ?? []; // Capture requirements
+    $questions = $_POST['questions'] ?? [];
+    $question_types = $_POST['question_types'] ?? [];
+    $dealbreakers = $_POST['dealbreakers'] ?? [];
+    $correct_answers = $_POST['correct_answers'] ?? [];
 
     // Basic validation for required fields
     if (empty($job_title) || empty($company) || empty($location) || empty($openings) || empty($deadline) || empty($description) || empty($status)) {
@@ -50,13 +55,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
         if ($stmt->execute()) {
             $job_id = $stmt->insert_id;
 
-            // Insert questionnaire if applicable
-            if ($has_questionnaire) {
-                $questions = $_POST['questions'] ?? [];
-                $question_types = $_POST['question_types'] ?? [];
-                $dealbreakers = $_POST['dealbreakers'] ?? [];
-                $correct_answers = $_POST['correct_answers'] ?? [];
+            // Insert requirements into the requirements table
+            $requirementSql = "
+                INSERT INTO requirement (job_id, requirement)
+                VALUES (?, ?)
+            ";
+            $requirementStmt = $conn->prepare($requirementSql);
 
+            foreach ($requirement_names as $requirement_name) {
+                $requirementStmt->bind_param('is', $job_id, $requirement_name);
+                if (!$requirementStmt->execute()) {
+                    $errors[] = "Error inserting requirement: " . $requirementStmt->error;
+                }
+            }
+            $requirementStmt->close();
+
+            // Insert questionnaire if applicable
+            if ($has_questionnaire && !empty($questions)) {
                 $questionSql = "
                     INSERT INTO questionnaire_template (job_id, question_text, question_type, is_required, is_dealbreaker, correct_answer)
                     VALUES (?, ?, ?, ?, ?, ?)
@@ -67,19 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
                     $is_dealbreaker = isset($dealbreakers[$index]) ? 1 : 0;
                     $is_required = 1;  // Assuming all questions are required
                     $question_type = $question_types[$index];
+                    $correct_answer = $question_type === 'YES_NO' ? strtoupper(trim($correct_answers[$index] ?? '')) : null;
 
-                    $correct_answer = null;
-
-                    if ($question_type === 'YES_NO') {
-                        // Handle YES/NO questions
-                        $correct_answer = strtoupper(trim($correct_answers[$index] ?? ''));
-                        $correct_answer = ($correct_answer === 'YES') ? 'YES' : 'NO';
-                    } elseif ($question_type === 'TEXT') {
-                        // No correct answer needed for TEXT type
+                    // Ensure correct answer is "YES" or "NO" for YES_NO type
+                    if ($question_type === 'YES_NO' && ($correct_answer !== 'YES' && $correct_answer !== 'NO')) {
                         $correct_answer = null;
                     }
 
-                    // Ensure question text is not empty before insertion
                     if (!empty($questionText)) {
                         $questionStmt->bind_param(
                             'issiis',
@@ -90,7 +99,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
                             $is_dealbreaker,
                             $correct_answer
                         );
-                        $questionStmt->execute();
+                        if (!$questionStmt->execute()) {
+                            $errors[] = "Error inserting question: " . $questionStmt->error;
+                        }
                     }
                 }
                 $questionStmt->close();
@@ -115,7 +126,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
             $pipelineStmt->execute();
             $pipelineStmt->close();
 
-            $successMessage = "Job posting created successfully!";
+            $successMessage = "Job posting, requirements, and questionnaire created successfully!";
+            header("Location: job_posting.php");  // Refresh to reset form
+            exit();
         } else {
             $errors[] = "Failed to create job posting. Please try again.";
         }
@@ -133,6 +146,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
     <title>Create Job Posting</title>
     <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS file -->
     <script>
+        function addRequirement() {
+            const container = document.getElementById('requirements-container');
+            const requirementDiv = document.createElement('div');
+            requirementDiv.innerHTML = `
+                <input type="text" name="requirement_names[]" placeholder="Enter requirement" required>
+                <button type="button" onclick="removeRequirement(this)">Remove</button>
+            `;
+            container.appendChild(requirementDiv);
+        }
+
+        function removeRequirement(button) {
+            button.parentElement.remove();
+        }
+
         function addQuestion() {
             const container = document.getElementById('questionnaire-container');
             const questionIndex = container.children.length;
@@ -170,13 +197,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
             const choicesDiv = document.getElementById(`choices_${questionIndex}`);
             const yesNoChoicesDiv = document.getElementById(`yes_no_choices_${questionIndex}`);
 
-            // Hide choices initially
             choicesDiv.style.display = 'none';
             yesNoChoicesDiv.style.display = 'none';
 
             if (selectElement.value === 'YES_NO') {
                 choicesDiv.style.display = 'block';
-                yesNoChoicesDiv.style.display = 'block'; // Show yes/no choices
+                yesNoChoicesDiv.style.display = 'block';
             }
         }
 
@@ -195,7 +221,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
     <div class="content-area">
         <h2>Create Job Posting</h2>
 
-        <!-- Display errors -->
         <?php if (!empty($errors)): ?>
             <div class="error-messages">
                 <ul>
@@ -206,7 +231,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
             </div>
         <?php endif; ?>
 
-        <!-- Success Message -->
         <?php if (!empty($successMessage)): ?>
             <div class="success-message">
                 <p><?php echo htmlspecialchars($successMessage); ?></p>
@@ -256,7 +280,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
                 </select>
             </div>
 
-            <!-- Include Questionnaire -->
             <div>
                 <input type="checkbox" id="has_questionnaire" name="has_questionnaire" onchange="document.getElementById('questionnaire-section').style.display = this.checked ? 'block' : 'none';">
                 <label for="has_questionnaire">Include Questionnaire</label>
@@ -266,10 +289,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
             <div id="questionnaire-section" style="display:none;">
                 <h3>Questionnaire</h3>
                 <div id="questionnaire-container">
-                    <!-- Dynamic questions will be added here -->
                 </div>
                 <button type="button" onclick="addQuestion()">Add Question</button>
             </div>
+
+            <!-- Requirement Form -->
+            <h3>Add Requirements</h3>
+            <div id="requirements-container">
+                <input type="text" name="requirement_names[]" placeholder="Enter requirement" required>
+            </div>
+            <button type="button" onclick="addRequirement()">Add Another Requirement</button>
 
             <div>
                 <button type="submit">Create Job Posting</button>
@@ -284,6 +313,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
 </html>
 
 <?php
-// Close the database connection
 $conn->close();
 ?>

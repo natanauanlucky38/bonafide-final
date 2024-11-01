@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 30, 2024 at 04:48 PM
+-- Generation Time: Oct 31, 2024 at 06:50 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -43,7 +43,8 @@ CREATE TABLE `applications` (
 --
 
 INSERT INTO `applications` (`application_id`, `job_id`, `profile_id`, `resume`, `application_status`, `rejection_reason`, `referral_source`, `recruiter_id`) VALUES
-(1, 1, 1, '8-1-20241030_164457-job_1.pdf', 'OFFERED', NULL, 'referral_applicants', 7);
+(1, 1, 1, '8-1-20241031_062856-job_1.pdf', 'INTERVIEW', NULL, 'referral_applicants', 7),
+(2, 1, 6, '13-6-20241030_172535-job_1.pdf', 'INTERVIEW', NULL, 'referral_applicants', 7);
 
 -- --------------------------------------------------------
 
@@ -63,8 +64,10 @@ CREATE TABLE `application_answers` (
 --
 
 INSERT INTO `application_answers` (`answer_id`, `application_id`, `question_id`, `answer_text`) VALUES
-(1, 1, 1, 'YES'),
-(2, 1, 2, 'none');
+(3, 2, 1, 'YES'),
+(4, 2, 2, 'none'),
+(5, 1, 1, 'YES'),
+(6, 1, 2, 'no');
 
 -- --------------------------------------------------------
 
@@ -119,7 +122,13 @@ CREATE TABLE `notifications` (
 INSERT INTO `notifications` (`notification_id`, `user_id`, `title`, `subject`, `link`, `is_read`, `created_at`) VALUES
 (1, 7, 'New Application Submitted', 'A new application has been submitted for the job: IT ADMIN', 'view_application.php?application_id=1', 1, '2024-10-30 15:44:57'),
 (2, 8, 'Interview Scheduled', 'An interview has been scheduled for your application.', 'http://localhost/bonafide-final/applicant/application.php?application_id=1', 1, '2024-10-30 15:46:27'),
-(3, 8, 'Job Offer', 'You have received a job offer.', 'http://localhost/bonafide-final/applicant/application.php?application_id=1', 1, '2024-10-30 15:47:15');
+(3, 8, 'Job Offer', 'You have received a job offer.', 'http://localhost/bonafide-final/applicant/application.php?application_id=1', 1, '2024-10-30 15:47:15'),
+(4, 7, 'New Application Submitted', 'A new application has been submitted for the job: IT ADMIN', 'view_application.php?application_id=2', 1, '2024-10-30 16:25:35'),
+(5, 13, 'Interview Scheduled', 'An interview has been scheduled for your application.', 'http://localhost/bonafide-final/applicant/application.php?application_id=2', 1, '2024-10-30 16:38:17'),
+(6, 8, 'Interview Scheduled', 'An interview has been scheduled for your application.', 'http://localhost/bonafide-final/applicant/application.php?application_id=1', 1, '2024-10-31 05:25:07'),
+(7, 7, 'Application Withdrawn', 'Applicant has withdrawn their application.', 'view_application.php?application_id=1', 0, '2024-10-31 05:28:12'),
+(8, 7, 'New Application Submitted', 'A new application has been submitted for the job: IT ADMIN', 'view_application.php?application_id=1', 0, '2024-10-31 05:28:56'),
+(9, 8, 'Interview Scheduled', 'An interview has been scheduled for your application.', 'http://localhost/bonafide-final/applicant/application.php?application_id=1', 1, '2024-10-31 05:29:36');
 
 -- --------------------------------------------------------
 
@@ -150,7 +159,9 @@ CREATE TABLE `profiles` (
 --
 
 INSERT INTO `profiles` (`profile_id`, `user_id`, `fname`, `lname`, `age`, `phone`, `address`, `civil_status`, `linkedin_link`, `facebook_link`, `referral_code`, `education_level`, `school_graduated`, `year_graduated`, `degree`) VALUES
-(1, 8, '123', '123', 21, '123', '123', 'SINGLE', NULL, NULL, '67F80492', 'POSTGRADUATE', '123', '123', 'BSIT');
+(1, 8, '123', '123', 21, '123', '123', 'SINGLE', NULL, NULL, '67F80492', 'POSTGRADUATE', '123', '123', 'BSIT'),
+(4, 11, 'Mark', 'Gomez', 20, '09296675422', 'San Isidro, Cabuyao, Laguna', 'SINGLE', NULL, NULL, 'F194C99A', 'POSTGRADUATE', 'PnC', '2025', 'BSIT'),
+(6, 13, 'Eric', 'Baylosis', 21, '09296675422', 'Cabuyao, Laguna', 'Single', 'www.linkedin/eric', '', 'B08B45F7', 'POSTGRADUATE', 'PnC', '2025', 'BSIT');
 
 -- --------------------------------------------------------
 
@@ -174,7 +185,10 @@ CREATE TABLE `profile_details` (
 INSERT INTO `profile_details` (`detail_id`, `profile_id`, `detail_value`, `qualifications`, `skills`, `work_experience`) VALUES
 (1, 1, 'none', 'qualification', '', ''),
 (2, 1, 'none', '', 'skill', ''),
-(3, 1, 'none', '', '', 'work_experience');
+(3, 1, 'none', '', '', 'work_experience'),
+(4, 6, 'none', 'qualification', '', ''),
+(5, 6, 'none', '', 'skill', ''),
+(6, 6, 'none', '', '', 'work_experience');
 
 -- --------------------------------------------------------
 
@@ -214,6 +228,28 @@ CREATE TABLE `referrals` (
   `points` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `referrals`
+--
+
+INSERT INTO `referrals` (`referral_id`, `referred_user_id`, `referrer_user_id`, `referral_code`, `points`) VALUES
+(1, 11, 8, '67F80492', 2),
+(3, 13, 8, '67F80492', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `requirements_tracking`
+--
+
+CREATE TABLE `requirements_tracking` (
+  `requirement_id` int(11) NOT NULL,
+  `application_id` int(11) NOT NULL,
+  `job_id` int(11) NOT NULL,
+  `requirement_name` varchar(255) NOT NULL,
+  `is_submitted` tinyint(1) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- --------------------------------------------------------
 
 --
@@ -249,7 +285,8 @@ CREATE TABLE `tbl_interview` (
 --
 
 INSERT INTO `tbl_interview` (`interview_id`, `application_id`, `interview_date`, `interview_type`, `meet_link`, `phone`, `recruiter_email`, `remarks`) VALUES
-(1, 1, '2024-11-04 23:45:00', 'Online', 'https://www.facebook.com/', '0965675', 'r@g.c', 'none');
+(2, 2, '2024-11-09 00:37:00', 'Online', 'https://www.facebook.com/', '09647475', 'r@g.c', 'none'),
+(4, 1, '2024-11-02 13:29:00', 'Online', 'https://www.facebook.com/', '0965653', 'r@g.c', 'none');
 
 -- --------------------------------------------------------
 
@@ -278,7 +315,7 @@ CREATE TABLE `tbl_job_metrics` (
 --
 
 INSERT INTO `tbl_job_metrics` (`metric_id`, `job_id`, `time_to_fill`, `total_applicants`, `screened_applicants`, `interviewed_applicants`, `offered_applicants`, `successful_placements`, `rejected_applicants`, `referral_applicants`, `social_media_applicants`, `career_site_applicants`, `withdrawn_applicants`) VALUES
-(1, 1, NULL, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0);
+(1, 1, NULL, 2, 4, 4, 1, 0, 0, 2, 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -294,13 +331,6 @@ CREATE TABLE `tbl_offer_details` (
   `benefits` varchar(255) DEFAULT NULL,
   `remarks` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `tbl_offer_details`
---
-
-INSERT INTO `tbl_offer_details` (`offer_id`, `job_id`, `salary`, `start_date`, `benefits`, `remarks`) VALUES
-(1, 1, 5000000.00, '2024-11-05', 'none', 'none');
 
 -- --------------------------------------------------------
 
@@ -330,7 +360,8 @@ CREATE TABLE `tbl_pipeline_stage` (
 --
 
 INSERT INTO `tbl_pipeline_stage` (`stage_id`, `application_id`, `applied_at`, `screened_at`, `interviewed_at`, `offered_at`, `deployed_at`, `rejected_at`, `withdrawn_at`, `duration_applied_to_screened`, `duration_screened_to_interviewed`, `duration_interviewed_to_offered`, `duration_offered_to_hired`, `total_duration`) VALUES
-(1, 1, '2024-10-30 23:44:57', '2024-10-30 23:46:27', '2024-11-04 23:45:00', '2024-10-30 23:47:15', NULL, NULL, NULL, 0, 4, -4, NULL, NULL);
+(1, 1, '2024-10-31 13:28:56', '2024-10-31 13:29:36', '2024-11-02 13:29:00', '2024-10-30 23:47:15', NULL, NULL, NULL, 0, 1, -4, NULL, 0),
+(2, 2, '2024-10-31 00:25:35', '2024-10-31 00:38:17', '2024-11-09 00:37:00', NULL, NULL, NULL, NULL, 0, 8, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -354,8 +385,10 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`user_id`, `email`, `password`, `role`, `last_login`, `registration_date`, `status`) VALUES
 (5, 'u@g.c', '123', 'USER_ADMIN', '2024-10-30 23:41:24', '2024-10-30 23:34:35', 'ACTIVE'),
-(7, 'r@g.c', '$2y$10$x9bfW4AoYfaPmEB8v9oqce1b6LQRmw07wNd30YyYZfQyMecFsjnuS', 'RECRUITER', '2024-10-30 23:42:36', '2024-10-30 23:42:02', 'ACTIVE'),
-(8, 'a@g.c', '$2y$10$4gXsZ2PPk2Hivg/iX/jhfu8PlaxNWNOR8ZTO9mouWDJVjq4DMe346', 'APPLICANT', NULL, '2024-10-30 23:44:19', 'ACTIVE');
+(7, 'r@g.c', '$2y$10$x9bfW4AoYfaPmEB8v9oqce1b6LQRmw07wNd30YyYZfQyMecFsjnuS', 'RECRUITER', '2024-10-31 00:37:32', '2024-10-30 23:42:02', 'ACTIVE'),
+(8, 'a@g.c', '$2y$10$4gXsZ2PPk2Hivg/iX/jhfu8PlaxNWNOR8ZTO9mouWDJVjq4DMe346', 'APPLICANT', NULL, '2024-10-30 23:44:19', 'ACTIVE'),
+(11, 'a2@g.c', '$2y$10$pmd5xLwkHiLoHz9bLF70tOMFZJ0aQETKrcu807m.6x3Mg0Kg6.uXO', 'APPLICANT', NULL, '2024-10-31 00:05:12', 'ACTIVE'),
+(13, 'a3@g.c', '$2y$10$/rmDnVk.hRYrK2zsXcgsI.GLNTpC7x3PQbtOWdvZZW7HWU47Y/G2e', 'APPLICANT', NULL, '2024-10-31 00:23:02', 'ACTIVE');
 
 --
 -- Indexes for dumped tables
@@ -422,6 +455,14 @@ ALTER TABLE `referrals`
   ADD KEY `referrals_ibfk_2` (`referrer_user_id`);
 
 --
+-- Indexes for table `requirements_tracking`
+--
+ALTER TABLE `requirements_tracking`
+  ADD PRIMARY KEY (`requirement_id`),
+  ADD KEY `fk_application_id` (`application_id`),
+  ADD KEY `fk_job_id` (`job_id`);
+
+--
 -- Indexes for table `tbl_deployment_details`
 --
 ALTER TABLE `tbl_deployment_details`
@@ -470,13 +511,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `applications`
 --
 ALTER TABLE `applications`
-  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `application_answers`
 --
 ALTER TABLE `application_answers`
-  MODIFY `answer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `answer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `job_postings`
@@ -488,19 +529,19 @@ ALTER TABLE `job_postings`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `profiles`
 --
 ALTER TABLE `profiles`
-  MODIFY `profile_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `profile_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `profile_details`
 --
 ALTER TABLE `profile_details`
-  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `questionnaire_template`
@@ -512,7 +553,13 @@ ALTER TABLE `questionnaire_template`
 -- AUTO_INCREMENT for table `referrals`
 --
 ALTER TABLE `referrals`
-  MODIFY `referral_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `referral_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `requirements_tracking`
+--
+ALTER TABLE `requirements_tracking`
+  MODIFY `requirement_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tbl_deployment_details`
@@ -524,7 +571,7 @@ ALTER TABLE `tbl_deployment_details`
 -- AUTO_INCREMENT for table `tbl_interview`
 --
 ALTER TABLE `tbl_interview`
-  MODIFY `interview_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `interview_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `tbl_job_metrics`
@@ -542,13 +589,13 @@ ALTER TABLE `tbl_offer_details`
 -- AUTO_INCREMENT for table `tbl_pipeline_stage`
 --
 ALTER TABLE `tbl_pipeline_stage`
-  MODIFY `stage_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `stage_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- Constraints for dumped tables
@@ -605,6 +652,13 @@ ALTER TABLE `questionnaire_template`
 ALTER TABLE `referrals`
   ADD CONSTRAINT `referrals_ibfk_1` FOREIGN KEY (`referred_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `referrals_ibfk_2` FOREIGN KEY (`referrer_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `requirements_tracking`
+--
+ALTER TABLE `requirements_tracking`
+  ADD CONSTRAINT `fk_application_id` FOREIGN KEY (`application_id`) REFERENCES `applications` (`application_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_job_id` FOREIGN KEY (`job_id`) REFERENCES `job_postings` (`job_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `tbl_deployment_details`

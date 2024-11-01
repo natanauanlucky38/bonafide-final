@@ -107,7 +107,7 @@ function getCalendarEvents($conn)
     $events = [];
 
     // Fetch job deadlines
-    $jobQuery = "SELECT job_title AS title, deadline AS date FROM job_postings WHERE deadline IS NOT NULL";
+    $jobQuery = "SELECT job_id, job_title AS title, deadline AS date FROM job_postings WHERE deadline IS NOT NULL";
     $jobResult = mysqli_query($conn, $jobQuery);
     if (!$jobResult) {
         die("Error in jobQuery for calendar events: " . mysqli_error($conn));
@@ -116,7 +116,7 @@ function getCalendarEvents($conn)
         $events[] = [
             'title' => 'Deadline: ' . $job['title'],
             'start' => $job['date'],
-            'url' => 'view_job.php?job_title=' . urlencode($job['title'])  // Make this clickable
+            'url' => 'application.php?highlight_job_id=' . $job['job_id']
         ];
     }
 
@@ -130,7 +130,7 @@ function getCalendarEvents($conn)
         $events[] = [
             'title' => 'Interview - ' . $interview['type'],
             'start' => $interview['date'],
-            'url' => 'view_interview.php?application_id=' . $interview['application_id']  // Make this clickable
+            'url' => 'application.php?highlight_application_id=' . $interview['application_id']
         ];
     }
 
