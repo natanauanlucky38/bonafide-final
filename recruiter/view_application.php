@@ -227,40 +227,78 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
                 $message = "Offer details saved successfully.";
                 break;
 
+                // Deployment case
             case 'deployment':
                 $deployment_remarks = $_POST['deployment_remarks'];
 
+                // Update application status to 'DEPLOYED'
                 $sql = "UPDATE applications SET application_status = 'DEPLOYED' WHERE application_id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("i", $application_id);
                 $stmt->execute();
 
+                // Update pipeline stage with deployment details and duration
                 $pipeline_sql = "UPDATE tbl_pipeline_stage 
-                                 SET deployed_at = NOW(), duration_offered_to_hired = TIMESTAMPDIFF(DAY, offered_at, NOW()), total_duration = TIMESTAMPDIFF(DAY, applied_at, NOW()) 
-                                 WHERE application_id = ?";
+                     SET deployed_at = NOW(), duration_offered_to_hired = TIMESTAMPDIFF(DAY, offered_at, NOW()), total_duration = TIMESTAMPDIFF(DAY, applied_at, NOW()) 
+                     WHERE application_id = ?";
                 $pipeline_stmt = $conn->prepare($pipeline_sql);
                 $pipeline_stmt->bind_param("i", $application_id);
                 $pipeline_stmt->execute();
 
-                // Increment successful_placements in tbl_job_metrics
-                $update_metrics_sql = "UPDATE tbl_job_metrics 
-                                       SET successful_placements = successful_placements + 1 
-                                       WHERE job_id = ?";
-                $metrics_stmt = $conn->prepare($update_metrics_sql);
-                $metrics_stmt->bind_param("i", $job_id);
-                $metrics_stmt->execute();
-
                 // Insert deployment details
                 $deployment_sql = "INSERT INTO tbl_deployment_details (application_id, deployment_date, deployment_remarks) 
-                                   VALUES (?, NOW(), ?)";
+                       VALUES (?, NOW(), ?)";
                 $deployment_stmt = $conn->prepare($deployment_sql);
                 $deployment_stmt->bind_param("is", $application_id, $deployment_remarks);
                 $deployment_stmt->execute();
 
+                // Increment successful_placements in tbl_job_metrics
+                $update_metrics_sql = "UPDATE tbl_job_metrics 
+                           SET successful_placements = successful_placements + 1 
+                           WHERE job_id = ?";
+                $metrics_stmt = $conn->prepare($update_metrics_sql);
+                $metrics_stmt->bind_param("i", $job_id);
+                $metrics_stmt->execute();
+
+                // Check if successful placements match job openings
+                $check_filled_sql = "SELECT jm.successful_placements, jp.openings, jp.created_at 
+                         FROM tbl_job_metrics jm
+                         JOIN job_postings jp ON jm.job_id = jp.job_id 
+                         WHERE jm.job_id = ?";
+                $check_filled_stmt = $conn->prepare($check_filled_sql);
+                $check_filled_stmt->bind_param("i", $job_id);
+                $check_filled_stmt->execute();
+                $check_filled_result = $check_filled_stmt->get_result();
+                $filled_data = $check_filled_result->fetch_assoc();
+
+                // If placements match openings, update filled_date, status, and time_to_fill
+                if ((int)$filled_data['successful_placements'] === (int)$filled_data['openings']) {
+                    // Set filled_date and archive status in job_postings
+                    $update_filled_date_sql = "UPDATE job_postings 
+                                   SET filled_date = NOW(), 
+                                       status = 'ARCHIVED'
+                                   WHERE job_id = ?";
+                    $filled_date_stmt = $conn->prepare($update_filled_date_sql);
+                    $filled_date_stmt->bind_param("i", $job_id);
+                    $filled_date_stmt->execute();
+
+                    // Update time_to_fill in tbl_job_metrics
+                    $time_to_fill_sql = "UPDATE tbl_job_metrics 
+                             SET time_to_fill = TIMESTAMPDIFF(DAY, ?, NOW()) 
+                             WHERE job_id = ?";
+                    $time_to_fill_stmt = $conn->prepare($time_to_fill_sql);
+                    $time_to_fill_stmt->bind_param("si", $filled_data['created_at'], $job_id);
+                    $time_to_fill_stmt->execute();
+
+                    echo "filled_date, status, and time_to_fill updated for job_id: " . $job_id;
+                } else {
+                    echo "filled_date, status, and time_to_fill not updated as successful placements do not match openings.";
+                }
+
                 // Insert notification for deployment
                 $notification_link = $base_url;
                 $notification_sql = "INSERT INTO notifications (user_id, title, subject, link, is_read) 
-                                     VALUES (?, 'Deployment Completed', 'You have been successfully deployed.', ?, 0)";
+                         VALUES (?, 'Deployment Completed', 'You have been successfully deployed.', ?, 0)";
                 $notification_stmt = $conn->prepare($notification_sql);
                 $notification_stmt->bind_param("is", $applicant_id, $notification_link);
                 $notification_stmt->execute();

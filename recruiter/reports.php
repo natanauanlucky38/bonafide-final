@@ -70,63 +70,21 @@ function getHistoricalAverageTimeToFillData($conn)
     return $historical_data;
 }
 
-function getSourcingAnalytics($conn, $job_id)
+function getSourcingAnalytics($conn, $job_id, $totalApplications)
 {
     $query = "SELECT referral_source, COUNT(*) as count FROM applications 
               WHERE job_id = $job_id GROUP BY referral_source";
     $result = mysqli_query($conn, $query);
     $sourcing_data = [];
     while ($row = mysqli_fetch_assoc($result)) {
-        $sourcing_data[$row['referral_source']] = $row['count'];
+        $count = $row['count'];
+        $percentage = round(($count / $totalApplications) * 100, 2);
+        $sourcing_data[] = ['source' => $row['referral_source'], 'count' => $count, 'percentage' => $percentage];
     }
     return $sourcing_data;
 }
 
-function getPipelineOverview($conn, $job_id)
-{
-    $query = "SELECT 
-                SUM(screened_applicants) AS screened, 
-                SUM(interviewed_applicants) AS interviewed, 
-                SUM(offered_applicants) AS offered, 
-                SUM(successful_placements) AS placed, 
-                SUM(rejected_applicants) AS rejected
-              FROM tbl_job_metrics WHERE job_id = $job_id";
-    $result = mysqli_query($conn, $query);
-    return mysqli_fetch_assoc($result) ?? [];
-}
-
-function getMostDesirableSkills($conn)
-{
-    $query = "SELECT detail_value AS skill, COUNT(*) as count FROM profile_details 
-              JOIN applications ON profile_details.profile_id = applications.profile_id 
-              WHERE applications.application_status = 'DEPLOYED' 
-              AND skills IS NOT NULL 
-              GROUP BY skill 
-              ORDER BY count DESC 
-              LIMIT 10";
-    $result = mysqli_query($conn, $query);
-    $skills = [];
-    while ($row = mysqli_fetch_assoc($result)) {
-        $skills[] = $row;
-    }
-    return $skills;
-}
-
-function getMostAppliedJobs($conn)
-{
-    $query = "SELECT j.job_title, COUNT(a.job_id) as applications 
-              FROM applications a 
-              JOIN job_postings j ON a.job_id = j.job_id 
-              GROUP BY a.job_id ORDER BY applications DESC LIMIT 5";
-    $result = mysqli_query($conn, $query);
-    $jobs = [];
-    while ($row = mysqli_fetch_assoc($result)) {
-        $jobs[] = $row;
-    }
-    return $jobs;
-}
-
-function getCandidateDropOffPoints($conn, $job_id)
+function getCandidateDropOffPoints($conn, $job_id, $totalApplications)
 {
     $query = "SELECT 
                 COUNT(CASE WHEN screened_at IS NOT NULL AND interviewed_at IS NULL THEN 1 END) AS screened_dropoff,
@@ -137,7 +95,15 @@ function getCandidateDropOffPoints($conn, $job_id)
               WHERE a.job_id = $job_id";
 
     $result = mysqli_query($conn, $query);
-    return mysqli_fetch_assoc($result) ?? [];
+    $drop_off_points = mysqli_fetch_assoc($result) ?? [];
+
+    // Calculate percentages for each drop-off point
+    foreach ($drop_off_points as $stage => $count) {
+        $percentage = $totalApplications > 0 ? round(($count / $totalApplications) * 100, 2) : 0;
+        $drop_off_points[$stage] = ['count' => $count, 'percentage' => $percentage];
+    }
+
+    return $drop_off_points;
 }
 
 function getAverageStageTimes($conn, $job_id)
@@ -177,6 +143,8 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
     <div class="content-area">
         <div class="container-fluid">
             <h2>Job Reports</h2>
+
+            <a href="download_reports.php" class="btn btn-primary mb-3">Download Report as CSV</a>
 
             <!-- Historical Average Time-to-Fill Graph -->
             <h4>Historical Average Time to Fill</h4>
@@ -219,20 +187,17 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
 
             <div id="accordion">
                 <?php
-                $mostDesirableSkills = getMostDesirableSkills($conn);
-                $mostAppliedJobs = getMostAppliedJobs($conn);
-
                 foreach ($jobs as $job) {
                     $job_id = $job['job_id'];
                     $job_title = htmlspecialchars($job['job_title']);
                     $application_metrics = getApplicationMetrics($conn, $job_id);
                     $time_to_fill = getTimeToFill($conn, $job_id);
-                    $sourcing_analytics = getSourcingAnalytics($conn, $job_id);
-                    $pipeline_overview = getPipelineOverview($conn, $job_id);
-                    $drop_off_points = getCandidateDropOffPoints($conn, $job_id);
+                    $totalApplications = $application_metrics['total'] ?? 1; // Avoid division by zero
+
+                    $sourcing_analytics = getSourcingAnalytics($conn, $job_id, $totalApplications);
+                    $drop_off_points = getCandidateDropOffPoints($conn, $job_id, $totalApplications);
                     $average_stage_times = getAverageStageTimes($conn, $job_id);
 
-                    $total = $application_metrics['total'] ?? 1; // Avoid division by zero
                 ?>
                     <div class="card">
                         <div class="card-header" id="heading-<?php echo $job_id; ?>">
@@ -247,47 +212,166 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                             <div class="card-body">
                                 <h4>Metrics</h4>
                                 <p><strong>Time to Fill:</strong> <?php echo $time_to_fill; ?> days</p>
-                                <p><strong>Total Applications:</strong> <?php echo $application_metrics['total'] ?? 0; ?></p>
-                                <p><strong>Screened:</strong> <?php echo round(($application_metrics['screened'] / $total) * 100, 2); ?>% (<?php echo $application_metrics['screened'] ?? 0; ?>)</p>
-                                <p><strong>Interviewed:</strong> <?php echo round(($application_metrics['interviewed'] / $total) * 100, 2); ?>% (<?php echo $application_metrics['interviewed'] ?? 0; ?>)</p>
-                                <p><strong>Offered:</strong> <?php echo round(($application_metrics['offered'] / $total) * 100, 2); ?>% (<?php echo $application_metrics['offered'] ?? 0; ?>)</p>
-                                <p><strong>Deployed:</strong> <?php echo round(($application_metrics['deployed'] / $total) * 100, 2); ?>% (<?php echo $application_metrics['deployed'] ?? 0; ?>)</p>
+                                <p><strong>Total Applications:</strong> <?php echo $totalApplications; ?></p>
 
+                                <!-- Job Metrics Chart -->
+                                <div>
+                                    <canvas id="jobChart-<?php echo $job_id; ?>" width="400" height="200"></canvas>
+                                </div>
+                                <script>
+                                    var ctxJob<?php echo $job_id; ?> = document.getElementById('jobChart-<?php echo $job_id; ?>').getContext('2d');
+                                    var jobChart<?php echo $job_id; ?> = new Chart(ctxJob<?php echo $job_id; ?>, {
+                                        type: 'bar',
+                                        data: {
+                                            labels: ['Screened', 'Interviewed', 'Offered', 'Deployed'],
+                                            datasets: [{
+                                                label: 'Job Metrics',
+                                                data: [
+                                                    <?php echo $application_metrics['screened'] ?? 0; ?>,
+                                                    <?php echo $application_metrics['interviewed'] ?? 0; ?>,
+                                                    <?php echo $application_metrics['offered'] ?? 0; ?>,
+                                                    <?php echo $application_metrics['deployed'] ?? 0; ?>
+                                                ],
+                                                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                                borderColor: 'rgba(54, 162, 235, 1)',
+                                                borderWidth: 1
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            scales: {
+                                                y: {
+                                                    beginAtZero: true,
+                                                    title: {
+                                                        display: true,
+                                                        text: 'Count'
+                                                    }
+                                                },
+                                                x: {
+                                                    title: {
+                                                        display: true,
+                                                        text: 'Stages'
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    });
+                                </script>
+
+                                <!-- Average Time in Each Stage Chart -->
                                 <h4>Average Time in Each Stage</h4>
-                                <p><strong>Screened:</strong> <?php echo round($average_stage_times['avg_screened'], 2) ?? 'N/A'; ?> days</p>
-                                <p><strong>Interviewed:</strong> <?php echo round($average_stage_times['avg_interviewed'], 2) ?? 'N/A'; ?> days</p>
-                                <p><strong>Offered:</strong> <?php echo round($average_stage_times['avg_offered'], 2) ?? 'N/A'; ?> days</p>
-                                <p><strong>Hired:</strong> <?php echo round($average_stage_times['avg_hired'], 2) ?? 'N/A'; ?> days</p>
+                                <div>
+                                    <canvas id="avgStageTimeChart-<?php echo $job_id; ?>" width="400" height="200"></canvas>
+                                </div>
+                                <script>
+                                    var ctxAvgStageTime<?php echo $job_id; ?> = document.getElementById('avgStageTimeChart-<?php echo $job_id; ?>').getContext('2d');
+                                    var avgStageTimeChart<?php echo $job_id; ?> = new Chart(ctxAvgStageTime<?php echo $job_id; ?>, {
+                                        type: 'bar',
+                                        data: {
+                                            labels: ['Screened', 'Interviewed', 'Offered', 'Hired'],
+                                            datasets: [{
+                                                label: 'Average Time (days)',
+                                                data: [
+                                                    <?php echo round($average_stage_times['avg_screened'], 2) ?? 0; ?>,
+                                                    <?php echo round($average_stage_times['avg_interviewed'], 2) ?? 0; ?>,
+                                                    <?php echo round($average_stage_times['avg_offered'], 2) ?? 0; ?>,
+                                                    <?php echo round($average_stage_times['avg_hired'], 2) ?? 0; ?>
+                                                ],
+                                                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                                                borderColor: 'rgba(75, 192, 192, 1)',
+                                                borderWidth: 1
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            scales: {
+                                                y: {
+                                                    beginAtZero: true,
+                                                    title: {
+                                                        display: true,
+                                                        text: 'Days'
+                                                    }
+                                                },
+                                                x: {
+                                                    title: {
+                                                        display: true,
+                                                        text: 'Stages'
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    });
+                                </script>
 
+                                <!-- Sourcing Analytics Chart -->
                                 <h4>Sourcing Analytics</h4>
-                                <ul>
-                                    <?php foreach ($sourcing_analytics as $source => $count): ?>
-                                        <li><?php echo ucfirst($source); ?>: <?php echo $count; ?> candidates</li>
-                                    <?php endforeach; ?>
-                                </ul>
+                                <div>
+                                    <canvas id="sourcingChart-<?php echo $job_id; ?>" width="400" height="200"></canvas>
+                                </div>
+                                <script>
+                                    var ctxSourcing<?php echo $job_id; ?> = document.getElementById('sourcingChart-<?php echo $job_id; ?>').getContext('2d');
+                                    var sourcingLabels<?php echo $job_id; ?> = <?php echo json_encode(array_column($sourcing_analytics, 'source')); ?>;
+                                    var sourcingData<?php echo $job_id; ?> = <?php echo json_encode(array_column($sourcing_analytics, 'count')); ?>;
+                                    var sourcingChart<?php echo $job_id; ?> = new Chart(ctxSourcing<?php echo $job_id; ?>, {
+                                        type: 'pie',
+                                        data: {
+                                            labels: sourcingLabels<?php echo $job_id; ?>,
+                                            datasets: [{
+                                                label: 'Candidates by Source',
+                                                data: sourcingData<?php echo $job_id; ?>,
+                                                backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)'],
+                                                borderWidth: 1
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true
+                                        }
+                                    });
+                                </script>
 
+                                <!-- Drop-off Points Chart -->
                                 <h4>Drop-off Points</h4>
-                                <p><strong>Screened Drop-off:</strong> <?php echo $drop_off_points['screened_dropoff'] ?? 0; ?></p>
-                                <p><strong>Interviewed Drop-off:</strong> <?php echo $drop_off_points['interviewed_dropoff'] ?? 0; ?></p>
-                                <p><strong>Offered Drop-off:</strong> <?php echo $drop_off_points['offered_dropoff'] ?? 0; ?></p>
+                                <div>
+                                    <canvas id="dropOffChart-<?php echo $job_id; ?>" width="400" height="200"></canvas>
+                                </div>
+                                <script>
+                                    var ctxDropOff<?php echo $job_id; ?> = document.getElementById('dropOffChart-<?php echo $job_id; ?>').getContext('2d');
+                                    var dropOffLabels<?php echo $job_id; ?> = ['Screened Drop-off', 'Interviewed Drop-off', 'Offered Drop-off'];
+                                    var dropOffData<?php echo $job_id; ?> = [
+                                        <?php echo $drop_off_points['screened_dropoff']['count'] ?? 0; ?>,
+                                        <?php echo $drop_off_points['interviewed_dropoff']['count'] ?? 0; ?>,
+                                        <?php echo $drop_off_points['offered_dropoff']['count'] ?? 0; ?>
+                                    ];
+                                    var dropOffChart<?php echo $job_id; ?> = new Chart(ctxDropOff<?php echo $job_id; ?>, {
+                                        type: 'bar',
+                                        data: {
+                                            labels: dropOffLabels<?php echo $job_id; ?>,
+                                            datasets: [{
+                                                label: 'Drop-off Counts',
+                                                data: dropOffData<?php echo $job_id; ?>,
+                                                backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                                                borderColor: 'rgba(255, 99, 132, 1)',
+                                                borderWidth: 1
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            scales: {
+                                                y: {
+                                                    beginAtZero: true,
+                                                    title: {
+                                                        display: true,
+                                                        text: 'Count'
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    });
+                                </script>
                             </div>
                         </div>
                     </div>
                 <?php } ?>
-
-                <h4>Most Sought-After Skills (Based on Successful Deployments)</h4>
-                <ul>
-                    <?php foreach ($mostDesirableSkills as $skill): ?>
-                        <li><?php echo htmlspecialchars($skill['skill']); ?> - <?php echo $skill['count']; ?> deployments</li>
-                    <?php endforeach; ?>
-                </ul>
-
-                <h4>Most Sought After Jobs</h4>
-                <ul>
-                    <?php foreach ($mostAppliedJobs as $job): ?>
-                        <li><?php echo htmlspecialchars($job['job_title']); ?> - <?php echo $job['applications']; ?> applications</li>
-                    <?php endforeach; ?>
-                </ul>
             </div>
         </div>
     </div>
