@@ -1,5 +1,6 @@
 <?php
 include '../db.php';  // Database connection
+session_start();
 
 // Ensure the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
@@ -64,6 +65,15 @@ try {
     $link = "view_application.php?application_id=" . $application_id; // Create a link to the application view
     $notification_stmt->bind_param('is', $recruiter_id, $link);
     $notification_stmt->execute();
+
+    // Step 2.1: Reset the `is_submitted` field for all requirements in `requirement_tracking` related to this application
+    $reset_requirements_sql = "UPDATE requirement_tracking SET is_submitted = 0 WHERE application_id = ?";
+    $reset_requirements_stmt = $conn->prepare($reset_requirements_sql);
+    if (!$reset_requirements_stmt) {
+        throw new Exception("Error preparing requirements reset query: " . $conn->error);
+    }
+    $reset_requirements_stmt->bind_param('i', $application_id);
+    $reset_requirements_stmt->execute();
 
     // Step 3: Delete answers related to the application from `application_answers`
     $delete_answers_sql = "DELETE FROM application_answers WHERE application_id = ?";

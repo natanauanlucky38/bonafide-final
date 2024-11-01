@@ -20,10 +20,7 @@ $job_id = (int)$_GET['job_id']; // Sanitize job_id
 $_SESSION['job_id'] = $job_id; // Store job_id in session
 
 // Define upload directory for resume files
-$uploadDir = realpath(dirname(__FILE__) . '/../uploads') . '/';
-if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0777, true); // Create directory if it doesn't exist
-}
+$uploadDir = realpath(dirname(__FILE__) . '/../applicant/uploads') . '/';
 
 // Fetch job details to display
 $job_sql = "SELECT * FROM job_postings WHERE job_id = ?";
@@ -189,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $metrics_stmt->execute();
             }
 
-            // Automatically fill requirement_tracking with the req_id and application_id
+            // Automatically fill requirement_tracking with the req_id and application_id if they don't already exist
             $requirements_sql = "SELECT req_id FROM requirement WHERE job_id = ?";
             $requirements_stmt = $conn->prepare($requirements_sql);
             if (!$requirements_stmt) {
@@ -200,16 +197,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $requirements_stmt->execute();
             $requirements_result = $requirements_stmt->get_result();
 
-            // Prepare to insert into requirement_tracking for each requirement
-            $insert_requirements_sql = "INSERT INTO requirement_tracking (req_id, application_id) VALUES (?, ?)";
+            // Prepare the requirement_tracking insertion statement with a conditional check
+            $insert_requirements_sql = "
+    INSERT INTO requirement_tracking (req_id, application_id, is_submitted)
+    SELECT ?, ?, 0
+    FROM DUAL
+    WHERE NOT EXISTS (
+        SELECT 1 FROM requirement_tracking WHERE req_id = ? AND application_id = ?
+    )
+";
             $insert_requirements_stmt = $conn->prepare($insert_requirements_sql);
             if (!$insert_requirements_stmt) {
                 echo "Error preparing requirement_tracking insertion statement: " . $conn->error;
             } else {
                 while ($row = $requirements_result->fetch_assoc()) {
                     $req_id = $row['req_id'];
-                    // Insert into requirement_tracking with req_id and application_id
-                    $insert_requirements_stmt->bind_param('ii', $req_id, $application_id);
+                    // Bind parameters and execute only if the combination does not exist
+                    $insert_requirements_stmt->bind_param('iiii', $req_id, $application_id, $req_id, $application_id);
                     $insert_requirements_stmt->execute();
                 }
             }

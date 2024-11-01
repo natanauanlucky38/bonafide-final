@@ -284,7 +284,6 @@ while ($job = $jobs_result->fetch_assoc()) {
                                                     <?php echo htmlspecialchars($application['applicant_fname'] . ' ' . $application['applicant_lname']); ?>
                                                 </div>
                                                 <p>Status: <?php echo htmlspecialchars($application['display_status']); ?></p>
-                                                <p>Screening Result: <?php echo $application['screening_result'] ?? 'Pending'; ?></p>
                                             </div>
                                         <?php endforeach; ?>
                                     <?php else: ?>

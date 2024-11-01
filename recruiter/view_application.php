@@ -17,6 +17,40 @@ if (!isset($_GET['application_id'])) {
     exit();
 }
 
+// Check if required POST variables are set
+if (isset($_POST['req_id'], $_POST['application_id'], $_POST['is_submitted'])) {
+    $req_id = (int)$_POST['req_id'];
+    $application_id = (int)$_POST['application_id'];
+    $is_submitted = (int)$_POST['is_submitted'];
+
+    // First, check if the specific req_id and application_id already exists in requirement_tracking
+    $check_sql = "SELECT tracking_id FROM requirement_tracking WHERE req_id = ? AND application_id = ?";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bind_param("ii", $req_id, $application_id);
+    $check_stmt->execute();
+    $check_stmt->store_result();
+
+    if ($check_stmt->num_rows > 0) {
+        // If the record exists, update the is_submitted field
+        $update_sql = "UPDATE requirement_tracking SET is_submitted = ? WHERE req_id = ? AND application_id = ?";
+        $update_stmt = $conn->prepare($update_sql);
+        $update_stmt->bind_param("iii", $is_submitted, $req_id, $application_id);
+
+        if ($update_stmt->execute()) {
+            echo "Requirement updated successfully.";
+        } else {
+            echo "Error updating requirement.";
+        }
+
+        $update_stmt->close();
+    } else {
+        // If the record does not exist, return an error message
+        echo "Error: Requirement record not found for updating.";
+    }
+
+    $check_stmt->close();
+}
+
 $application_id = (int)$_GET['application_id']; // Sanitize application_id
 
 // Fetch application details with job title, applicant information, user_id, and resume path
@@ -41,6 +75,27 @@ if ($application_result->num_rows == 0) {
     exit();
 }
 $application = $application_result->fetch_assoc();
+
+// Fetch requirements for the job and their submission status
+$requirements_sql = "
+    SELECT r.req_id, r.requirement, COALESCE(rt.is_submitted, 0) AS is_submitted
+    FROM requirement r
+    LEFT JOIN requirement_tracking rt ON r.req_id = rt.req_id AND rt.application_id = ?
+    WHERE r.job_id = ?";
+$requirements_stmt = $conn->prepare($requirements_sql);
+$requirements_stmt->bind_param("ii", $application_id, $application['job_id']);
+$requirements_stmt->execute();
+$requirements_result = $requirements_stmt->get_result();
+
+// Check if all requirements are submitted
+$all_requirements_submitted = true;
+$requirements = [];
+while ($requirement = $requirements_result->fetch_assoc()) {
+    $requirements[] = $requirement;
+    if ($requirement['is_submitted'] == 0) {
+        $all_requirements_submitted = false;
+    }
+}
 
 // Fetch questionnaire answers and screening evaluation
 $questionnaire_sql = "
@@ -307,6 +362,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
             text-align: left;
         }
     </style>
+    <script>
+        // JavaScript to handle checkbox click and send AJAX request
+        function updateRequirementStatus(req_id, application_id, isSubmitted) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "update_requirement.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    console.log(xhr.responseText); // Log response for debugging
+
+                    // Reload the page to update the deployment option status
+                    location.reload();
+                }
+            };
+
+            xhr.send("req_id=" + req_id + "&application_id=" + application_id + "&is_submitted=" + (isSubmitted ? 1 : 0));
+        }
+    </script>
 </head>
 
 <body>
@@ -322,7 +396,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
         <p><strong>Location:</strong> <?php echo htmlspecialchars($application['location']); ?></p>
         <p><strong>Applicant Name:</strong> <?php echo htmlspecialchars($application['applicant_fname'] . ' ' . $application['applicant_lname']); ?></p>
         <p><strong>Application Status:</strong> <?php echo htmlspecialchars($application['application_status']); ?></p>
-        <p><strong>Resume:</strong> <a href="../applicant/uploads/<?php echo htmlspecialchars($application['resume']); ?>" download>Download Resume</a></p>
+        <p><strong>Resume:</strong>
+            <a href="<?php echo "../applicant/uploads/" . basename($application['resume']); ?>" download>Download Resume</a>
+        </p>
 
         <h3>Applicant Profile Details</h3>
         <p><strong>Email:</strong> <?php echo htmlspecialchars($application['email']); ?></p>
@@ -345,6 +421,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
             <?php endwhile; ?>
         </table>
 
+        <h3>Job Requirements</h3>
+        <table>
+            <tr>
+                <th>Requirement</th>
+                <th>Submitted</th>
+            </tr>
+            <?php
+            $all_requirements_submitted = true;
+            foreach ($requirements as $requirement):
+                if (!$requirement['is_submitted']) {
+                    $all_requirements_submitted = false;
+                }
+            ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($requirement['requirement']); ?></td>
+                    <td>
+                        <input type="checkbox"
+                            onclick="updateRequirementStatus(<?php echo $requirement['req_id']; ?>, <?php echo $application_id; ?>, this.checked)"
+                            <?php echo $requirement['is_submitted'] ? 'checked' : ''; ?>>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </table>
+        <br>
+
         <?php if (!$is_view_only): ?>
             <!-- Actions form -->
             <form method="POST">
@@ -353,7 +454,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
                     <option value="">Select Action</option>
                     <option value="interview">Proceed to Interview</option>
                     <option value="offer">Proceed to Offer</option>
-                    <option value="deployment">Proceed to Deployment</option>
+                    <?php if ($all_requirements_submitted): ?>
+                        <option value="deployment">Proceed to Deployment</option>
+                    <?php endif; ?>
                     <option value="reject">Reject</option>
                 </select>
 
