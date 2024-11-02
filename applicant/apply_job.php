@@ -162,6 +162,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $insert_pipeline_stmt->bind_param('i', $application_id);
                 $insert_pipeline_stmt->execute();
 
+                // Insert Qualifications
+                if (!empty($qualifications)) {
+                    foreach ($qualifications as $qualification) {
+                        if (!empty($qualification)) { // Ensure qualification is not empty
+                            $insert_qualifications_sql = "INSERT INTO profile_details (profile_id, qualifications) VALUES (?, ?)";
+                            $insert_qualifications_stmt = $conn->prepare($insert_qualifications_sql);
+                            $insert_qualifications_stmt->bind_param('is', $profile_id, $qualification);
+                            $insert_qualifications_stmt->execute();
+                            $insert_qualifications_stmt->close();
+                        }
+                    }
+                }
+
+                // Insert Skills
+                if (!empty($skills)) {
+                    foreach ($skills as $skill) {
+                        if (!empty($skill)) { // Ensure skill is not empty
+                            $insert_skills_sql = "INSERT INTO profile_details (profile_id, skills) VALUES (?, ?)";
+                            $insert_skills_stmt = $conn->prepare($insert_skills_sql);
+                            $insert_skills_stmt->bind_param('is', $profile_id, $skill);
+                            $insert_skills_stmt->execute();
+                            $insert_skills_stmt->close();
+                        }
+                    }
+                }
+
+                // Insert Work Experience
+                if (!empty($work_experience)) {
+                    foreach ($work_experience as $experience) {
+                        if (!empty($experience)) { // Ensure experience is not empty
+                            $insert_work_experience_sql = "INSERT INTO profile_details (profile_id, work_experience) VALUES (?, ?)";
+                            $insert_work_experience_stmt = $conn->prepare($insert_work_experience_sql);
+                            $insert_work_experience_stmt->bind_param('is', $profile_id, $experience);
+                            $insert_work_experience_stmt->execute();
+                            $insert_work_experience_stmt->close();
+                        }
+                    }
+                }
+
                 // Update job metrics to increase total applicants and increment based on referral source
                 $metrics_column = '';
                 switch ($referral_source) {

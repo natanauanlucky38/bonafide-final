@@ -145,6 +145,8 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
             <h2>Job Reports</h2>
 
             <a href="download_reports.php" class="btn btn-primary mb-3">Download Report as CSV</a>
+            <a href="download_pdf_reports.php" class="btn btn-primary mb-3">Download Report as PDF</a>
+
 
             <!-- Historical Average Time-to-Fill Graph -->
             <h4>Historical Average Time to Fill</h4>
