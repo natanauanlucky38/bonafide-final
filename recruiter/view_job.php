@@ -328,7 +328,7 @@ foreach ($statuses as $status) {
                         <h4><?php echo htmlspecialchars($job['job_title']); ?> at <?php echo htmlspecialchars($job['company']); ?></h4>
                         <div class="job-details">
                             <div><strong>Location:</strong> <?php echo htmlspecialchars($job['location']); ?></div>
-                            <div><strong>Salary Range:</strong> <?php echo htmlspecialchars($job['min_salary']); ?> - <?php echo htmlspecialchars($job['max_salary']); ?></div>
+                            <div><strong>Salary Range: ₱ </strong> <?php echo htmlspecialchars($job['min_salary']); ?> - <?php echo htmlspecialchars($job['max_salary']); ?></div>
                             <div><strong>Description:</strong> <?php echo htmlspecialchars($job['description']); ?></div>
                             <div><strong>Openings:</strong> <?php echo htmlspecialchars($job['openings']); ?></div>
                             <div><strong>Status:</strong> <?php echo htmlspecialchars($job['status']); ?></div>

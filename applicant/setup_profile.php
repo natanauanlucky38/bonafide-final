@@ -21,7 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $degree = ($education_level == 'TERTIARY' || $education_level == 'POSTGRADUATE') ? trim($_POST['degree']) : NULL;
     $linkedin_link = !empty($_POST['linkedin_link']) ? trim($_POST['linkedin_link']) : NULL;
     $facebook_link = !empty($_POST['facebook_link']) ? trim($_POST['facebook_link']) : NULL;
-    $civil_status = $_POST['civil_status'];  // Civil status selected by the user
+    $civil_status = $_POST['civil_status'];
+
+    // Validate phone number format
+    if (!preg_match('/^\+639\d{9}$/', $phone)) {
+        echo "Invalid phone number format. It should start with +639 followed by 9 digits.";
+        exit();
+    }
 
     // Generate referral code
     function generateReferralCode($length = 8)
@@ -62,6 +68,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 degreeField.style.display = 'none'; // Hide degree field
             }
         }
+
+        function validateForm() {
+            var phone = document.forms["profileForm"]["phone"].value;
+            var phonePattern = /^\+639\d{9}$/;
+
+            if (!phonePattern.test(phone)) {
+                alert("Invalid phone number format. It should start with +639 followed by 9 digits.");
+                return false; // Prevent form submission
+            }
+            return true;
+        }
     </script>
 </head>
 
@@ -69,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <h2>Setup Your Profile</h2>
 
     <!-- Added form opening tag with method="POST" -->
-    <form method="POST" action="setup_profile.php">
+    <form name="profileForm" method="POST" action="setup_profile.php" onsubmit="return validateForm()">
 
         <!-- Personal Information Section -->
         <fieldset>
@@ -91,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <!-- Contact Information Section -->
         <fieldset>
             <legend>Contact Information</legend>
-            <input type="text" name="phone" placeholder="Phone Number" required><br>
+            <input type="text" name="phone" id="phone" value="+639" maxlength="13" placeholder="Phone Number" required oninput="validatePhoneInput()"><br>
             <input type="text" name="address" placeholder="Address" required><br>
             <input type="text" name="linkedin_link" placeholder="LinkedIn Profile (Optional)"><br>
             <input type="text" name="facebook_link" placeholder="Facebook Profile (Optional)"><br>
@@ -120,6 +137,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <!-- Submit Button -->
         <button type="submit">Submit Profile</button>
     </form>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var phoneInput = document.getElementById("phone");
+
+            // Ensure the input starts with +639 and restrict the user from modifying it
+            phoneInput.addEventListener("input", validatePhoneInput);
+
+            function validatePhoneInput() {
+                if (!phoneInput.value.startsWith("+639")) {
+                    phoneInput.value = "+639"; // Reset to +639 if modified
+                }
+                // Allow only numeric input after the prefix
+                phoneInput.value = phoneInput.value.slice(0, 4) + phoneInput.value.slice(4).replace(/\D/g, '');
+                // Limit to +639 plus 9 digits (13 characters total)
+                if (phoneInput.value.length > 13) {
+                    phoneInput.value = phoneInput.value.slice(0, 13);
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -303,7 +303,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <p><strong>Company:</strong> <?php echo htmlspecialchars($job['company']); ?></p>
     <p><strong>Location:</strong> <?php echo htmlspecialchars($job['location']); ?></p>
     <p><strong>Description:</strong> <?php echo nl2br(htmlspecialchars($job['description'])); ?></p>
-    <p><strong>Salary Range:</strong> <?php echo htmlspecialchars($job['min_salary']); ?> - <?php echo htmlspecialchars($job['max_salary']); ?></p>
+    <p><strong>Salary Range: </strong>₱<?php echo htmlspecialchars($job['min_salary']); ?> - ₱<?php echo htmlspecialchars($job['max_salary']); ?></p>
+
 
     <form action="apply_job.php?job_id=<?php echo $job_id; ?>" method="POST" enctype="multipart/form-data">
         <label for="resume">Upload Resume:</label>

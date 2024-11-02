@@ -16,7 +16,6 @@ $user_id = $_SESSION['user_id'];
 // Get the application ID from the URL to highlight the specific row
 $highlightedApplicationId = isset($_GET['application_id']) ? $_GET['application_id'] : null;
 
-// Fetch user's applications, excluding those that are withdrawn
 $applications_sql = "
     SELECT a.application_id, a.application_status, a.rejection_reason, a.resume,
            j.job_title, j.company, j.location,
@@ -24,11 +23,20 @@ $applications_sql = "
            a.job_id
     FROM applications a
     JOIN job_postings j ON a.job_id = j.job_id
-    LEFT JOIN tbl_interview i ON a.application_id = i.application_id
+    LEFT JOIN (
+        SELECT application_id, interview_date, interview_type, meet_link
+        FROM tbl_interview
+        WHERE (application_id, interview_date) IN (
+            SELECT application_id, MAX(interview_date)
+            FROM tbl_interview
+            GROUP BY application_id
+        )
+    ) i ON a.application_id = i.application_id
     WHERE a.profile_id = (SELECT profile_id FROM profiles WHERE user_id = ?)
     AND a.application_status != 'WITHDRAWN'
     ORDER BY a.application_id DESC
 ";
+
 
 $applications_stmt = $conn->prepare($applications_sql);
 if (!$applications_stmt) {

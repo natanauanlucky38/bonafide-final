@@ -91,7 +91,7 @@ $result = $stmt->get_result();
                             <td><?php echo htmlspecialchars($row['job_title']); ?></td>
                             <td><?php echo htmlspecialchars($row['company']); ?></td>
                             <td><?php echo htmlspecialchars($row['location']); ?></td>
-                            <td><?php echo htmlspecialchars($row['min_salary']) . ' - ' . htmlspecialchars($row['max_salary']); ?></td>
+                            <td><?php echo '₱' . htmlspecialchars($row['min_salary']) . ' - ₱' . htmlspecialchars($row['max_salary']); ?></td>
                             <td><?php echo htmlspecialchars($row['description']); ?></td>
                             <td><?php echo htmlspecialchars($row['openings']); ?></td>
                             <td><?php echo htmlspecialchars($row['deadline']); ?></td>

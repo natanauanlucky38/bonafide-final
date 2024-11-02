@@ -14,9 +14,9 @@ $successMessage = "";
 // Handle form submission for creating a job posting and requirements
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
     // Sanitize and validate form inputs
-    $job_title = trim($_POST['job_title']);
-    $company = trim($_POST['company']);
-    $location = trim($_POST['location']);
+    $job_title = strtoupper(trim($_POST['job_title']));  // Convert to uppercase
+    $company = strtoupper(trim($_POST['company']));      // Convert to uppercase
+    $location = strtoupper(trim($_POST['location']));    // Convert to uppercase
     $min_salary = trim($_POST['min_salary']);
     $max_salary = trim($_POST['max_salary']);
     $description = trim($_POST['description']);
@@ -33,6 +33,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
     // Basic validation for required fields
     if (empty($job_title) || empty($company) || empty($location) || empty($openings) || empty($deadline) || empty($description) || empty($status)) {
         $errors[] = "Please fill in all required fields.";
+    }
+
+    // Validate salary fields and remove any formatting (e.g., "₱") before storing
+    $min_salary = str_replace('₱', '', $min_salary);
+    $max_salary = str_replace('₱', '', $max_salary);
+
+    if (!is_numeric($min_salary) || !is_numeric($max_salary)) {
+        $errors[] = "Please enter valid numeric values for salary.";
+    } elseif (floatval($min_salary) > floatval($max_salary)) {
+        $errors[] = "Minimum salary cannot be greater than maximum salary.";
     }
 
     // Validate deadline
@@ -63,12 +73,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
             $requirementStmt = $conn->prepare($requirementSql);
 
             foreach ($requirement_names as $requirement_name) {
+                $requirement_name = strtoupper($requirement_name);
                 $requirementStmt->bind_param('is', $job_id, $requirement_name);
                 if (!$requirementStmt->execute()) {
                     $errors[] = "Error inserting requirement: " . $requirementStmt->error;
                 }
             }
             $requirementStmt->close();
+
 
             // Insert questionnaire if applicable
             if ($has_questionnaire && !empty($questions)) {
