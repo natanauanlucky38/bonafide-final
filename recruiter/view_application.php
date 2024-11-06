@@ -564,6 +564,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
         </script>
     </div>
 </body>
+<?php include 'footer.php'; ?>
 
 </html>
 

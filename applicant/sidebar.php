@@ -2,11 +2,6 @@
 // sidebar.php
 ?>
 
-<!-- Sidebar Toggle Button (Hamburger Icon) -->
-<button class="sidebar-toggle" onclick="toggleSidebar()">
-    <i class="fas fa-bars"></i>
-</button>
-
 <!-- Sidebar -->
 <div class="sidebar">
     <ul class="sidebar_list">

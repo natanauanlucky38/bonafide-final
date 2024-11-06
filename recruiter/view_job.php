@@ -153,9 +153,10 @@ foreach ($statuses as $status) {
         <?php endforeach; ?>
     </div>
 
-    <?php include 'footer.php'; ?>
+
 
 </body>
+<?php include 'footer.php'; ?>
 
 </html>
 

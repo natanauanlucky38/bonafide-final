@@ -37,18 +37,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header('Location: dashboard.php');
         exit();
     } else {
-        $error_message = "Invalid password.";
+        $error_message = "No user found with that email."; // Moved inside else block
     }
-} else {
-    $error_message = "No user found with that email.";
-}
 
-// Close the $stmt only if it was successfully prepared
-if (isset($stmt)) {
+    // Close the $stmt only if it was successfully prepared
     $stmt->close();
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -58,25 +53,42 @@ if (isset($stmt)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="user_admin_styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 </head>
 
-<body>
-    <div class="container mt-5">
-        <h2 class="text-center">Login</h2>
-        <?php if (isset($error_message)): ?>
+<body class="index-main-content">
+    <div class="index-container mt-5">
+        <h1 class="text-center">Bonafide Trainology Placement Services</h1>
+        <h2 class="text-center">Admin - Login</h2>
+        <br>
+        <hr>
+        <?php if (!empty($error_message)): ?>
             <div class="alert alert-danger"><?php echo htmlspecialchars($error_message); ?></div>
         <?php endif; ?>
         <form method="POST">
             <div class="form-group">
                 <label for="email">Email</label>
-                <input type="email" class="form-control" name="email" required>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                    </div>
+                    <input type="email" class="form-control" name="email" required>
+                </div>
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" class="form-control" name="password" required>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    </div>
+                    <input type="password" class="form-control" name="password" required>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary btn-block">Login</button>
         </form>
+
     </div>
 </body>
 

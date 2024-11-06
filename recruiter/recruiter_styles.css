@@ -441,10 +441,12 @@ button:hover, .btn:hover {
     padding: 20px;
     background-color: #f0f4f7; /* Light background */
     color: #333;
+    padding-bottom: 60px; /* Adjust this value based on footer height */
+
 }
 
 /* Content Area Container */
-.content-area {
+.user_management-content-area {
     background-color: #ffffff;
     border-radius: 8px;
     padding: 20px;
@@ -452,7 +454,7 @@ button:hover, .btn:hover {
 }
 
 /* Page Title */
-.content-area h2 {
+.user_management-content-area h2 {
     color: #004d00; /* Dark green */
     font-weight: bold;
     text-align: center;
@@ -464,7 +466,7 @@ form[action="user_management.php"] {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
 form[action="user_management.php"] input[type="text"] {
@@ -500,13 +502,14 @@ form[action="user_management.php"] button:hover {
 .email-action button {
     background-color: #228B22;
     color: white;
-    padding: 10px 20px;
+    padding: 10px 10px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 1em;
+    font-size: 2em;
     font-weight: bold;
     transition: background-color 0.3s;
+    margin-right: 10px;
 }
 
 .email-action button:hover {
@@ -1017,6 +1020,7 @@ table tbody tr:nth-child(odd) {
     color: #333;
     display: flex;
     justify-content: center; /* Center the content area */
+    padding-bottom: 60px; /* Adjust this value based on footer height */
 }
 
 /* Content Area */
@@ -1695,4 +1699,45 @@ button[type="submit"]:hover {
     .title-container h2 {
         font-size: 1.2em;
     }
+}
+
+/*.
+.
+.,.
+,.
+,.
+,.
+,.
+,.
+,.
+,.
+*/
+
+/* Footer Styling */
+.main-footer {
+    background-color: #004d00; /* Dark green background */
+    color: #f1f1f1; /* Light text color for readability */
+    text-align: center;
+    padding: 15px 20px;
+    width: 100%;
+    position: fixed; /* Fixed position to keep it at the bottom */
+    bottom: 0; /* Align to the bottom of the viewport */
+    left: 0; /* Align to the left edge */
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1); /* Shadow for depth */
+    font-size: 1em;
+    z-index: 1000; /* Ensure it stays above other elements */
+}
+
+.main-footer p {
+    margin: 0;
+}
+
+.main-footer p a {
+    color: #a8d5a8; /* Light green link color */
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.main-footer p a:hover {
+    color: #f1f1f1; /* Change color on hover */
 }

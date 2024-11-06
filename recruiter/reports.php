@@ -532,7 +532,8 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
         }
     </script>
 
-    <?php include 'footer.php'; ?>
+
 </body>
+<?php include 'footer.php'; ?>
 
 </html>

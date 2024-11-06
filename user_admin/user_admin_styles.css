@@ -1,0 +1,409 @@
+/* General Body Styling */
+body.index-main-content {
+    background: linear-gradient(to right, #004d00, #66ff66); /* Gradient background */
+    font-family: 'Arial', sans-serif;
+    height: 100vh; /* Full height for vertical centering */
+    display: flex; /* Flexbox for centering */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+}
+
+/* Container Styling */
+.index-container {
+    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white */
+    border-radius: 10px; /* Rounded corners */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
+    padding: 30px; /* Padding for inner spacing */
+    max-width: 500px; /* Limit the width of the login form */
+    width: 100%; /* Allow full width for responsiveness */
+}
+
+/* Heading Styling */
+.index-container h1 {
+    color: #004d00; /* Dark green color */
+    margin: 0; /* Remove margin to prevent spacing issues */
+    text-align: center; /* Center text horizontally */
+    font-size: 1.5em; /* Adjust font size as needed */
+    white-space: nowrap; /* Prevent line breaks */
+    overflow: hidden; /* Hide overflow text */
+    text-overflow: ellipsis; /* Add ellipsis for overflow text */
+}
+
+/* Subheading Styling */
+.index-container h2 {
+    color: #004d00; /* Dark green color */
+    margin-bottom: 20px; /* Space below the heading */
+    text-align: center; /* Center text horizontally */
+}
+
+/* Alert Message Styling */
+.alert {
+    border-radius: 5px; /* Rounded corners for alert */
+}
+
+/* Form Group Styling */
+.form-group label {
+    font-weight: bold; /* Bold labels */
+    color: #004d00; /* Dark green color */
+}
+
+/* Input Group Styling */
+.input-group {
+    display: flex;
+    align-items: center; /* Center align items */
+}
+
+.input-group-prepend {
+    margin-right: 10px; /* Space between icon and input field */
+}
+
+.input-group-text {
+    background-color: #f1f1f1; /* Light gray background for the icon */
+    border: 1px solid #ccc; /* Border similar to the input field */
+    border-radius: 5px; /* Rounded corners for the icon container */
+    color: #004d00; /* Dark green color for the icons */
+}
+
+.input-group-text i {
+    margin: 0; /* No margin around the icon */
+    font-size: 1.2em; /* Icon size */
+}
+
+.form-control {
+    border: 1px solid #ccc; /* Light gray border */
+    border-radius: 5px; /* Rounded corners */
+    transition: border-color 0.3s; /* Smooth transition */
+}
+
+.form-control:focus {
+    border-color: #66ff66; /* Change border color on focus */
+    box-shadow: 0 0 5px rgba(102, 255, 102, 0.5); /* Shadow effect */
+}
+
+/* Button Styling */
+.btn {
+    background-color: #004d00; /* Dark green background */
+    border: none; /* Remove border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 10px; /* Padding for button */
+    font-size: 16px; /* Font size for button */
+    transition: background-color 0.3s, transform 0.2s; /* Smooth transition for hover */
+    color: white; /* White text color */
+}
+
+.btn:hover {
+    background-color: #66ff66; /* Light green on hover */
+    transform: translateY(-2px); /* Slight lift on hover */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .index-container {
+        padding: 20px; /* Less padding on smaller screens */
+    }
+    h2 {
+        font-size: 24px; /* Smaller heading on mobile */
+    }
+}
+
+
+/*,
+.,
+.
+,.
+,.
+,.
+,.
+,.,
+*/
+
+/* General Body Styling */
+body.dashboard-main-content {
+    background: linear-gradient(to right, #004d00, #66ff66); /* Gradient background */
+    font-family: 'Arial', sans-serif;
+    margin: 0; /* Remove default margin */
+    padding: 0; /* Remove default padding */
+}
+
+/* Container Styling */
+.dashboard-container {
+    background-color: rgba(255, 255, 255, 0.95); /* Slightly more opaque white */
+    border-radius: 10px; /* Rounded corners */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
+    padding: 30px; /* Padding for inner spacing */
+    max-width: 800px; /* Limit the width of the dashboard */
+    margin: auto; /* Center align */
+}
+
+/* Heading Styling */
+.dashboard-container h2 {
+    color: #004d00; /* Dark green color */
+    margin-bottom: 20px; /* Space below the heading */
+    font-size: 2em; /* Larger heading size */
+    text-align: center; /* Center the main heading */
+}
+
+.dashboard-container h4 {
+    color: #004d00; /* Dark green for section headings */
+    margin-top: 30px; /* Space above section headings */
+    font-size: 1.5em; /* Slightly larger subsection heading */
+}
+
+/* Alert Message Styling */
+.alert {
+    border-radius: 5px; /* Rounded corners for alert */
+    padding: 15px; /* More padding for better appearance */
+    margin-bottom: 20px; /* Space below alert */
+}
+
+/* Table Styling */
+.table {
+    margin-bottom: 30px; /* Space below tables */
+    border-radius: 8px; /* Rounded corners */
+    border: 5px solid #004d00; /* Dark green border for the table */
+    overflow: hidden; /* Prevent overflow of the rounded corners */
+}
+
+.table thead {
+    background-color: #004d00; /* Dark green header */
+    color: #fff; /* White text */
+}
+
+.table th, .table td {
+    vertical-align: middle; /* Center align cell content */
+    padding: 15px; /* Add padding for cells */
+    border-bottom: 1px solid #ddd; /* Light gray bottom border */
+}
+
+.table tbody tr {
+    transition: background-color 0.3s; /* Smooth transition */
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 77, 0, 0.2); /* Light hover effect */
+}
+
+/* Button Styling */
+.btn {
+    background-color: #004d00; /* Dark green background */
+    border: none; /* Remove border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 10px 15px; /* Padding for button */
+    font-size: 16px; /* Font size for button */
+    transition: background-color 0.3s, transform 0.2s; /* Smooth transition for hover */
+    color: white; /* White text color for buttons */
+}
+
+.btn:hover {
+    background-color: #66ff66; /* Light green on hover */
+    transform: translateY(-2px); /* Slight lift on hover */
+}
+
+/* Specific button styling for edit actions */
+.btn-warning {
+    color: white; /* Ensure edit button text is white */
+}
+
+/* Icon Styling */
+.input-group-text i {
+    color: #004d00; /* Dark green color for icons */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .dashboard-container {
+        padding: 20px; /* Less padding on smaller screens */
+    }
+    h2 {
+        font-size: 24px; /* Smaller heading on mobile */
+    }
+    h4 {
+        font-size: 20px; /* Smaller section heading on mobile */
+    }
+}
+
+
+
+/*
+,.
+,.
+,.
+,.
+,
+.,
+*/
+
+
+/* Edit User Container */
+.edit-user-container {
+    background-color: rgba(255, 255, 255, 0.95); /* Slightly more opaque */
+    border-radius: 10px; /* Rounded corners */
+    padding: 20px; /* Inner padding */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Shadow for depth */
+}
+
+/* Form Group Styling */
+.edit-user-container .form-group {
+    margin-bottom: 20px; /* Space below each form group */
+}
+
+/* Button Styling */
+.edit-user-container .btn {
+    background-color: #004d00; /* Dark green background */
+    border-radius: 5px; /* Rounded corners */
+}
+
+/* Alert Styling */
+.alert {
+    margin-bottom: 20px; /* Space below alerts */
+}
+
+/*
+,.
+,.
+,.
+,
+.,
+.*/
+
+/* General Body Styling */
+body.create-user-main-content {
+    background: linear-gradient(to right, #004d00, #66ff66); /* Gradient background */
+    font-family: 'Arial', sans-serif;
+}
+
+/* Create User Container */
+.create-user-container {
+    background-color: rgba(255, 255, 255, 0.95); /* Slightly more opaque */
+    border-radius: 10px; /* Rounded corners */
+    padding: 30px; /* Inner padding */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Shadow for depth */
+}
+
+/* Heading Styling */
+.create-user-container h2 {
+    color: #004d00; /* Dark green color */
+}
+
+/* Form Group Styling */
+.form-group {
+    margin-bottom: 20px; /* Space below each form group */
+}
+
+/* Button Styling */
+.btn {
+    background-color: #004d00; /* Dark green background */
+    border-radius: 5px; /* Rounded corners */
+}
+
+/* Alert Styling */
+.alert {
+    margin-bottom: 20px; /* Space below alerts */
+}
+
+/* Icon Styling */
+.input-group-text i {
+    color: #004d00; /* Dark green color for icons */
+}
+
+/*
+
+,.
+,.
+,
+.,
+.,
+.,
+.
+,.
+
+*/
+
+/* Main Header Styling */
+.main-header {
+    background-color: #a8d5a8; /* Light green background */
+    color: #004d00; /* Dark green text color */
+    display: flex; /* Use flexbox for layout */
+    justify-content: space-between; /* Space between title and logout */
+    align-items: center; /* Center items vertically */
+    padding: 10px 20px; /* Adjust padding for header */
+    height: 60px; /* Set a fixed height for the header */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+.header-title {
+    display: flex; /* Use flexbox for logo and title alignment */
+    align-items: center; /* Center logo and title vertically */
+}
+
+.header-title .logo {
+    height: 40px; /* Set a fixed height for the logo image */
+    width: auto; /* Maintain aspect ratio */
+    margin-right: 10px; /* Space between logo and title */
+}
+
+.header-title h1 {
+    margin: 0; /* Remove default margin */
+    font-size: 1.5em; /* Increase title font size */
+}
+
+.header-right .logout {
+    background-color: #f44336; /* Red background for logout button */
+    color: white; /* White text color */
+    padding: 10px 15px; /* Padding for button */
+    border-radius: 5px; /* Rounded corners */
+    text-decoration: none; /* Remove underline */
+    transition: background-color 0.3s; /* Smooth transition for hover */
+}
+
+.header-right .logout:hover {
+    background-color: #c62828; /* Darker red on hover */
+}
+
+
+/*
+,.
+,.
+,
+.,
+.,
+.,
+*/
+
+
+
+/* Footer Styling */
+html, body {
+    height: 100%; /* Make sure the body takes the full height */
+    margin: 0; /* Remove default margin */
+}
+
+body {
+    display: flex; /* Use flexbox for layout */
+    flex-direction: column; /* Arrange elements in a column */
+}
+
+.main-footer {
+    background-color: #a8d5a8; /* Light green background */
+    color: #004d00; /* Dark green text color */
+    text-align: center; /* Center text */
+    padding: 15px 20px; /* Padding for footer */
+    width: 100%; /* Full width */
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1); /* Shadow for depth */
+    font-size: 1em; /* Font size for footer text */
+    margin-top: auto; /* Push the footer to the bottom of the page */
+}
+
+.main-footer p {
+    margin: 0; /* Remove default margin */
+}
+
+.main-footer p a {
+    color: #004d00; /* Dark green link color */
+    text-decoration: none; /* Remove underline */
+    transition: color 0.3s; /* Smooth transition for hover */
+}
+
+.main-footer p a:hover {
+    color: #f1f1f1; /* Change color on hover */
+}

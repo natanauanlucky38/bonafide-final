@@ -298,6 +298,7 @@ while ($job = $jobs_result->fetch_assoc()) {
         <?php endforeach; ?>
     </div>
 </body>
+<?php include 'footer.php'; ?>
 
 </html>
 

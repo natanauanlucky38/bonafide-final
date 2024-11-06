@@ -1,7 +1,7 @@
 <?php
 include '../db.php'; // Database connection
 include 'header.php';
-include 'footer.php';
+
 
 // Check if user is logged in and is a USER_ADMIN
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'USER_ADMIN') {
@@ -43,11 +43,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create_user'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create New User</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="user_admin_styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
-<body>
-    <div class="container mt-5">
-        <h2>Create New User</h2>
+<body class="create-user-main-content">
+    <div class="create-user-container mt-5">
+        <h2><i class="fas fa-user-plus"></i> Create New User</h2>
         <?php if (isset($success_message)): ?>
             <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
         <?php endif; ?>
@@ -57,19 +59,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create_user'])) {
 
         <form method="POST" class="mb-4">
             <div class="form-group">
-                <label for="email">Email</label>
+                <label for="email">Email <i class="fas fa-envelope"></i></label>
                 <input type="email" class="form-control" name="email" required>
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password">Password <i class="fas fa-lock"></i></label>
                 <input type="password" class="form-control" name="password" required>
             </div>
             <div class="form-group">
-                <label for="confirm_password">Confirm Password</label>
+                <label for="confirm_password">Confirm Password <i class="fas fa-lock"></i></label>
                 <input type="password" class="form-control" name="confirm_password" required>
             </div>
             <div class="form-group">
-                <label for="role">Role</label>
+                <label for="role">Role <i class="fas fa-user-tag"></i></label>
                 <select name="role" class="form-control" required>
                     <option value="RECRUITER">RECRUITER</option>
                     <?php if ($_SESSION['role'] == 'USER_ADMIN'): ?>
@@ -77,9 +79,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create_user'])) {
                     <?php endif; ?>
                 </select>
             </div>
-            <button type="submit" name="create_user" class="btn btn-primary">Create User</button>
+            <button type="submit" name="create_user" class="btn btn-primary"><i class="fas fa-user-plus"></i> Create User</button>
         </form>
     </div>
 </body>
+<?php include 'footer.php'; ?>
 
 </html>

@@ -87,6 +87,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <?php if (isset($error)) {
         echo "<p style='color:red;'>$error</p>";
     } ?>
+
+
 </body>
+<?php include 'footer.php'; ?>
 
 </html>

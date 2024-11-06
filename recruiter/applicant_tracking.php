@@ -183,6 +183,7 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
     </div>
 
 </body>
+<?php include 'footer.php'; ?>
 
 </html>
 

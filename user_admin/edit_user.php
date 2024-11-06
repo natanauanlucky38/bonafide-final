@@ -63,11 +63,13 @@ if (isset($_GET['user_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit User</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="user_admin_styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
-<body>
-    <div class="container mt-5">
-        <h2>Edit User</h2>
+<body class="edit-user-main-content">
+    <div class="edit-user-container mt-5">
+        <h2><i class="fas fa-user-edit"></i> Edit User</h2>
         <?php if (isset($success_message)): ?>
             <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
         <?php endif; ?>
@@ -79,11 +81,11 @@ if (isset($_GET['user_id'])) {
         <form method="POST">
             <input type="hidden" name="user_id" value="<?php echo htmlspecialchars($user['user_id']); ?>">
             <div class="form-group">
-                <label for="email">Email</label>
+                <label for="email">Email <i class="fas fa-envelope"></i></label>
                 <input type="email" class="form-control" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
             </div>
             <div class="form-group">
-                <label for="role">Role</label>
+                <label for="role">Role <i class="fas fa-user-tag"></i></label>
                 <select name="role" class="form-control" required>
                     <option value="RECRUITER" <?php echo ($user['role'] == 'RECRUITER') ? 'selected' : ''; ?>>RECRUITER</option>
                     <option value="APPLICANT" <?php echo ($user['role'] == 'APPLICANT') ? 'selected' : ''; ?>>APPLICANT</option>
@@ -91,15 +93,16 @@ if (isset($_GET['user_id'])) {
                 </select>
             </div>
             <div class="form-group">
-                <label for="status">Status</label>
+                <label for="status">Status <i class="fas fa-check-circle"></i></label>
                 <select name="status" class="form-control" required>
                     <option value="ACTIVE" <?php echo ($user['status'] == 'ACTIVE') ? 'selected' : ''; ?>>ACTIVE</option>
                     <option value="BANNED" <?php echo ($user['status'] == 'BANNED') ? 'selected' : ''; ?>>BANNED</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary">Update User</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update User</button>
         </form>
     </div>
 </body>
+<?php include 'footer.php'; ?>
 
 </html>

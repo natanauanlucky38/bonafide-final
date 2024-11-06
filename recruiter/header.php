@@ -20,6 +20,7 @@ $unread_count = $unread_row['unread_count'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recruiter Dashboard</title>
     <link rel="stylesheet" href="recruiter_styles.css"> <!-- Link to external CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- Link to Font Awesome -->
 </head>
 
 <body>
@@ -34,7 +35,8 @@ $unread_count = $unread_row['unread_count'];
             <!-- Notification Dropdown -->
             <div class="notification">
                 <a href="#" id="notification-bell">
-                    Notifications <span class="badge"><?php echo $unread_count; ?></span>
+                    <i class="fas fa-bell"></i> <!-- Bell icon -->
+                    <span class="badge"><?php echo $unread_count; ?></span>
                 </a>
                 <div class="notification-list">
                     <?php

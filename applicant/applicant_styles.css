@@ -306,11 +306,44 @@ html, body {
 }
 
 /* Search Bar Styling */
-.view_job-container form {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+.view_job-container .search-bar {
+    display: flex; /* Use flexbox to align input and button */
+    margin-bottom: 20px; /* Space below the search bar */
 }
+
+.view_job-container .search-bar input[type="text"] {
+    flex: 1; /* Allow the input to take available space */
+    padding: 5px; /* Smaller padding inside the input */
+    border: 1px solid #ccc; /* Light gray border */
+    border-radius: 5px 0 0 5px; /* Rounded corners for the left side */
+    font-size: 14px; /* Font size for input text */
+    min-width: 150px; /* Set a minimum width for the input */
+}
+
+.view_job-container .search-bar input[type="text"]:focus {
+    border-color: #66ff66; /* Change border color on focus */
+    box-shadow: 0 0 5px rgba(102, 255, 102, 0.5); /* Shadow effect */
+}
+
+/* Updated button styling with smaller size */
+.view_job-container .search-bar button {
+    padding: 5px 10px; /* Smaller padding for the button */
+    border: none; /* Remove border */
+    background-color: #004d00; /* Dark green background */
+    color: white; /* White text color */
+    border-radius: 0 5px 5px 0; /* Rounded corners for the right side */
+    cursor: pointer; /* Change cursor on hover */
+    font-size: 14px; /* Match font size with input */
+    transition: background-color 0.3s; /* Smooth transition for hover */
+    height: 30px; /* Set a specific height for the button */
+    min-width: 70px; /* Minimum width for the button */
+    max-width: 100px; /* Maximum width for the button */
+}
+
+.view_job-container .search-bar button:hover {
+    background-color: #66ff66; /* Light green on hover */
+}
+
 
 .view_job-container input[type="text"] {
     width: 300px;
@@ -750,43 +783,17 @@ html, body {
     }
 }
 
-/* Footer Styling */
-.main-footer {
-    background-color: #004d00; /* Dark green background */
-    color: #f1f1f1; /* Light text color for readability */
-    text-align: center;
-    padding: 15px 20px;
-    width: 100%;
-    position: relative;
-    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1); /* Shadow for depth */
-    font-size: 1em;
-    z-index: 1000; /* Ensure it stays above other elements */
-    bottom: 0;
-    left: 0;
-    flex-shrink: 0; /* Prevent footer from shrinking */
-}
-
-.main-footer p {
-    margin: 0;
-}
-
-.main-footer p a {
-    color: #a8d5a8; /* Light green link color */
-    text-decoration: none;
-    transition: color 0.3s;
-}
-
-.main-footer p a:hover {
-    color: #f1f1f1; /* Change color on hover */
-}
-
-/* Responsive adjustments */
-@media screen and (max-width: 768px) {
-    .main-footer {
-        font-size: 0.8em;
-        padding: 10px 15px;
-    }
-}
+/*
+.
+.
+.
+..
+.
+.
+.
+.
+.
+.*/
 
 
 /*
@@ -1157,22 +1164,13 @@ html, body {
     text-align: center;
     padding: 15px 20px;
     width: 100%;
-    position: relative;
+    position: fixed; /* Fixed position to keep it at the bottom */
+    bottom: 0; /* Align to the bottom of the viewport */
+    left: 0; /* Align to the left edge */
     box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1); /* Shadow for depth */
     font-size: 1em;
     z-index: 1000; /* Ensure it stays above other elements */
-    bottom: 0;
-    left: 0;
-    flex-shrink: 0; /* Prevent footer from shrinking */
 }
-
-/* Wrapper for main content and footer */
-.wrapper {
-    display: flex;
-    flex-direction: column;
-    flex: 1; /* Takes remaining height to push footer down */
-}
-
 
 .main-footer p {
     margin: 0;
@@ -1186,14 +1184,6 @@ html, body {
 
 .main-footer p a:hover {
     color: #f1f1f1; /* Change color on hover */
-}
-
-/* Responsive adjustments */
-@media screen and (max-width: 768px) {
-    .main-footer {
-        font-size: 0.8em;
-        padding: 10px 15px;
-    }
 }
 
 

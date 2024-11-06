@@ -211,9 +211,7 @@ $referred_users = $referred_users_result->fetch_all(MYSQLI_ASSOC);
 
 
 </body>
-<?php
-include 'footer.php';
-?>
+<?php include 'footer.php'; ?>
 
 </html>
 

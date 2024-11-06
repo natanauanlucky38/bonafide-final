@@ -57,7 +57,7 @@ $results = $stmt->get_result();
 </head>
 
 <body class="user_management-main-content">
-    <div class="content-area">
+    <div class="user_management-content-area">
         <h2>User Management - Applicants</h2>
 
         <!-- Search Form -->

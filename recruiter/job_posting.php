@@ -318,9 +318,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
         </form>
     </div>
 
-    <?php include 'footer.php'; ?>
+
 
 </body>
+<?php include 'footer.php'; ?>
 
 </html>
 

@@ -1,7 +1,7 @@
 <?php
 include '../db.php'; // Database connection
 include 'header.php';
-include 'footer.php';
+
 
 // Check if user is logged in and is a USER_ADMIN
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'USER_ADMIN') {
@@ -52,7 +52,6 @@ function fetchUsersByRole($conn, $role, $status_sort, $current_user_id)
 $applicants = fetchUsersByRole($conn, 'APPLICANT', $applicant_sort, $current_user_id);
 $recruiters = fetchUsersByRole($conn, 'RECRUITER', $recruiter_sort, $current_user_id);
 $user_admins = fetchUsersByRole($conn, 'USER_ADMIN', $admin_sort, $current_user_id);
-
 ?>
 
 <!DOCTYPE html>
@@ -63,10 +62,12 @@ $user_admins = fetchUsersByRole($conn, 'USER_ADMIN', $admin_sort, $current_user_
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Admin Dashboard</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="user_admin_styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
-<body>
-    <div class="container mt-5">
+<body class="dashboard-main-content">
+    <div class="dashboard-container mt-5">
         <h2>User Management</h2>
         <?php if (isset($success_message)): ?>
             <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
@@ -99,8 +100,12 @@ $user_admins = fetchUsersByRole($conn, 'USER_ADMIN', $admin_sort, $current_user_
                         <td><?php echo htmlspecialchars($applicant['email']); ?></td>
                         <td><?php echo htmlspecialchars($applicant['status']); ?></td>
                         <td>
-                            <a href="edit_user.php?user_id=<?php echo $applicant['user_id']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                            <a href="?delete_user=<?php echo $applicant['user_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
+                            <a href="edit_user.php?user_id=<?php echo $applicant['user_id']; ?>" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="?delete_user=<?php echo $applicant['user_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?');">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -129,8 +134,12 @@ $user_admins = fetchUsersByRole($conn, 'USER_ADMIN', $admin_sort, $current_user_
                         <td><?php echo htmlspecialchars($recruiter['email']); ?></td>
                         <td><?php echo htmlspecialchars($recruiter['status']); ?></td>
                         <td>
-                            <a href="edit_user.php?user_id=<?php echo $recruiter['user_id']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                            <a href="?delete_user=<?php echo $recruiter['user_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
+                            <a href="edit_user.php?user_id=<?php echo $recruiter['user_id']; ?>" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="?delete_user=<?php echo $recruiter['user_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?');">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -159,8 +168,13 @@ $user_admins = fetchUsersByRole($conn, 'USER_ADMIN', $admin_sort, $current_user_
                         <td><?php echo htmlspecialchars($user_admin['email']); ?></td>
                         <td><?php echo htmlspecialchars($user_admin['status']); ?></td>
                         <td>
-                            <a href="edit_user.php?user_id=<?php echo $user_admin['user_id']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                            <a href="?delete_user=<?php echo $user_admin['user_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
+                            <a href="edit_user.php?user_id=<?php echo $applicant['user_id']; ?>" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+
+                            <a href="?delete_user=<?php echo $user_admin['user_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?');">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -168,5 +182,6 @@ $user_admins = fetchUsersByRole($conn, 'USER_ADMIN', $admin_sort, $current_user_
         </table>
     </div>
 </body>
+<?php include 'footer.php'; ?>
 
 </html>

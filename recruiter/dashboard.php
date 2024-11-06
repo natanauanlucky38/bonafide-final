@@ -161,6 +161,7 @@ $calendar_events = getCalendarEvents($conn);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
     <link rel="stylesheet" href="recruiter_styles.css"> <!-- Link to your CSS file -->
 
@@ -241,6 +242,23 @@ $calendar_events = getCalendarEvents($conn);
                     data: [<?php echo $monthly_jobs; ?>, <?php echo $quarterly_jobs; ?>, <?php echo $yearly_jobs; ?>],
                     backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
                 }]
+            },
+            options: {
+                plugins: {
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'end',
+                        formatter: (value, context) => {
+                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(2) + '%';
+                            return `${percentage} (${value})`; // Display percentage and count
+                        },
+                        color: '#fff',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                }
             }
         });
 
@@ -259,6 +277,21 @@ $calendar_events = getCalendarEvents($conn);
                     ],
                     backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#e74a3b', '#f6c23e']
                 }]
+            },
+            options: {
+                plugins: {
+                    datalabels: {
+                        formatter: (value, context) => {
+                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(2) + '%';
+                            return `${percentage} (${value})`; // Display percentage and count
+                        },
+                        color: '#fff',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                }
             }
         });
 
@@ -271,6 +304,21 @@ $calendar_events = getCalendarEvents($conn);
                     data: Object.values(<?php echo json_encode($referrals); ?>),
                     backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
                 }]
+            },
+            options: {
+                plugins: {
+                    datalabels: {
+                        formatter: (value, context) => {
+                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(2) + '%';
+                            return `${percentage} (${value})`; // Display percentage and count
+                        },
+                        color: '#fff',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                }
             }
         });
 
@@ -289,6 +337,21 @@ $calendar_events = getCalendarEvents($conn);
                     ],
                     backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#e74a3b', '#f6c23e']
                 }]
+            },
+            options: {
+                plugins: {
+                    datalabels: {
+                        formatter: (value, context) => {
+                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(2) + '%';
+                            return `${percentage} (${value})`; // Display percentage and count
+                        },
+                        color: '#fff',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                }
             }
         });
 
@@ -301,6 +364,21 @@ $calendar_events = getCalendarEvents($conn);
                     data: Object.values(<?php echo json_encode($sourcing_analytics); ?>),
                     backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e']
                 }]
+            },
+            options: {
+                plugins: {
+                    datalabels: {
+                        formatter: (value, context) => {
+                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(2) + '%';
+                            return `${percentage} (${value})`; // Display percentage and count
+                        },
+                        color: '#fff',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                }
             }
         });
 
@@ -344,8 +422,8 @@ $calendar_events = getCalendarEvents($conn);
         }
     </script>
 
-    <?php include 'footer.php'; ?>
 </body>
+<?php include 'footer.php'; ?>
 
 </html>
 
