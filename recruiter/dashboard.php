@@ -163,8 +163,7 @@ $calendar_events = getCalendarEvents($conn);
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
-    <link rel="stylesheet" href="recruiter_styles.css"> <!-- Link to your CSS file -->
-
+    <link rel="stylesheet" href="recruiter_styles.css">
 </head>
 
 <body class="dashboard-main-content">
@@ -214,6 +213,8 @@ $calendar_events = getCalendarEvents($conn);
     </div>
 
     <script>
+        Chart.register(ChartDataLabels); // Ensure datalabels plugin is active
+
         let currentInterval = '1 MONTH';
 
         function updateCharts() {
@@ -223,7 +224,6 @@ $calendar_events = getCalendarEvents($conn);
             fetch(`get_chart_data.php?interval=${currentInterval}`)
                 .then(response => response.json())
                 .then(data => {
-                    // Update charts with new data
                     updateTotalJobsChart(data.totalJobs);
                     updateApplicationMetricsChart(data.applicationMetrics);
                     updateReferralsChart(data.referrals);
@@ -232,8 +232,14 @@ $calendar_events = getCalendarEvents($conn);
                 });
         }
 
-        // Initialize Charts with initial data
-        const totalJobsChart = new Chart(document.getElementById('totalJobsChart').getContext('2d'), {
+        // Function to calculate percentage
+        function calculatePercentage(value, total) {
+            return total ? ((value / total) * 100).toFixed(2) + '%' : '0%';
+        }
+
+        // Initialize Total Jobs Chart
+        const totalJobsChartContext = document.getElementById('totalJobsChart').getContext('2d');
+        let totalJobsChart = new Chart(totalJobsChartContext, {
             type: 'bar',
             data: {
                 labels: ['Monthly', 'Quarterly', 'Yearly'],
@@ -246,22 +252,35 @@ $calendar_events = getCalendarEvents($conn);
             options: {
                 plugins: {
                     datalabels: {
-                        anchor: 'end',
-                        align: 'end',
-                        formatter: (value, context) => {
-                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value / total) * 100).toFixed(2) + '%';
-                            return `${percentage} (${value})`; // Display percentage and count
-                        },
+                        display: true,
                         color: '#fff',
+                        anchor: 'center', // Center the label inside the bar
+                        align: 'center', // Align the label in the center
                         font: {
                             weight: 'bold'
+                        },
+                        formatter: (value, context) => {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = calculatePercentage(value, total);
+                            return `${value} (${percentage})`; // Display value and percentage
                         }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
                     }
                 }
             }
         });
 
+        // Function to update Total Jobs Chart
+        function updateTotalJobsChart(newData) {
+            totalJobsChart.data.datasets[0].data = newData;
+            totalJobsChart.update();
+        }
+
+        // Application Metrics Chart
         const applicationMetricsChart = new Chart(document.getElementById('applicationMetricsChart').getContext('2d'), {
             type: 'pie',
             data: {
@@ -281,20 +300,22 @@ $calendar_events = getCalendarEvents($conn);
             options: {
                 plugins: {
                     datalabels: {
-                        formatter: (value, context) => {
-                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value / total) * 100).toFixed(2) + '%';
-                            return `${percentage} (${value})`; // Display percentage and count
-                        },
+                        display: true,
                         color: '#fff',
                         font: {
                             weight: 'bold'
+                        },
+                        formatter: (value, context) => {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = calculatePercentage(value, total);
+                            return `${value} (${percentage})`;
                         }
                     }
                 }
             }
         });
 
+        // Referrals Chart
         const referralsChart = new Chart(document.getElementById('referralsChart').getContext('2d'), {
             type: 'doughnut',
             data: {
@@ -308,20 +329,22 @@ $calendar_events = getCalendarEvents($conn);
             options: {
                 plugins: {
                     datalabels: {
-                        formatter: (value, context) => {
-                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value / total) * 100).toFixed(2) + '%';
-                            return `${percentage} (${value})`; // Display percentage and count
-                        },
+                        display: true,
                         color: '#fff',
                         font: {
                             weight: 'bold'
+                        },
+                        formatter: (value, context) => {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = calculatePercentage(value, total);
+                            return `${value} (${percentage})`;
                         }
                     }
                 }
             }
         });
 
+        // Pipeline Overview Chart
         const pipelineChart = new Chart(document.getElementById('pipelineChart').getContext('2d'), {
             type: 'bar',
             data: {
@@ -341,20 +364,27 @@ $calendar_events = getCalendarEvents($conn);
             options: {
                 plugins: {
                     datalabels: {
-                        formatter: (value, context) => {
-                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value / total) * 100).toFixed(2) + '%';
-                            return `${percentage} (${value})`; // Display percentage and count
-                        },
+                        display: true,
                         color: '#fff',
                         font: {
                             weight: 'bold'
+                        },
+                        formatter: (value, context) => {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = calculatePercentage(value, total);
+                            return `${value} (${percentage})`;
                         }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
                     }
                 }
             }
         });
 
+        // Sourcing Analytics Chart
         const sourcingAnalyticsChart = new Chart(document.getElementById('sourcingAnalyticsChart').getContext('2d'), {
             type: 'doughnut',
             data: {
@@ -368,14 +398,15 @@ $calendar_events = getCalendarEvents($conn);
             options: {
                 plugins: {
                     datalabels: {
-                        formatter: (value, context) => {
-                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value / total) * 100).toFixed(2) + '%';
-                            return `${percentage} (${value})`; // Display percentage and count
-                        },
+                        display: true,
                         color: '#fff',
                         font: {
                             weight: 'bold'
+                        },
+                        formatter: (value, context) => {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = calculatePercentage(value, total);
+                            return `${value} (${percentage})`;
                         }
                     }
                 }
@@ -389,43 +420,17 @@ $calendar_events = getCalendarEvents($conn);
                 initialView: 'dayGridMonth',
                 events: <?php echo json_encode($calendar_events); ?>,
                 eventClick: function(info) {
-                    // Open the URL of the clicked event
                     window.location.href = info.event.url;
                 }
             });
             calendar.render();
         });
-
-        function updateTotalJobsChart(newData) {
-            totalJobsChart.data.datasets[0].data = newData;
-            totalJobsChart.update();
-        }
-
-        function updateApplicationMetricsChart(newData) {
-            applicationMetricsChart.data.datasets[0].data = newData;
-            applicationMetricsChart.update();
-        }
-
-        function updateReferralsChart(newData) {
-            referralsChart.data.datasets[0].data = newData;
-            referralsChart.update();
-        }
-
-        function updatePipelineChart(newData) {
-            pipelineChart.data.datasets[0].data = newData;
-            pipelineChart.update();
-        }
-
-        function updateSourcingAnalyticsChart(newData) {
-            sourcingAnalyticsChart.data.datasets[0].data = newData;
-            sourcingAnalyticsChart.update();
-        }
     </script>
-
 </body>
 <?php include 'footer.php'; ?>
 
 </html>
+
 
 <?php
 // Close the database connection

@@ -1,7 +1,6 @@
 <?php
 include '../db.php'; // Include database connection
 include 'header.php';
-include 'footer.php';
 
 // Check if user is logged in and is a USER_ADMIN
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'USER_ADMIN') {
@@ -99,6 +98,7 @@ if (isset($_GET['user_id'])) {
                     <option value="BANNED" <?php echo ($user['status'] == 'BANNED') ? 'selected' : ''; ?>>BANNED</option>
                 </select>
             </div>
+            <a href="dashboard.php" class="btn btn-secondary mr-2"><i class="fas fa-arrow-left"></i> Back</a>
             <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update User</button>
         </form>
     </div>

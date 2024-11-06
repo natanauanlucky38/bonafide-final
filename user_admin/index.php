@@ -55,7 +55,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="user_admin_styles.css"> <!-- Link to your CSS file -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .input-group {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
 
+        .input-group input[type="password"],
+        .input-group input[type="email"] {
+            flex: 1;
+            padding-right: 2.5rem;
+            /* Space for the eye icon */
+        }
+
+        .input-group .input-group-prepend .input-group-text {
+            background-color: transparent;
+            border: none;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #90ee90;
+            /* Light green color for the eye icon */
+            transition: color 0.3s ease;
+            /* Smooth transition for color change */
+        }
+
+        .toggle-password.active {
+            color: #32cd32;
+            /* Darker green when toggled */
+        }
+    </style>
 </head>
 
 <body class="index-main-content">
@@ -83,13 +120,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-lock"></i></span>
                     </div>
-                    <input type="password" class="form-control" name="password" required>
+                    <input type="password" class="form-control" name="password" id="password" required>
+                    <i class="bi bi-eye toggle-password" onclick="togglePasswordVisibility()" id="toggleIcon"></i>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary btn-block">Login</button>
         </form>
-
     </div>
+
+    <script>
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('toggleIcon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.add('active'); // Apply active class for darker green color
+                toggleIcon.classList.replace('bi-eye', 'bi-eye-slash'); // Change to eye-slash icon
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('active'); // Revert to light green
+                toggleIcon.classList.replace('bi-eye-slash', 'bi-eye'); // Change back to eye icon
+            }
+        }
+    </script>
 </body>
 
 </html>

@@ -43,7 +43,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <title>Recruiter Login</title>
     <link rel="stylesheet" href="recruiter_styles.css"> <!-- Link to the external stylesheet for UI styling -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .input-group {
+            position: relative;
+            width: 100%;
+        }
 
+        .input-group input[type="password"],
+        .input-group input[type="email"] {
+            width: 100%;
+            padding-right: 2.5rem;
+        }
+
+        .input-group .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #90ee90;
+            /* Light green color for the eye icon */
+            transition: color 0.3s ease;
+            /* Smooth transition for color change */
+        }
+
+        .input-group .toggle-password.active {
+            color: #32cd32;
+            /* Darker green when toggled */
+        }
+    </style>
 </head>
 
 <body class="login-page">
@@ -62,7 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <input type="email" name="email" placeholder="Email" required>
                 </div>
                 <div class="input-group">
-                    <input type="password" name="password" placeholder="Password" required>
+                    <input type="password" name="password" placeholder="Password" id="password" required>
+                    <i class="bi bi-eye toggle-password" onclick="togglePasswordVisibility()" id="toggleIcon"></i>
                 </div>
                 <button type="submit">Login</button>
             </form>
@@ -72,6 +104,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             } ?>
         </div>
     </div>
+
+    <script>
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('toggleIcon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.add('active'); // Apply active class for darker green color
+                toggleIcon.classList.replace('bi-eye', 'bi-eye-slash'); // Change to eye-slash icon
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('active'); // Revert to light green
+                toggleIcon.classList.replace('bi-eye-slash', 'bi-eye'); // Change back to eye icon
+            }
+        }
+    </script>
 </body>
 
 </html>
