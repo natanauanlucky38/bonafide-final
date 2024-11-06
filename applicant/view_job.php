@@ -41,81 +41,61 @@ $result = $stmt->get_result();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Job Postings</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Include your CSS styles here -->
+    <link rel="stylesheet" href="applicant_styles.css"> <!-- Link to the external CSS file -->
 </head>
 
-<body>
+<body class="view_job-main-content">
 
-    <?php include 'header.php'; ?> <!-- Include a common header if needed -->
+    <?php include 'header.php'; ?>
+    <div class="wrapper">
+        <?php include 'sidebar.php'; ?>
 
-    <div class="container">
-        <h2>Active Job Postings</h2>
+        <div class="view_job-container">
+            <h2>Active Job Postings</h2>
 
-        <!-- Search Bar -->
-        <form method="GET" action="view_job.php" style="margin-bottom: 20px;">
-            <input type="text" name="search" placeholder="Search by job title or company" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-            <button type="submit">Search</button>
-        </form>
+            <form method="GET" action="view_job.php" class="search-bar">
+                <input type="text" name="search" placeholder="Search by job title or company"
+                    value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                <button type="submit">Search</button>
+            </form>
 
-        <?php if ($result->num_rows > 0): ?>
-            <table border="1">
-                <thead>
-                    <tr>
-                        <th>Job Title</th>
-                        <th>Company</th>
-                        <th>Location</th>
-                        <th>Salary Range</th>
-                        <th>Description</th>
-                        <th>Openings</th>
-                        <th>Deadline</th>
-                        <th>Action</th>
-                        <th>Share</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <?php if ($result->num_rows > 0): ?>
+                <div class="job-cards">
                     <?php while ($row = $result->fetch_assoc()):
                         $job_id = $row['job_id'];
-
-                        // Check if the user has already applied for this job
+                        $already_applied = false;
                         $application_check_sql = "SELECT application_id, application_status FROM applications 
-                                              WHERE job_id = '$job_id' AND profile_id = 
-                                              (SELECT profile_id FROM profiles WHERE user_id = '$user_id') 
-                                              AND application_status != 'WITHDRAWN'";
+                                                  WHERE job_id = '$job_id' AND profile_id = 
+                                                  (SELECT profile_id FROM profiles WHERE user_id = '$user_id') 
+                                                  AND application_status != 'WITHDRAWN'";
                         $application_check_result = $conn->query($application_check_sql);
-
                         $already_applied = $application_check_result->num_rows > 0;
-                        // Generate shareable link URL for each job
                         $share_link = "http://" . $_SERVER['HTTP_HOST'] . "/bonafide-final/applicant/view_job.php?job_id=" . $job_id;
                     ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($row['job_title']); ?></td>
-                            <td><?php echo htmlspecialchars($row['company']); ?></td>
-                            <td><?php echo htmlspecialchars($row['location']); ?></td>
-                            <td><?php echo '₱' . htmlspecialchars($row['min_salary']) . ' - ₱' . htmlspecialchars($row['max_salary']); ?></td>
-                            <td><?php echo htmlspecialchars($row['description']); ?></td>
-                            <td><?php echo htmlspecialchars($row['openings']); ?></td>
-                            <td><?php echo htmlspecialchars($row['deadline']); ?></td>
-                            <td>
-                                <?php if ($already_applied): ?>
-                                    <span>Already Applied</span>
-                                <?php else: ?>
-                                    <a href="apply_job.php?job_id=<?php echo $row['job_id']; ?>">Apply Now</a>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <button onclick="copyToClipboard('<?php echo $share_link; ?>')">Copy Link</button>
-                            </td>
-                        </tr>
+                        <div class="job-card">
+                            <h3><?php echo htmlspecialchars($row['job_title']); ?></h3>
+                            <div class="company"><?php echo htmlspecialchars($row['company']); ?></div>
+                            <div class="location"><?php echo htmlspecialchars($row['location']); ?></div>
+                            <div class="salary">₱<?php echo htmlspecialchars($row['min_salary']); ?> - ₱<?php echo htmlspecialchars($row['max_salary']); ?></div>
+                            <p class="description"><?php echo htmlspecialchars($row['description']); ?></p>
+                            <div class="details">
+                                <div>
+                                    <?php if ($already_applied): ?>
+                                        <span class="already-applied">Already Applied</span>
+                                    <?php else: ?>
+                                        <a href="apply_job.php?job_id=<?php echo $row['job_id']; ?>" class="apply-btn">Apply Now</a>
+                                    <?php endif; ?>
+                                </div>
+                                <button onclick="copyToClipboard('<?php echo $share_link; ?>')" class="copy-link-btn">Copy Link</button>
+                            </div>
+                        </div>
                     <?php endwhile; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p>No active job postings at the moment.</p>
-        <?php endif; ?>
-
+                </div>
+            <?php else: ?>
+                <p>No active job postings at the moment.</p>
+            <?php endif; ?>
+        </div>
     </div>
-
-    <?php include 'footer.php'; ?> <!-- Include a common footer if needed -->
 
     <script>
         function copyToClipboard(link) {
@@ -126,11 +106,13 @@ $result = $stmt->get_result();
             });
         }
     </script>
+
+    <?php include 'footer.php'; ?>
 </body>
 
 </html>
-
 <?php
 // Close the database connection
 $conn->close();
+
 ?>

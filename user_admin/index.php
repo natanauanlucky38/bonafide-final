@@ -1,7 +1,9 @@
 <?php
 include '../db.php';  // Include database connection
 
-// Handle login form submission
+// Initialize error message variable
+$error_message = "";
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Sanitize inputs
     $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
@@ -17,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $user = $result->fetch_assoc();
 
         // Verify password
-        //if (password_verify($password, $user['password'])) {
+        // if (password_verify($password, $user['password'])) {  // Uncomment this if password verification is required
         // Set session variables
         $_SESSION['user_id'] = $user['user_id'];
         $_SESSION['email'] = $user['email'];
@@ -40,9 +42,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 } else {
     $error_message = "No user found with that email.";
 }
-$stmt->close();
 
+// Close the $stmt only if it was successfully prepared
+if (isset($stmt)) {
+    $stmt->close();
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

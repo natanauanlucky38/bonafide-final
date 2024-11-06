@@ -1,6 +1,9 @@
 <?php
 // Include necessary files
 include '../db.php';  // Include database connection
+// Include the header and sidebar components
+include 'header.php';
+include 'sidebar.php';
 
 // Check if user is logged in and is a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
@@ -49,17 +52,11 @@ $results = $stmt->get_result();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Management</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        /* Custom styles */
-    </style>
+    <link rel="stylesheet" href="recruiter_styles.css">
+
 </head>
 
-<body>
-
-    <?php include 'header.php'; ?>
-    <?php include 'sidebar.php'; ?>
-
+<body class="user_management-main-content">
     <div class="content-area">
         <h2>User Management - Applicants</h2>
 

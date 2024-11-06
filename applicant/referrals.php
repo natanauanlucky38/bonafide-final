@@ -51,96 +51,65 @@ $referred_users = $referred_users_result->fetch_all(MYSQLI_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Referrals</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+    <link rel="stylesheet" href="applicant_styles.css"> <!-- Include your CSS styles here -->
 
-        table,
-        th,
-        td {
-            border: 1px solid black;
-        }
-
-        th,
-        td {
-            padding: 10px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
-        }
-
-        .profile-details {
-            margin-bottom: 20px;
-        }
-
-        .no-referrals {
-            text-align: center;
-        }
-
-        .referral-graph {
-            width: 100%;
-            height: 400px;
-            border: 1px solid #ddd;
-            margin-top: 30px;
-        }
-    </style>
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 
-<body>
-    <h1>My Referrals</h1>
+<body class="main-content-referrals">
 
-    <!-- Display referral code -->
-    <div class="profile-details">
-        <h3>Your Referral Code: <?php echo htmlspecialchars($user_profile['referral_code']); ?></h3>
-    </div>
+    <div class="referrals-container">
+        <h1>My Referrals</h1>
 
-    <!-- Email Form -->
-    <form method="POST" action="send_email.php" id="emailForm">
-        <div class="email-action">
-            <button type="button" onclick="sendEmail()" class="btn btn-primary">Send Email</button>
+        <!-- Display referral code -->
+        <div class="profile-details">
+            <h3>Your Referral Code: <?php echo htmlspecialchars($user_profile['referral_code']); ?></h3>
         </div>
 
-        <!-- Display User Referrals Table -->
-        <table>
-            <thead>
-                <tr>
-                    <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"></th>
-                    <th>Referred Person</th>
-                    <th>Email</th>
-                    <th>LinkedIn</th>
-                    <th>Facebook</th>
-                    <th>Referral Code Used</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (!empty($referred_users)): ?>
-                    <?php foreach ($referred_users as $referral): ?>
-                        <tr>
-                            <td><input type="checkbox" name="selected_emails[]" value="<?php echo htmlspecialchars($referral['referred_email']); ?>"></td>
-                            <td><?php echo htmlspecialchars($referral['referred_fname'] . ' ' . $referral['referred_lname']); ?></td>
-                            <td><?php echo htmlspecialchars($referral['referred_email']); ?></td>
-                            <td><a href="<?php echo htmlspecialchars($referral['linkedin_link']); ?>" target="_blank">LinkedIn</a></td>
-                            <td><a href="<?php echo htmlspecialchars($referral['facebook_link']); ?>" target="_blank">Facebook</a></td>
-                            <td><?php echo htmlspecialchars($referral['referral_code']); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="6" class="no-referrals">No referrals made yet. Start referring others to earn points!</td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </form>
+        <!-- Email Form -->
+        <form method="POST" action="send_email.php" id="emailForm">
+            <div class="email-action">
+                <button type="button" onclick="sendEmail()" class="btn btn-primary">Send Email</button>
+            </div>
 
-    <!-- Referral Connection Web -->
-    <h2>Your Referral Connection</h2>
-    <div id="referral-graph" class="referral-graph"></div>
+            <!-- Display User Referrals Table -->
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"></th>
+                        <th>Referred Person</th>
+                        <th>Email</th>
+                        <th>LinkedIn</th>
+                        <th>Facebook</th>
+                        <th>Referral Code Used</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($referred_users)): ?>
+                        <?php foreach ($referred_users as $referral): ?>
+                            <tr>
+                                <td><input type="checkbox" name="selected_emails[]" value="<?php echo htmlspecialchars($referral['referred_email']); ?>"></td>
+                                <td><?php echo htmlspecialchars($referral['referred_fname'] . ' ' . $referral['referred_lname']); ?></td>
+                                <td><?php echo htmlspecialchars($referral['referred_email']); ?></td>
+                                <td><a href="<?php echo htmlspecialchars($referral['linkedin_link']); ?>" target="_blank">LinkedIn</a></td>
+                                <td><a href="<?php echo htmlspecialchars($referral['facebook_link']); ?>" target="_blank">Facebook</a></td>
+                                <td><?php echo htmlspecialchars($referral['referral_code']); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="6" class="no-referrals">No referrals made yet. Start referring others to earn points!</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </form>
+
+        <!-- Referral Connection Web -->
+        <h2>Your Referral Connection</h2>
+        <div id="referral-graph" class="referral-graph"></div>
+
+    </div>
 
     <script>
         // Prepare data for the referral connection web
@@ -240,8 +209,11 @@ $referred_users = $referred_users_result->fetch_all(MYSQLI_ASSOC);
         }
     </script>
 
-    <?php include 'footer.php'; ?>
+
 </body>
+<?php
+include 'footer.php';
+?>
 
 </html>
 

@@ -1,6 +1,7 @@
 <?php
 include '../db.php';  // Database connection
 include 'sidebar.php';
+include 'header.php';
 
 // Check if the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
@@ -316,6 +317,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Apply for Job</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="applicant_styles.css"> <!-- Include your CSS styles here -->
+
     <script>
         function addField(type) {
             let container = document.getElementById(type + '-container');
@@ -337,64 +341,74 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </script>
 </head>
 
-<body>
-    <h2>Apply for Job: <?php echo htmlspecialchars($job['job_title']); ?></h2>
-    <p><strong>Company:</strong> <?php echo htmlspecialchars($job['company']); ?></p>
-    <p><strong>Location:</strong> <?php echo htmlspecialchars($job['location']); ?></p>
-    <p><strong>Description:</strong> <?php echo nl2br(htmlspecialchars($job['description'])); ?></p>
-    <p><strong>Salary Range: </strong>₱<?php echo htmlspecialchars($job['min_salary']); ?> - ₱<?php echo htmlspecialchars($job['max_salary']); ?></p>
+<body class="apply_job-main-conntent">
+
+    <div class="apply_job-container">
+        <h2>Apply for Job: <?php echo htmlspecialchars($job['job_title']); ?></h2>
+        <p><strong>Company:</strong> <?php echo htmlspecialchars($job['company']); ?></p>
+        <p><strong>Location:</strong> <?php echo htmlspecialchars($job['location']); ?></p>
+        <p><strong>Description:</strong> <?php echo nl2br(htmlspecialchars($job['description'])); ?></p>
+        <p><strong>Salary Range: </strong>₱<?php echo htmlspecialchars($job['min_salary']); ?> - ₱<?php echo htmlspecialchars($job['max_salary']); ?></p>
 
 
-    <form action="apply_job.php?job_id=<?php echo $job_id; ?>" method="POST" enctype="multipart/form-data">
-        <label for="resume">Upload Resume:</label>
-        <input type="file" name="resume" id="resume" required accept=".pdf,.doc,.docx"><br>
+        <form action="apply_job.php?job_id=<?php echo $job_id; ?>" method="POST" enctype="multipart/form-data">
+            <label for="resume">Upload Resume:</label>
+            <input type="file" name="resume" id="resume" required accept=".pdf,.doc,.docx"><br>
 
-        <label for="referral_source">How did you hear about this job?</label>
-        <select name="referral_source" id="referral_source" required>
-            <option value="referral_applicants">Employee Referral</option>
-            <option value="social_media_applicants">Social Media</option>
-            <option value="career_site_applicants">Career Website</option>
-        </select><br>
+            <label for="referral_source">How did you hear about this job?</label>
+            <select name="referral_source" id="referral_source" required>
+                <option value="referral_applicants">Employee Referral</option>
+                <option value="social_media_applicants">Social Media</option>
+                <option value="career_site_applicants">Career Website</option>
+            </select><br>
 
-        <label for="qualifications">Qualifications:</label>
-        <div id="qualifications-container">
-            <input type="text" name="qualifications[]" placeholder="Enter qualification"><br>
-        </div>
-        <button type="button" onclick="addField('qualifications')">Add Qualification</button>
-        <button type="button" onclick="removeField('qualifications')">Remove Qualification</button><br>
+            <label for="qualifications">Qualifications:</label>
+            <div id="qualifications-container">
+                <input type="text" name="qualifications[]" placeholder="Enter qualification"><br>
+            </div>
+            <button type="button" onclick="addField('qualifications')"><i class="fas fa-plus"></i> Add Qualification</button>
+            <button type="button" onclick="removeField('qualifications')"><i class="fas fa-minus"></i> Remove Qualification</button><br>
 
-        <label for="skills">Skills:</label>
-        <div id="skills-container">
-            <input type="text" name="skills[]" placeholder="Enter skill"><br>
-        </div>
-        <button type="button" onclick="addField('skills')">Add Skill</button>
-        <button type="button" onclick="removeField('skills')">Remove Skill</button><br>
+            <label for="skills">Skills:</label>
+            <div id="skills-container">
+                <input type="text" name="skills[]" placeholder="Enter skill"><br>
+            </div>
+            <button type="button" onclick="addField('skills')"><i class="fas fa-plus"></i> Add Skill</button>
+            <button type="button" onclick="removeField('skills')"><i class="fas fa-minus"></i> Remove Skill</button><br>
 
-        <label for="work_experience">Work Experience:</label>
-        <div id="work_experience-container">
-            <input type="text" name="work_experience[]" placeholder="Enter work experience"><br>
-        </div>
-        <button type="button" onclick="addField('work_experience')">Add Work Experience</button>
-        <button type="button" onclick="removeField('work_experience')">Remove Work Experience</button><br>
+            <label for="work_experience">Work Experience:</label>
+            <div id="work_experience-container">
+                <input type="text" name="work_experience[]" placeholder="Enter work experience"><br>
+            </div>
+            <button type="button" onclick="addField('work_experience')"><i class="fas fa-plus"></i> Add Work Experience</button>
+            <button type="button" onclick="removeField('work_experience')"><i class="fas fa-minus"></i> Remove Work Experience</button><br>
 
-        <?php if ($question_result->num_rows > 0): ?>
-            <h3>Job Questionnaire</h3>
-            <?php while ($question = $question_result->fetch_assoc()): ?>
-                <label><?php echo htmlspecialchars($question['question_text']); ?></label><br>
-                <?php if ($question['question_type'] === 'TEXT'): ?>
-                    <input type="text" name="answers[<?php echo $question['question_id']; ?>]" required><br>
-                <?php elseif ($question['question_type'] === 'YES_NO'): ?>
-                    <select name="answers[<?php echo $question['question_id']; ?>]" required>
-                        <option value="YES">Yes</option>
-                        <option value="NO">No</option>
-                    </select><br>
-                <?php endif; ?>
-            <?php endwhile; ?>
-        <?php endif; ?>
 
-        <button type="submit">Submit Application</button>
-    </form>
+            <?php if ($question_result->num_rows > 0): ?>
+                <h3>Job Questionnaire</h3>
+                <?php while ($question = $question_result->fetch_assoc()): ?>
+                    <label><?php echo htmlspecialchars($question['question_text']); ?></label><br>
+                    <?php if ($question['question_type'] === 'TEXT'): ?>
+                        <input type="text" name="answers[<?php echo $question['question_id']; ?>]" required><br>
+                    <?php elseif ($question['question_type'] === 'YES_NO'): ?>
+                        <select name="answers[<?php echo $question['question_id']; ?>]" required>
+                            <option value="YES">Yes</option>
+                            <option value="NO">No</option>
+                        </select><br>
+                    <?php endif; ?>
+                <?php endwhile; ?>
+            <?php endif; ?>
+
+            <button type="submit">Submit Application</button>
+        </form>
+
+    </div>
 </body>
+
+
+<?php
+include 'footer.php';
+?>
 
 </html>
 

@@ -67,22 +67,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Applicant Login</title>
+    <link rel="stylesheet" href="applicant_styles.css"> <!-- Link to your CSS file -->
 </head>
 
-<body>
-    <h2>Applicant Login</h2>
-    <form method="POST" action="index.php">
-        <input type="email" name="email" placeholder="Email" required><br>
-        <input type="password" name="password" placeholder="Password" required><br>
-        <button type="submit">Login</button>
-    </form>
+<body class="login-page">
+    <div class="login-container">
+        <!-- Logo Section -->
+        <div class="login-logo-company">
+            <img src="images/logo.png" alt="Company Logo" class="logo-login">
+        </div>
 
-    <!-- Add the registration link here -->
-    <p>Don't have an account? <a href="register.php">Register here</a></p>
+        <!-- Login Form Section -->
+        <div class="login-form">
+            <div class="title-container">
+                <h2>Bonafide Trainology Placement Services</h2>
+                <h3>Applicant Login</h3>
+            </div>
+            <form method="POST" action="index.php">
+                <div class="input-group">
+                    <input type="email" name="email" placeholder="Email" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" name="password" placeholder="Password" required>
+                </div>
+                <button type="submit">Login</button>
+            </form>
 
-    <?php if (isset($error)) {
-        echo "<p style='color:red;'>$error</p>";
-    } ?>
+            <!-- Registration Link -->
+            <p>Don't have an account? <a href="register.php">Register here</a></p>
+
+            <?php if (isset($error)) {
+                echo "<p class='error'>$error</p>";
+            } ?>
+        </div>
+    </div>
 </body>
 
 </html>

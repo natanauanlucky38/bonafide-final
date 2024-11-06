@@ -1,6 +1,7 @@
 <?php
 // dashboard.php
 include '../db.php';  // Database connection
+include 'header.php';
 include 'sidebar.php';
 
 
@@ -10,7 +11,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
     exit();
 }
 
-include 'header.php';
+
 
 // Retrieve user ID from session
 $user_id = $_SESSION['user_id'];
@@ -71,64 +72,66 @@ while ($row = $interviews_result->fetch_assoc()) {
 <head>
     <meta charset="UTF-8">
     <title>Applicant Dashboard</title>
+    <link rel="stylesheet" href="applicant_styles.css"> <!-- Include your CSS styles here -->
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FullCalendar CSS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
-
-    <style>
-        /* Custom CSS to resize the calendar */
-        #calendar {
-            max-width: 600px;
-            /* Adjust the width as needed */
-            height: 400px;
-            /* Adjust the height as needed */
-            margin: 0 auto;
-            /* Center the calendar */
-        }
-    </style>
 </head>
 
-<body>
-    <div class="container mt-5">
-        <!-- Welcome Message -->
-        <h2>Welcome, <?php echo htmlspecialchars($_SESSION['fname']) . ' ' . htmlspecialchars($_SESSION['lname']); ?>!</h2>
-        <p>This is your applicant dashboard.</p>
-        <!-- Calendar Section -->
-        <h3>Upcoming Events</h3>
-        <div id="calendar" style="max-width: 600px; height: 400px;"></div>
-    </div>
+<body class="dashboard-main-content">
 
-    <!-- Bootstrap JS and FullCalendar JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+    <div class="dashboard-container">
+        <!-- Left Column: Welcome Message -->
+        <div class="welcome-section">
+            <h2>Welcome, <?php echo htmlspecialchars($_SESSION['fname']) . ' ' . htmlspecialchars($_SESSION['lname']); ?>!</h2>
+            <p>Welcome to the dashboard! We're glad to have you here. Let's get started! you can keep track of your upcoming interviews and other events.</p>
+        </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('calendar');
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                events: <?php echo json_encode($interviews); ?>, // Load interview dates
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                eventColor: '#3788d8', // Set a color for interview events
-                eventClick: function(info) {
-                    window.location.href = 'application.php'; // Redirect to application.php
-                }
+        <!-- Right Column: Calendar Section -->
+        <div class="calendar-section">
+            <h3>Upcoming Events</h3>
+            <div id="calendar"></div>
+        </div>
+
+
+
+        <!-- Bootstrap JS and FullCalendar JS -->
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var calendarEl = document.getElementById('calendar');
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    events: <?php echo json_encode($interviews); ?>, // Load interview dates
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    eventColor: '#3788d8', // Set a color for interview events
+                    eventClick: function(info) {
+                        window.location.href = 'application.php'; // Redirect to application.php
+                    }
+                });
+                calendar.render();
             });
-            calendar.render();
-        });
-    </script>
+        </script>
+    </div>
 </body>
+
+<?php
+include 'footer.php';
+?>
 
 </html>
 
 
 <?php
+// Close the database connection
 $conn->close();
-include 'footer.php';
 ?>

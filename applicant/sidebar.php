@@ -2,8 +2,15 @@
 // sidebar.php
 ?>
 
+<!-- Sidebar Toggle Button (Hamburger Icon) -->
+<button class="sidebar-toggle" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Sidebar -->
 <div class="sidebar">
-    <ul>
+    <ul class="sidebar_list">
+        <li><a href="dashboard.php">Dashboard</a></li>
         <li><a href="view_job.php">Job Postings</a></li>
         <li><a href="referrals.php">Referrals</a></li>
         <li><a href="application.php">Applications</a></li>
@@ -11,31 +18,11 @@
     </ul>
 </div>
 
-<style>
-    /* Optional styling for the sidebar */
-    .sidebar {
-        width: 200px;
-        padding: 10px;
-        background-color: #f4f4f4;
-    }
+<!-- Link to Font Awesome for icons -->
+<link rel="stylesheet" href="applicant_styles.css"> <!-- Link to your CSS file -->
 
-    .sidebar ul {
-        list-style-type: none;
-        padding: 0;
+<script>
+    function toggleSidebar() {
+        document.querySelector('.sidebar').classList.toggle('sidebar-hidden');
     }
-
-    .sidebar ul li {
-        margin: 5px 0;
-    }
-
-    .sidebar ul li a {
-        text-decoration: none;
-        color: #333;
-        font-size: 16px;
-    }
-
-    .sidebar ul li a:hover {
-        color: #007bff;
-        /* Change color on hover */
-    }
-</style>
+</script>

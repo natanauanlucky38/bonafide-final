@@ -2,6 +2,7 @@
 // Include necessary files
 include '../db.php';  // Include database connection
 include 'header.php';
+include 'sidebar.php';
 
 // Check if the user is logged in and is a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
@@ -140,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Job Posting</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="recruiter_styles.css">
     <script>
         let newQuestionCount = 0;
 
@@ -197,12 +198,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </head>
 
-<body>
-
-    <?php include 'header.php'; ?>
-    <?php include 'sidebar.php'; ?>
-
-    <div class="content-area">
+<body class="edit_job-main-content">
+    <div class="edit_job-content-area">
         <h2>Edit Job Posting</h2>
 
         <!-- Display errors -->

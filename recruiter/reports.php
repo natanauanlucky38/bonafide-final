@@ -17,8 +17,8 @@ if (!$conn) {
     die("Database connection failed: " . mysqli_connect_error());
 }
 
-// Fetch all jobs
-$jobQuery = "SELECT job_id, job_title FROM job_postings";
+// Fetch all jobs including created_at and deadline
+$jobQuery = "SELECT job_id, job_title, created_at, deadline FROM job_postings";
 $jobResult = mysqli_query($conn, $jobQuery);
 
 if (!$jobResult) {
@@ -27,7 +27,7 @@ if (!$jobResult) {
 
 $jobs = [];
 while ($row = mysqli_fetch_assoc($jobResult)) {
-    $jobs[] = $row;
+    $jobs[] = $row; // This will now include created_at and deadline
 }
 
 // Database query functions
@@ -124,7 +124,6 @@ function getAverageStageTimes($conn, $job_id)
 $historical_data = getHistoricalAverageTimeToFillData($conn);
 $months = array_column($historical_data, 'month');
 $avg_times = array_column($historical_data, 'avg_time_to_fill');
-
 ?>
 
 <!DOCTYPE html>
@@ -133,25 +132,30 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
 <head>
     <meta charset="UTF-8">
     <title>Recruiter Reports</title>
+
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.2/jspdf.min.js"></script>
 </head>
 
-<body>
-    <div class="content-area">
-        <div class="container-fluid">
+<body class="reports-main-content">
+    <div class="reports-content-area">
+        <div class="reports-container-fluid">
             <h2>Job Reports</h2>
 
-            <a href="download_reports.php" class="btn btn-primary mb-3">Download Report as CSV</a>
-            <a href="download_pdf_reports.php" class="btn btn-primary mb-3">Download Report as PDF</a>
-
+            <div class="d-flex mb-3">
+                <a href="download_reports.php" class="btn btn-primary mr-2">Download Report as CSV</a>
+                <button onclick="downloadPDF()" class="btn btn-primary">Download Report as PDF</button>
+            </div>
 
             <!-- Historical Average Time-to-Fill Graph -->
             <h4>Historical Average Time to Fill</h4>
-            <div>
-                <canvas id="historicalTimeToFillChart" width="400" height="200"></canvas>
+            <div class="col-md-6 mb-3">
+                <canvas id="historicalTimeToFillChart"></canvas>
             </div>
             <script>
                 var ctx = document.getElementById('historicalTimeToFillChart').getContext('2d');
@@ -163,11 +167,23 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                             label: 'Average Time to Fill (Days)',
                             data: <?php echo json_encode($avg_times); ?>,
                             borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
                             fill: true
                         }]
                     },
                     options: {
                         responsive: true,
+                        plugins: {
+                            datalabels: {
+                                display: true,
+                                align: 'top',
+                                color: 'black',
+                                font: {
+                                    weight: 'bold'
+                                },
+                                formatter: (value) => `${value} days`
+                            }
+                        },
                         scales: {
                             y: {
                                 beginAtZero: true,
@@ -183,15 +199,19 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                                 }
                             }
                         }
-                    }
+                    },
+                    plugins: [ChartDataLabels]
                 });
             </script>
 
+            <!-- Job Reports Section -->
             <div id="accordion">
-                <?php
-                foreach ($jobs as $job) {
+                <?php foreach ($jobs as $job): ?>
+                    <?php
                     $job_id = $job['job_id'];
                     $job_title = htmlspecialchars($job['job_title']);
+                    $created_at = htmlspecialchars($job['created_at']);
+                    $deadline = htmlspecialchars($job['deadline']);
                     $application_metrics = getApplicationMetrics($conn, $job_id);
                     $time_to_fill = getTimeToFill($conn, $job_id);
                     $totalApplications = $application_metrics['total'] ?? 1; // Avoid division by zero
@@ -199,8 +219,8 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                     $sourcing_analytics = getSourcingAnalytics($conn, $job_id, $totalApplications);
                     $drop_off_points = getCandidateDropOffPoints($conn, $job_id, $totalApplications);
                     $average_stage_times = getAverageStageTimes($conn, $job_id);
+                    ?>
 
-                ?>
                     <div class="card">
                         <div class="card-header" id="heading-<?php echo $job_id; ?>">
                             <h5 class="mb-0">
@@ -215,12 +235,21 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                                 <h4>Metrics</h4>
                                 <p><strong>Time to Fill:</strong> <?php echo $time_to_fill; ?> days</p>
                                 <p><strong>Total Applications:</strong> <?php echo $totalApplications; ?></p>
+                                <p><strong>Created At:</strong> <?php echo $created_at; ?></p>
+                                <p><strong>Deadline:</strong> <?php echo $deadline; ?></p>
 
                                 <!-- Job Metrics Chart -->
-                                <div>
-                                    <canvas id="jobChart-<?php echo $job_id; ?>" width="400" height="200"></canvas>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <canvas id="jobChart-<?php echo $job_id; ?>"></canvas>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <canvas id="avgStageTimeChart-<?php echo $job_id; ?>"></canvas>
+                                    </div>
                                 </div>
+
                                 <script>
+                                    // Job Metrics Chart
                                     var ctxJob<?php echo $job_id; ?> = document.getElementById('jobChart-<?php echo $job_id; ?>').getContext('2d');
                                     var jobChart<?php echo $job_id; ?> = new Chart(ctxJob<?php echo $job_id; ?>, {
                                         type: 'bar',
@@ -241,6 +270,17 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                                         },
                                         options: {
                                             responsive: true,
+                                            plugins: {
+                                                datalabels: {
+                                                    display: true,
+                                                    align: 'top',
+                                                    color: 'black',
+                                                    font: {
+                                                        weight: 'bold'
+                                                    },
+                                                    formatter: (value) => `${value} (${((value / <?php echo $totalApplications; ?>) * 100).toFixed(2)}%)`
+                                                }
+                                            },
                                             scales: {
                                                 y: {
                                                     beginAtZero: true,
@@ -256,16 +296,11 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                                                     }
                                                 }
                                             }
-                                        }
+                                        },
+                                        plugins: [ChartDataLabels]
                                     });
-                                </script>
 
-                                <!-- Average Time in Each Stage Chart -->
-                                <h4>Average Time in Each Stage</h4>
-                                <div>
-                                    <canvas id="avgStageTimeChart-<?php echo $job_id; ?>" width="400" height="200"></canvas>
-                                </div>
-                                <script>
+                                    // Average Stage Time Chart
                                     var ctxAvgStageTime<?php echo $job_id; ?> = document.getElementById('avgStageTimeChart-<?php echo $job_id; ?>').getContext('2d');
                                     var avgStageTimeChart<?php echo $job_id; ?> = new Chart(ctxAvgStageTime<?php echo $job_id; ?>, {
                                         type: 'bar',
@@ -286,6 +321,17 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                                         },
                                         options: {
                                             responsive: true,
+                                            plugins: {
+                                                datalabels: {
+                                                    display: true,
+                                                    align: 'top',
+                                                    color: 'black',
+                                                    font: {
+                                                        weight: 'bold'
+                                                    },
+                                                    formatter: (value) => `${value} days`
+                                                }
+                                            },
                                             scales: {
                                                 y: {
                                                     beginAtZero: true,
@@ -301,42 +347,73 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                                                     }
                                                 }
                                             }
-                                        }
+                                        },
+                                        plugins: [ChartDataLabels]
                                     });
                                 </script>
 
-                                <!-- Sourcing Analytics Chart -->
+                                <!-- Sourcing Analytics Chart (Horizontal Bar) -->
                                 <h4>Sourcing Analytics</h4>
-                                <div>
-                                    <canvas id="sourcingChart-<?php echo $job_id; ?>" width="400" height="200"></canvas>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <canvas id="sourcingChart-<?php echo $job_id; ?>"></canvas>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <canvas id="dropOffChart-<?php echo $job_id; ?>"></canvas>
+                                    </div>
                                 </div>
                                 <script>
                                     var ctxSourcing<?php echo $job_id; ?> = document.getElementById('sourcingChart-<?php echo $job_id; ?>').getContext('2d');
                                     var sourcingLabels<?php echo $job_id; ?> = <?php echo json_encode(array_column($sourcing_analytics, 'source')); ?>;
                                     var sourcingData<?php echo $job_id; ?> = <?php echo json_encode(array_column($sourcing_analytics, 'count')); ?>;
+                                    var sourcingPercentages<?php echo $job_id; ?> = <?php echo json_encode(array_column($sourcing_analytics, 'percentage')); ?>;
+
                                     var sourcingChart<?php echo $job_id; ?> = new Chart(ctxSourcing<?php echo $job_id; ?>, {
-                                        type: 'pie',
+                                        type: 'bar',
                                         data: {
                                             labels: sourcingLabels<?php echo $job_id; ?>,
                                             datasets: [{
                                                 label: 'Candidates by Source',
                                                 data: sourcingData<?php echo $job_id; ?>,
-                                                backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)'],
+                                                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                                borderColor: 'rgba(54, 162, 235, 1)',
                                                 borderWidth: 1
                                             }]
                                         },
                                         options: {
-                                            responsive: true
-                                        }
+                                            indexAxis: 'y', // Horizontal bar chart
+                                            responsive: true,
+                                            plugins: {
+                                                datalabels: {
+                                                    display: true,
+                                                    align: 'right',
+                                                    color: 'black',
+                                                    font: {
+                                                        weight: 'bold'
+                                                    },
+                                                    formatter: (value, ctx) => `${value} (${sourcingPercentages<?php echo $job_id; ?>[ctx.dataIndex]}%)`
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    beginAtZero: true,
+                                                    title: {
+                                                        display: true,
+                                                        text: 'Count'
+                                                    }
+                                                },
+                                                y: {
+                                                    title: {
+                                                        display: true,
+                                                        text: 'Source'
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        plugins: [ChartDataLabels]
                                     });
-                                </script>
 
-                                <!-- Drop-off Points Chart -->
-                                <h4>Drop-off Points</h4>
-                                <div>
-                                    <canvas id="dropOffChart-<?php echo $job_id; ?>" width="400" height="200"></canvas>
-                                </div>
-                                <script>
+                                    // Drop-off Points Chart
                                     var ctxDropOff<?php echo $job_id; ?> = document.getElementById('dropOffChart-<?php echo $job_id; ?>').getContext('2d');
                                     var dropOffLabels<?php echo $job_id; ?> = ['Screened Drop-off', 'Interviewed Drop-off', 'Offered Drop-off'];
                                     var dropOffData<?php echo $job_id; ?> = [
@@ -344,6 +421,7 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                                         <?php echo $drop_off_points['interviewed_dropoff']['count'] ?? 0; ?>,
                                         <?php echo $drop_off_points['offered_dropoff']['count'] ?? 0; ?>
                                     ];
+
                                     var dropOffChart<?php echo $job_id; ?> = new Chart(ctxDropOff<?php echo $job_id; ?>, {
                                         type: 'bar',
                                         data: {
@@ -358,6 +436,17 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                                         },
                                         options: {
                                             responsive: true,
+                                            plugins: {
+                                                datalabels: {
+                                                    display: true,
+                                                    align: 'top',
+                                                    color: 'black',
+                                                    font: {
+                                                        weight: 'bold'
+                                                    },
+                                                    formatter: (value) => `${value} (${((value / <?php echo $totalApplications; ?>) * 100).toFixed(2)}%)`
+                                                }
+                                            },
                                             scales: {
                                                 y: {
                                                     beginAtZero: true,
@@ -367,16 +456,81 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                                                     }
                                                 }
                                             }
-                                        }
+                                        },
+                                        plugins: [ChartDataLabels]
                                     });
                                 </script>
                             </div>
                         </div>
                     </div>
-                <?php } ?>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>
+
+    <script>
+        async function downloadPDF() {
+            const pdf = new jsPDF();
+            const jobCards = document.querySelectorAll('.card');
+
+            for (let i = 0; i < jobCards.length; i++) {
+                const jobCard = jobCards[i];
+                const jobDetail = jobCard.querySelector('.card-body');
+
+                // Get job title and other information
+                const jobTitleElement = jobCard.querySelector('.btn-link');
+                const createdAtElement = jobDetail.querySelector('p:nth-of-type(3)');
+                const deadlineElement = jobDetail.querySelector('p:nth-of-type(4)');
+
+                const jobTitle = jobTitleElement ? jobTitleElement.innerText : 'Job Title Not Found';
+                const createdAt = createdAtElement ? createdAtElement.innerText : 'Created At Not Available';
+                const deadline = deadlineElement ? deadlineElement.innerText : 'Deadline Not Available';
+
+                if (i > 0) pdf.addPage(); // New page for each job section if needed
+
+                // Add job details to PDF
+                pdf.setFontSize(16);
+                pdf.text(`Job Report: ${jobTitle}`, 10, 15);
+                pdf.setFontSize(12);
+                pdf.text(`Created At: ${createdAt}`, 10, 25);
+                pdf.text(`Deadline: ${deadline}`, 10, 35);
+
+                // Locate all charts within the current job details section
+                const charts = jobDetail.querySelectorAll('canvas');
+                let yOffset = 50;
+
+                // Convert each chart to an image and add it to the PDF
+                for (const chart of charts) {
+                    if (chart) {
+                        try {
+                            await new Promise((resolve) => setTimeout(resolve, 500)); // Small delay to ensure charts are rendered
+                            const imgData = chart.toDataURL('image/png'); // Capture chart as an image
+                            const imgWidth = 160; // Adjust width for the PDF
+                            const imgHeight = (chart.height * imgWidth) / chart.width; // Keep aspect ratio
+
+                            pdf.addImage(imgData, 'PNG', 10, yOffset, imgWidth, imgHeight);
+                            yOffset += imgHeight + 10; // Move down for the next chart
+
+                            if (yOffset > 250) { // Check if space on page is exceeded
+                                pdf.addPage(); // Add a new page for the next chart if needed
+                                yOffset = 20; // Reset yOffset for new page
+                            }
+                        } catch (error) {
+                            console.error(`Error rendering chart image for ${jobTitle}:`, error);
+                            pdf.text("Error rendering chart image.", 10, yOffset);
+                            yOffset += 10;
+                        }
+                    } else {
+                        console.warn(`Chart not found in job report for ${jobTitle}`);
+                    }
+                }
+            }
+
+            // Save the PDF file
+            pdf.save('full_report_with_charts.pdf');
+            console.log("PDF generated successfully with all charts, labels, and values.");
+        }
+    </script>
 
     <?php include 'footer.php'; ?>
 </body>

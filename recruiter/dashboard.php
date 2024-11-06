@@ -162,64 +162,11 @@ $calendar_events = getCalendarEvents($conn);
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
-    <style>
-        /* General Styling */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-        }
+    <link rel="stylesheet" href="recruiter_styles.css"> <!-- Link to your CSS file -->
 
-        .container-fluid {
-            padding: 20px;
-        }
-
-        h2 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-        }
-
-        .content-area {
-            max-width: 1200px;
-            margin: auto;
-        }
-
-        /* Chart Container Styling */
-        .chart-container {
-            padding: 10px;
-            margin-bottom: 15px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .chart-container h4 {
-            font-size: 1.2rem;
-            margin-bottom: 5px;
-        }
-
-        /* Compact Grid for Charts */
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .col-md-6 {
-            flex: 1 1 48%;
-            min-width: 320px;
-        }
-
-        /* Calendar Styling */
-        #calendar {
-            padding: 10px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-    </style>
 </head>
 
-<body>
+<body class="dashboard-main-content">
     <div class="content-area">
         <div class="container-fluid">
             <h2>Welcome, <?php echo htmlspecialchars($_SESSION['email']); ?>! You are logged in as a Recruiter.</h2>

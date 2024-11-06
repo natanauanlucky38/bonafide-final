@@ -1,6 +1,7 @@
 <?php
 include '../db.php'; // Include database connection
 include 'sidebar.php';
+include 'header.php';
 
 // Ensure the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
@@ -33,97 +34,12 @@ $user = $user_result->fetch_assoc();
 <head>
     <meta charset="UTF-8">
     <title>View Profile</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    <link rel="stylesheet" href="applicant_styles.css"> <!-- Include your CSS styles here -->
 
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .profile-container {
-            max-width: 650px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .profile-header {
-            background-color: #007bff;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .profile-header h2 {
-            font-size: 1.8rem;
-        }
-
-        .profile-info {
-            padding: 20px;
-        }
-
-        .section-title {
-            font-size: 1.3rem;
-            color: #007bff;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
-        }
-
-        .profile-info p {
-            margin-bottom: 12px;
-            color: #555;
-            font-size: 1rem;
-        }
-
-        .profile-info p strong {
-            color: #333;
-        }
-
-        .profile-info a {
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        .profile-info a:hover {
-            text-decoration: underline;
-        }
-
-        .edit-button {
-            text-align: center;
-            padding: 15px;
-            background-color: #f4f4f4;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .edit-button a {
-            text-decoration: none;
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-weight: bold;
-            transition: background-color 0.3s;
-        }
-
-        .edit-button a:hover {
-            background-color: #0056b3;
-        }
-    </style>
 </head>
 
-<body>
+<body class="view_profile-content">
+
     <div class="profile-container">
         <div class="profile-header">
             <h2>Profile Information</h2>
@@ -169,6 +85,10 @@ $user = $user_result->fetch_assoc();
         </div>
     </div>
 </body>
+
+<?php
+include 'footer.php';
+?>
 
 </html>
 

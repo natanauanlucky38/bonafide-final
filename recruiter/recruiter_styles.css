@@ -1,0 +1,1698 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* Main Layout */
+body {
+    display: flex;
+    flex-direction: column;
+    background-color: #f0f4f7; /* Light background color */
+    color: #333;
+}
+
+/* Header Styling */
+.main-header {
+    width: 100%;
+    padding: 15px 20px;
+    background-color: #004d00; /* Deep green */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-bottom: 2px solid #228B22; /* Subtle accent line */
+}
+
+/* Header Title and Logo */
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Space between logo and text */
+}
+
+.logo {
+    width: 40px;
+    height: auto;
+    border-radius: 50%; /* Circular logo */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Shadow for depth */
+}
+
+.main-header h1 {
+    font-size: 1.6em;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* Header Right Section (Notifications and Logout) */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Space between notification and logout links */
+}
+
+.notification {
+    position: relative;
+}
+
+.notification a {
+    color: #90EE90;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.3s, color 0.3s;
+    background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent background */
+}
+
+.notification a:hover {
+    background-color: #228B22; /* Light green on hover */
+    color: white; /* Text color change on hover */
+    transform: scale(1.05); /* Slight grow on hover */
+}
+
+.notification .badge {
+    background-color: #90EE90;
+    color: black;
+    padding: 3px 7px;
+    border-radius: 50%;
+    font-size: 0.8em;
+    position: absolute;
+    top: 0;
+    right: -10px;
+}
+
+/* Notification Dropdown */
+.notification-list {
+    display: none;
+    position: absolute;
+    top: 35px;
+    right: 0;
+    background-color: white;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    width: 250px;
+    z-index: 1000;
+}
+
+.notification-list a {
+    display: block;
+    padding: 8px;
+    color: #004d00;
+    text-decoration: none;
+    font-size: 0.9em;
+    border-bottom: 1px solid #ddd;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.notification-list a:hover {
+    background-color: #f4f4f4;
+    color: #228B22; /* Text color change on hover */
+}
+
+.notification-list p {
+    padding: 8px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* Show notification dropdown on hover */
+.notification:hover .notification-list {
+    display: block;
+}
+
+/* Logout Link */
+.main-header a.logout {
+    color: white;
+    text-decoration: none;
+    font-size: 1em;
+    padding: 8px 12px;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.3s;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.main-header a.logout:hover {
+    background-color: #228B22;
+    transform: scale(1.05);
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 250px;
+    background-color: #228B22; /* Green color */
+    color: white;
+    position: fixed;
+    top: 60px; /* Offset to start below the header */
+    bottom: 0;
+    left: 0;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.2);
+    border-right: 2px solid #004d00; /* Dark accent border */
+}
+
+.sidebar ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.sidebar a {
+    display: block;
+    padding: 15px 20px;
+    color: white;
+    text-decoration: none;
+    font-size: 1em;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: background-color 0.3s, transform 0.3s, color 0.3s;
+    margin: 5px 10px;
+}
+
+.sidebar a:hover {
+    background-color: #006400; /* Dark green on hover */
+    color: #90EE90; /* Lighter green text on hover */
+    transform: scale(1.05); /* Slight grow on hover */
+}
+
+.sidebar .sidebar-active-link {
+    background-color: #004d00; /* Darker green for active link */
+}
+
+/* Main Content Area */
+.main-content {
+    margin-top: 80px; /* Adjusted for header height */
+    margin-left: 270px; /* Adjusted for sidebar width */
+    padding: 20px;
+    width: calc(100% - 270px);
+    background-color: #f8f8f8; /* Light gray for content area */
+    color: #333;
+}
+
+.main-content h2 {
+    color: #006400; /* Dark green for headings */
+}
+
+/* Link Hover Effects */
+.main-content a {
+    color: #228B22;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.main-content a:hover {
+    color: #004d00; /* Darker green text color on hover */
+    text-decoration: underline;
+}
+
+/* Responsive Design for Tablets */
+@media screen and (max-width: 992px) {
+    .sidebar {
+        width: 200px;
+    }
+    .main-content {
+        margin-left: 220px;
+        width: calc(100% - 220px);
+    }
+}
+
+/* Responsive Design for Mobile */
+@media screen and (max-width: 768px) {
+    .main-header h1 {
+        font-size: 1.4em;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        top: 0;
+        padding-top: 60px;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        margin-top: 140px;
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .main-header h1 {
+        font-size: 1.2em;
+    }
+    .sidebar a {
+        font-size: 0.9em;
+    }
+}
+
+/*
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+*/
+/* Dashboard Main Content Area */
+/* Dashboard Main Content Area */
+/* Dashboard Main Content Area */
+/* Dashboard Main Content Area */
+/* Dashboard Main Content Area */
+.dashboard-main-content {
+    margin-top: 80px;
+    margin-left: 270px;
+    padding: 20px;
+    background-color: #f0f4f7; /* Light background color */
+    color: #333;
+}
+
+/* Container for Compact Grid Layout */
+.content-area .container-fluid {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.content-area h2 {
+    color: #004d00; /* Dark green */
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center; /* Center alignment for the main welcome message */
+}
+
+/* Dropdown Selector */
+.form-group label {
+    font-weight: bold;
+    color: #004d00;
+    margin-bottom: 5px;
+}
+
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+    transition: border-color 0.3s;
+}
+
+.form-group select:focus {
+    border-color: #228B22;
+    outline: none;
+}
+
+/* Row Layout for Charts and Calendar */
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* Chart Container Styling */
+.chart-container {
+    background-color: #d0ffd8;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    flex: 1 1 48%; /* Flex-basis to fit 2 columns on large screens */
+    text-align: center; /* Center alignment for the chart title */
+}
+
+.chart-container h4 {
+    color: #006400;
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #004d00;
+    padding-bottom: 5px;
+    font-weight: bold;
+    text-align: center; /* Center alignment for the title */
+}
+
+/* Calendar Styling */
+#calendar {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Styling for Charts (Bar, Pie, Doughnut) */
+canvas {
+    margin-top: 10px;
+}
+
+/* Tooltip Styling for Charts */
+.chartjs-tooltip {
+    background: #004d00;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Link Hover Effect in Content Area */
+.content-area a {
+    color: #228B22;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.content-area a:hover {
+    color: #004d00;
+    text-decoration: underline;
+}
+
+/* Button Styles */
+button, .btn {
+    background-color: #228B22;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover, .btn:hover {
+    background-color: #006400;
+}
+
+/* Responsive Layout for Smaller Screens */
+@media (max-width: 992px) {
+    .chart-container {
+        flex: 1 1 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .content-area h2 {
+        font-size: 1.2em;
+    }
+}
+
+
+/*
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.*/
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* User Management Main Content Area */
+.user_management-main-content {
+    margin-top: 80px;
+    margin-left: 270px;
+    padding: 20px;
+    background-color: #f0f4f7; /* Light background */
+    color: #333;
+}
+
+/* Content Area Container */
+.content-area {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Page Title */
+.content-area h2 {
+    color: #004d00; /* Dark green */
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Search Form Styling */
+form[action="user_management.php"] {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+form[action="user_management.php"] input[type="text"] {
+    width: 300px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1em;
+    margin-right: 10px;
+}
+
+form[action="user_management.php"] button {
+    background-color: #228B22;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+form[action="user_management.php"] button:hover {
+    background-color: #006400;
+}
+
+/* Email Action Button Alignment */
+.email-action {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px; /* Increased margin for spacing between button and table */
+}
+
+.email-action button {
+    background-color: #228B22;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.email-action button:hover {
+    background-color: #006400;
+}
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+table th, table td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.95em;
+}
+
+/* Table Header Styling */
+table th {
+    background-color: #004d00; /* Dark green background for headers */
+    color: white; /* White text */
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Table Data Styling */
+table td {
+    background-color: white;
+    color: #333;
+}
+
+table tbody tr:hover {
+    background-color: #e9f7e9; /* Light green highlight on hover */
+}
+
+/* Enhanced Checkbox Styling */
+input[type="checkbox"] {
+    transform: scale(1.2); /* Enlarge checkbox for visibility */
+}
+
+/* Links in Table Headers for Sorting */
+table th a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+table th a:hover {
+    color: #90EE90; /* Light green on hover */
+}
+
+/* Select All Checkbox */
+#selectAll {
+    cursor: pointer;
+}
+
+/* Row Stripes for Improved Readability */
+table tbody tr:nth-child(even) {
+    background-color: #f2f2f2; /* Light gray for even rows */
+}
+
+table tbody tr:nth-child(odd) {
+    background-color: #ffffff; /* White for odd rows */
+}
+
+/* Responsive Adjustments for Smaller Screens */
+@media (max-width: 768px) {
+    .content-area h2 {
+        font-size: 1.4em;
+    }
+
+    form[action="user_management.php"] input[type="text"] {
+        width: 100%;
+    }
+
+    form[action="user_management.php"], .email-action {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    table th, table td {
+        font-size: 0.85em;
+        padding: 8px;
+    }
+}
+
+
+/*.
+.
+.
+.
+.
+.
+.
+.
+..
+*/
+
+
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* Referrals Main Content Area */
+.referrals-main-content {
+    margin-top: 80px;
+    margin-left: 270px;
+    padding: 20px;
+    background-color: #f0f4f7;
+    color: #333;
+}
+
+/* Referrals Container */
+.referrals-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Page Title */
+.referrals-container h1 {
+    color: #004d00; /* Dark green */
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Section Header for Each Referrer */
+.referrer-section h2 {
+    color: #228B22;
+    font-weight: bold;
+    margin-top: 30px;
+    border-bottom: 2px solid #004d00;
+    padding-bottom: 5px;
+}
+
+/* Profile Details Styling */
+.profile-details {
+    background-color: #e7f3e7;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 0.95em;
+}
+
+.profile-details p {
+    margin: 5px 0;
+}
+
+.profile-details strong {
+    color: #004d00;
+}
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+table th, table td {
+    padding: 12px;
+    text-align: center;
+    font-size: 0.95em;
+}
+
+table th {
+    background-color: #004d00; /* Dark green background for headers */
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+table td {
+    background-color: white;
+    color: #333;
+}
+
+table tbody tr:hover {
+    background-color: #e9f7e9; /* Light green highlight on hover */
+}
+
+/* Row Stripes for Improved Readability */
+table tbody tr:nth-child(even) {
+    background-color: #f2f2f2; /* Light gray for even rows */
+}
+
+table tbody tr:nth-child(odd) {
+    background-color: #ffffff; /* White for odd rows */
+}
+
+/* Referral Graph Section */
+.referrals-container h2 {
+    color: #228B22;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 40px;
+    border-bottom: 2px solid #004d00;
+    padding-bottom: 5px;
+}
+
+/* D3.js Referral Graph Container */
+.referral-graph {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced Tooltip Styling for D3.js Nodes */
+.tooltip {
+    position: absolute;
+    background-color: #004d00;
+    color: white;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    pointer-events: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .referrals-container h1 {
+        font-size: 1.4em;
+    }
+
+    table th, table td {
+        font-size: 0.85em;
+        padding: 8px;
+    }
+}
+
+
+
+/*
+.
+..
+.
+.
+.
+.
+.
+.*/
+
+
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* Main Content Area */
+.applicant_tracking-main-content {
+    margin-top: 80px;
+    margin-left: 270px;
+    padding: 20px;
+    background-color: #f0f4f7;
+    color: #333;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* Page Title */
+.container h1 {
+    color: #004d00;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* Summary Box Styling */
+.summary-box {
+    background-color: #e7f3e7;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.summary-box h2 {
+    color: #228B22;
+    margin-bottom: 15px;
+}
+
+.summary-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.summary-metric {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    width: 130px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.summary-metric-number {
+    font-size: 1.8em;
+    color: #004d00;
+    font-weight: bold;
+}
+
+.summary-metric-label {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Job Box Styling */
+.job-box {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #004d00;
+    border-bottom: 2px solid #e7f3e7;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.job-company {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.metric {
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    width: 120px;
+    padding: 10px;
+    text-align: center;
+}
+
+.metric-number {
+    font-size: 1.4em;
+    color: #228B22;
+    font-weight: bold;
+}
+
+.metric-label {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Toggle Button */
+.toggle-btn {
+    background-color: #228B22;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: background-color 0.3s;
+    display: block;
+    text-align: center;
+}
+
+.toggle-btn:hover {
+    background-color: #006400;
+}
+
+/* Applicant Info Section */
+.applicant-info-section {
+    display: none; /* Hidden by default, shown on toggle */
+    padding-top: 15px;
+}
+
+.applicant-info h3 {
+    color: #004d00;
+    font-size: 1.2em;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+}
+
+.applicant-details {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.applicant-details div {
+    margin: 5px 0;
+}
+
+.applicant-details strong {
+    color: #228B22;
+}
+
+.applicant-details a {
+    color: #006400;
+    text-decoration: none;
+}
+
+.applicant-details a:hover {
+    text-decoration: underline;
+}
+
+/* Icons for Different Stages */
+.icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.summary-metric .icon,
+.metric .icon {
+    display: inline-block;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .summary-metrics, .metrics {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .job-header {
+        font-size: 1em;
+    }
+
+    .metric {
+        width: 100%;
+    }
+}
+
+
+/*.
+
+..
+.
+
+.
+..
+
+.*/
+
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* Main Content Styling */
+.view_job-main-content {
+    margin-top: 80px;
+    margin-left: 270px;
+    padding: 20px;
+    background-color: #f0f4f7;
+    color: #333;
+    display: flex;
+    justify-content: center; /* Center the content area */
+}
+
+/* Content Area */
+.content-area {
+    width: 100%;
+    max-width: 1100px; /* Set a max-width for better readability */
+    margin: 0 auto; /* Center content within its container */
+    padding: 20px; /* Add padding to keep content from touching the edges */
+}
+
+/* Page Title */
+.content-area h2 {
+    text-align: center;
+    color: #004d00;
+    font-weight: bold;
+    margin-bottom: 30px; /* Extra margin below the title */
+}
+
+/* Search Form */
+form[action="view_job.php"] {
+    display: flex;
+    justify-content: center;
+    gap: 10px; /* Gap between search input and button */
+    margin-bottom: 20px;
+}
+
+form[action="view_job.php"] input[type="text"] {
+    width: 300px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+form[action="view_job.php"] button {
+    background-color: #228B22;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+form[action="view_job.php"] button:hover {
+    background-color: #006400;
+}
+
+/* Two-Column Job Card Grid Layout */
+.job-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Two columns */
+    gap: 20px; /* Space between cards */
+}
+
+/* Job Card Styling */
+.job-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: transform 0.2s;
+    position: relative;
+    margin-bottom: 20px; /* Extra margin at the bottom */
+}
+
+.job-card:hover {
+    transform: translateY(-5px); /* Lift effect on hover */
+}
+
+.job-card h4 {
+    color: #004d00;
+    font-size: 1.4em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.job-card h4:before {
+    content: url('job-icon.svg'); /* Placeholder for an icon image */
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+}
+
+/* Job Details Styling */
+.job-details {
+    margin-top: 10px;
+    line-height: 1.6;
+    color: #555;
+    font-size: 0.95em;
+    gap: 10px; /* Space between each detail item */
+}
+
+.job-details div {
+    margin: 5px 0;
+}
+
+.job-details strong {
+    color: #004d00;
+}
+
+/* Job Actions Styling */
+.job-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px; /* Gap between action buttons */
+    margin-top: 20px;
+}
+
+.job-actions a {
+    background-color: #228B22;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    text-decoration: none;
+    transition: background-color 0.3s;
+    display: inline-block;
+}
+
+.job-actions a:hover {
+    background-color: #006400;
+}
+
+.job-actions a:nth-child(2) {
+    background-color: #e74a3b; /* Red for delete */
+}
+
+.job-actions a:nth-child(2):hover {
+    background-color: #c9302c;
+}
+
+/* Success and Error Messages */
+.success-message, .error-messages {
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.success-message {
+    background-color: #e6ffe6;
+    color: #004d00;
+    border: 1px solid #004d00;
+}
+
+.error-messages {
+    background-color: #ffe6e6;
+    color: #990000;
+    border: 1px solid #990000;
+}
+
+.error-messages ul {
+    list-style: none;
+    padding: 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+    .job-card-grid {
+        grid-template-columns: 1fr; /* Single column on smaller screens */
+    }
+    
+    form[action="view_job.php"] {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    form[action="view_job.php"] input[type="text"],
+    form[action="view_job.php"] button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+
+
+/*
+.
+.
+.
+.
+..
+.
+*/
+
+
+/* General Styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* Main Reports Content Area */
+.reports-main-content {
+    margin-top: 80px;
+    margin-left: 270px;
+    padding: 20px;
+    background-color: #f4f6f9;
+    color: #333;
+    display: flex;
+    justify-content: center;
+}
+
+.reports-content-area {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Page Title */
+.reports-content-area h2 {
+    text-align: center;
+    color: #004d00;
+    font-weight: bold;
+    margin-bottom: 30px;
+}
+
+/* Action Buttons */
+.reports-content-area .btn {
+    background-color: #228B22;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-right: 10px;
+    border-radius: 5px;
+    font-size: 1em;
+    transition: background-color 0.3s;
+}
+
+.reports-content-area .btn:hover {
+    background-color: #006400;
+}
+
+/* Time-to-Fill Chart Container */
+.timetofill-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.timetofill-container h4 {
+    color: #004d00;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Job Reports Accordion */
+#accordion-container {
+    margin-top: 20px;
+}
+
+/* Reports Card Styling */
+.reports-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.reports-card-header {
+    background-color: #004d00;
+    color: #ffffff;
+    padding: 15px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.reports-card-header h5 button {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 1.1em;
+    padding: 0;
+}
+
+.reports-card-header h5 button:focus {
+    outline: none;
+}
+
+.reports-card .card-body {
+    padding: 20px;
+    background-color: #f9f9f9;
+}
+
+/* Metrics and Charts Section */
+.job_metrics-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+.job_metrics-container h4 {
+    color: #004d00;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.job_metrics-container p {
+    color: #555;
+    font-size: 0.95em;
+    margin-bottom: 8px;
+}
+
+/* Sourcing Analytics and Drop-off Charts */
+.sourcing-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+.sourcing-container h4 {
+    color: #004d00;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* Chart Containers */
+canvas {
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Success and Error Messages */
+.success-message, .error-messages {
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.success-message {
+    background-color: #e6ffe6;
+    color: #004d00;
+    border: 1px solid #004d00;
+}
+
+.error-messages {
+    background-color: #ffe6e6;
+    color: #990000;
+    border: 1px solid #990000;
+}
+
+.error-messages ul {
+    list-style: none;
+    padding: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .reports-content-area {
+        padding: 15px;
+    }
+    .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+
+
+/*
+.
+.
+.
+.
+.
+.
+.
+*/
+
+
+
+/* Main Content Styling */
+.edit_job-main-content {
+    background-color: #f8f8f8;
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+/* Content Area */
+.edit_job-content-area {
+
+    width: 100%;
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 30px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.edit_job-content-area h2 {
+    text-align: center;
+    color: #004d00;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* Form Input Styling */
+form div {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+form label {
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+form input[type="text"],
+form input[type="number"],
+form input[type="date"],
+form select,
+form textarea {
+    padding: 8px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+form textarea {
+    min-height: 100px;
+}
+
+/* Button Styling */
+button[type="submit"],
+button[type="button"] {
+    background-color: #228B22;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 15px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+button[type="submit"]:hover,
+button[type="button"]:hover {
+    background-color: #006400;
+}
+
+/* Questionnaire Section */
+#questionnaire-section {
+    background-color: #f0f4f7;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+#questionnaire-section h3 {
+    color: #228B22;
+    font-size: 1.2em;
+    margin-bottom: 15px;
+}
+
+#questionnaire-container > div {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+#questionnaire-container label {
+    font-size: 0.9em;
+    color: #555;
+}
+
+#questionnaire-container input[type="text"],
+#questionnaire-container select,
+#questionnaire-container input[type="checkbox"] {
+    margin-bottom: 10px;
+}
+
+#questionnaire-container button[type="button"] {
+    align-self: flex-start;
+    background-color: #e74c3c;
+    color: #ffffff;
+    padding: 6px 10px;
+    font-size: 0.8em;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+#questionnaire-container button[type="button"]:hover {
+    background-color: #c0392b;
+}
+
+/* Error and Success Messages */
+.error-messages ul,
+.success-message {
+    list-style-type: none;
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #fdecea;
+    border-left: 5px solid #e74c3c;
+    color: #555;
+    border-radius: 5px;
+}
+
+.success-message {
+    background-color: #e9f6ec;
+    border-left: 5px solid #2ecc71;
+    color: #004d00;
+}
+
+.error-messages li {
+    font-size: 0.9em;
+}
+
+
+/*
+
+
+
+
+.
+.
+.
+*/
+
+/* Login Page Styling */
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-image: url(images/bg-image.jpeg);
+}
+
+/* Central login container */
+.login-container {
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 900px;
+    width: 100%;
+}
+
+/* Logo section with transparent background */
+.login-logo-company {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent; /* Transparent background */
+}
+
+.logo-login {
+    width: 300px;
+    height: auto; /* Maintain aspect ratio */
+    transition: transform 0.3s ease; /* Smooth animation */
+}
+
+/* Animation on hover */
+.logo-login:hover {
+    transform: scale(1.3) rotate(12deg); /* Slight grow and rotate effect */
+}
+
+/* Form section */
+.login-form {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #004d00;
+    padding: 50px;
+}
+
+/* Title container styling to keep title on one line */
+.title-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Ensuring h2 text stays on one line */
+.title-container h2 {
+    font-size: 1.4em;
+    color: #004d00;
+    white-space: nowrap; /* Prevent line break */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+/* Styling for subtitle */
+.title-container h3 {
+    font-size: 1.2em;
+    color: #228B22;
+    margin: 5px 0 20px;
+}
+
+.input-group {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 1em;
+}
+
+button[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    background-color: #228B22;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button[type="submit"]:hover {
+    background-color: #006400;
+}
+
+/* Error message styling */
+.error {
+    color: #990000;
+    font-size: 0.9em;
+    margin-top: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+        padding: 20px;
+    }
+    
+    .logo-login {
+        width: 150px;
+    }
+
+    .login-form {
+        padding: 15px;
+    }
+
+    /* Adjust font size on smaller screens */
+    .title-container h2 {
+        font-size: 1.2em;
+    }
+}

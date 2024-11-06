@@ -1,5 +1,7 @@
 <?php
 include '../db.php'; // Include database connection
+include 'header.php';
+include 'sidebar.php';
 
 // Ensure the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
@@ -107,135 +109,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Edit Profile</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="applicant_styles.css"> <!-- Include your CSS styles here -->
 
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .profile-container {
-            max-width: 650px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .profile-header {
-            background-color: #007bff;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .profile-header h2 {
-            font-size: 1.8rem;
-        }
-
-        form {
-            padding: 80px;
-        }
-
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-            color: #555;
-        }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="password"],
-        select {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 1rem;
-            color: #333;
-        }
-
-        .password-container {
-            display: flex;
-            align-items: center;
-            position: relative;
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 10px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            color: #666;
-        }
-
-        .message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        .button-group {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        button,
-        .back-button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        button {
-            background-color: #007bff;
-            color: white;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .back-button {
-            background-color: #e0e0e0;
-            color: #333;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-        }
-
-        .back-button:hover {
-            background-color: #c0c0c0;
-        }
-    </style>
 </head>
 
-<body>
+<body class="edit_profile-main-content">
     <div class="profile-container">
         <div class="profile-header">
             <h2>Edit Profile</h2>
@@ -308,9 +187,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <label for="confirm_password">Confirm New Password</label>
             <div class="password-container">
-                <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password (optional)">
-                <span class="toggle-password" onclick="togglePasswordVisibility('confirm_password')">👁️</span>
+                <input type="password" id="password" name="password" placeholder="Enter new password (optional)">
+                <span class="toggle-password" onclick="togglePasswordVisibility('password')">
+                    <i class="fas fa-eye"></i> <!-- Font Awesome eye icon, or Material Icons equivalent -->
+                </span>
             </div>
+
 
             <div class="button-group">
                 <button type="submit">Update Profile</button>

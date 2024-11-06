@@ -17,6 +17,29 @@ if (!isset($_GET['application_id'])) {
     exit();
 }
 
+// Place this after $application has been fetched, where $application_id and $application['job_id'] are defined
+
+$questionnaire_sql = "
+    SELECT q.question_text, 
+           a.answer_text, 
+           q.is_dealbreaker, 
+           CASE 
+               WHEN q.is_dealbreaker = 1 AND a.answer_text = 'NO' THEN 'Fail'
+               WHEN q.is_dealbreaker = 1 AND a.answer_text = 'YES' THEN 'Pass'
+               ELSE 'N/A'
+           END AS evaluation
+    FROM questionnaire_template q
+    LEFT JOIN application_answers a 
+           ON q.question_id = a.question_id 
+           AND a.application_id = ?
+    WHERE q.job_id = ?";
+
+$questionnaire_stmt = $conn->prepare($questionnaire_sql);
+$questionnaire_stmt->bind_param("ii", $application_id, $application['job_id']);
+$questionnaire_stmt->execute();
+$questionnaire_result = $questionnaire_stmt->get_result();
+
+
 // Check if required POST variables are set
 if (isset($_POST['req_id'], $_POST['application_id'], $_POST['is_submitted'])) {
     $req_id = (int)$_POST['req_id'];
@@ -453,7 +476,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
             <?php while ($question = $questionnaire_result->fetch_assoc()): ?>
                 <tr>
                     <td><?php echo htmlspecialchars($question['question_text']); ?></td>
-                    <td><?php echo htmlspecialchars($question['answer_text']); ?></td>
+                    <td><?php echo htmlspecialchars($question['answer_text'] ?? 'No answer'); ?></td> <!-- Display 'No answer' if null -->
                     <td><?php echo htmlspecialchars($question['evaluation']); ?></td>
                 </tr>
             <?php endwhile; ?>

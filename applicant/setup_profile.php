@@ -82,81 +82,85 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </script>
 </head>
 
-<body>
-    <h2>Setup Your Profile</h2>
+<body class="setup_main-content">
 
-    <!-- Added form opening tag with method="POST" -->
-    <form name="profileForm" method="POST" action="setup_profile.php" onsubmit="return validateForm()">
+    <div class="setup-container">
+        <h2>Setup Your Profile</h2>
 
-        <!-- Personal Information Section -->
-        <fieldset>
-            <legend>Personal Information</legend>
-            <input type="text" name="fname" placeholder="First Name" required><br>
-            <input type="text" name="lname" placeholder="Last Name" required><br>
-            <input type="number" name="age" placeholder="Age" required><br>
+        <!-- Added form opening tag with method="POST" -->
+        <form name="profileForm" method="POST" action="setup_profile.php" onsubmit="return validateForm()">
 
-            <!-- Civil Status Selection -->
-            <label for="civil_status">Civil Status:</label>
-            <select name="civil_status" id="civil_status" required>
-                <option value="SINGLE">Single</option>
-                <option value="MARRIED">Married</option>
-                <option value="DIVORCED">Divorced</option>
-                <option value="WIDOWED">Widowed</option>
-            </select><br>
-        </fieldset>
+            <!-- Personal Information Section -->
+            <fieldset>
+                <legend>Personal Information</legend>
+                <input type="text" name="fname" placeholder="First Name" required><br>
+                <input type="text" name="lname" placeholder="Last Name" required><br>
+                <input type="number" name="age" placeholder="Age" required><br>
 
-        <!-- Contact Information Section -->
-        <fieldset>
-            <legend>Contact Information</legend>
-            <input type="text" name="phone" id="phone" value="+639" maxlength="13" placeholder="Phone Number" required oninput="validatePhoneInput()"><br>
-            <input type="text" name="address" placeholder="Address" required><br>
-            <input type="text" name="linkedin_link" placeholder="LinkedIn Profile (Optional)"><br>
-            <input type="text" name="facebook_link" placeholder="Facebook Profile (Optional)"><br>
-        </fieldset>
+                <!-- Civil Status Selection -->
+                <label for="civil_status">Civil Status:</label>
+                <select name="civil_status" id="civil_status" required>
+                    <option value="SINGLE">Single</option>
+                    <option value="MARRIED">Married</option>
+                    <option value="DIVORCED">Divorced</option>
+                    <option value="WIDOWED">Widowed</option>
+                </select><br>
+            </fieldset>
 
-        <!-- Education Information Section -->
-        <fieldset>
-            <legend>Education Information</legend>
-            <label for="education_level">Education Level:</label>
-            <select name="education_level" id="education_level" onchange="toggleDegreeField()" required>
-                <option value="PRIMARY">Primary</option>
-                <option value="SECONDARY">Secondary</option>
-                <option value="TERTIARY">Tertiary</option>
-                <option value="POSTGRADUATE">Postgraduate</option>
-            </select><br>
+            <!-- Contact Information Section -->
+            <fieldset>
+                <legend>Contact Information</legend>
+                <input type="text" name="phone" id="phone" value="+639" maxlength="13" placeholder="Phone Number" required oninput="validatePhoneInput()"><br>
+                <input type="text" name="address" placeholder="Address" required><br>
+                <input type="text" name="linkedin_link" placeholder="LinkedIn Profile (Optional)"><br>
+                <input type="text" name="facebook_link" placeholder="Facebook Profile (Optional)"><br>
+            </fieldset>
 
-            <input type="text" name="school_graduated" placeholder="School Graduated" required><br>
-            <input type="text" name="year_graduated" placeholder="Year Graduated" required><br>
+            <!-- Education Information Section -->
+            <fieldset>
+                <legend>Education Information</legend>
+                <label for="education_level">Education Level:</label>
+                <select name="education_level" id="education_level" onchange="toggleDegreeField()" required>
+                    <option value="PRIMARY">Primary</option>
+                    <option value="SECONDARY">Secondary</option>
+                    <option value="TERTIARY">Tertiary</option>
+                    <option value="POSTGRADUATE">Postgraduate</option>
+                </select><br>
 
-            <!-- Degree field, hidden initially, shown only for Tertiary or Postgraduate -->
-            <div id="degree_field" style="display:none;">
-                <input type="text" name="degree" placeholder="Degree Obtained"><br>
-            </div>
-        </fieldset>
+                <input type="text" name="school_graduated" placeholder="School Graduated" required><br>
+                <input type="text" name="year_graduated" placeholder="Year Graduated" required><br>
 
-        <!-- Submit Button -->
-        <button type="submit">Submit Profile</button>
-    </form>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var phoneInput = document.getElementById("phone");
+                <!-- Degree field, hidden initially, shown only for Tertiary or Postgraduate -->
+                <div id="degree_field" style="display:none;">
+                    <input type="text" name="degree" placeholder="Degree Obtained"><br>
+                </div>
+            </fieldset>
 
-            // Ensure the input starts with +639 and restrict the user from modifying it
-            phoneInput.addEventListener("input", validatePhoneInput);
+            <!-- Submit Button -->
+            <button type="submit">Submit Profile</button>
+        </form>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                var phoneInput = document.getElementById("phone");
 
-            function validatePhoneInput() {
-                if (!phoneInput.value.startsWith("+639")) {
-                    phoneInput.value = "+639"; // Reset to +639 if modified
+                // Ensure the input starts with +639 and restrict the user from modifying it
+                phoneInput.addEventListener("input", validatePhoneInput);
+
+                function validatePhoneInput() {
+                    if (!phoneInput.value.startsWith("+639")) {
+                        phoneInput.value = "+639"; // Reset to +639 if modified
+                    }
+                    // Allow only numeric input after the prefix
+                    phoneInput.value = phoneInput.value.slice(0, 4) + phoneInput.value.slice(4).replace(/\D/g, '');
+                    // Limit to +639 plus 9 digits (13 characters total)
+                    if (phoneInput.value.length > 13) {
+                        phoneInput.value = phoneInput.value.slice(0, 13);
+                    }
                 }
-                // Allow only numeric input after the prefix
-                phoneInput.value = phoneInput.value.slice(0, 4) + phoneInput.value.slice(4).replace(/\D/g, '');
-                // Limit to +639 plus 9 digits (13 characters total)
-                if (phoneInput.value.length > 13) {
-                    phoneInput.value = phoneInput.value.slice(0, 13);
-                }
-            }
-        });
-    </script>
+            });
+        </script>
+
+    </div>
 </body>
 
 </html>
