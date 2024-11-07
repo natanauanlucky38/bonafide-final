@@ -73,20 +73,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Applicant Registration</title>
+    <link rel="stylesheet" href="applicant_styles.css"> <!-- Include your CSS styles here -->
+
 </head>
 
-<body>
-    <h2>Applicant Registration</h2>
-    <form method="POST" action="register.php">
-        <input type="email" name="email" placeholder="Email" required><br>
-        <input type="password" name="password" placeholder="Password" required><br>
-        <input type="password" name="confirm_password" placeholder="Confirm Password" required><br>
-        <input type="text" name="referral_code" placeholder="Referral Code (if any)"><br> <!-- Referral code input -->
-        <button type="submit">Register</button>
-    </form>
-    <?php if (isset($error)) {
-        echo "<p style='color:red;'>$error</p>";
-    } ?>
+<body class="register-main-content">
+    <div class="register-container">
+        <h2>Applicant Registration</h2>
+        <form method="POST" action="register.php">
+            <input type="email" name="email" placeholder="Email" required><br>
+            <input type="password" name="password" placeholder="Password" required><br>
+            <input type="password" name="confirm_password" placeholder="Confirm Password" required><br>
+            <input type="text" name="referral_code" placeholder="Referral Code (if any)"><br> <!-- Referral code input -->
+            <button type="submit">Register</button>
+        </form>
+        <?php if (isset($error)) {
+            echo "<p style='color:red;'>$error</p>";
+        } ?>
+    </div>
 
 
 </body>

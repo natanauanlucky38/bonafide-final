@@ -40,9 +40,9 @@ $user = $user_result->fetch_assoc();
 
 <body class="view_profile-content">
 
-    <div class="profile-container">
+    <div class="view-profile-container">
         <div class="profile-header">
-            <h2>Profile Information</h2>
+            <h1>Profile Information</h>
         </div>
 
         <div class="profile-info">
@@ -84,6 +84,7 @@ $user = $user_result->fetch_assoc();
             <a href="edit_profile.php">Edit Profile</a>
         </div>
     </div>
+    <div style="height: 500px;"></div>
 </body>
 
 <?php include 'footer.php'; ?>

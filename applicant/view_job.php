@@ -1,6 +1,7 @@
 <?php
 include '../db.php';  // Database connection
-include 'sidebar.php';
+include 'header.php';
+include 'sidebar.php';;
 
 // Ensure the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
@@ -41,15 +42,11 @@ $result = $stmt->get_result();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Job Postings</title>
-    <link rel="stylesheet" href="applicant_styles.css"> <!-- Link to the external CSS file -->
+    <link rel="stylesheet" href="applicant_styles.css">
 </head>
 
 <body class="view_job-main-content">
-
-    <?php include 'header.php'; ?>
     <div class="wrapper">
-        <?php include 'sidebar.php'; ?>
-
         <div class="view_job-container">
             <h2>Active Job Postings</h2>
 
@@ -96,6 +93,7 @@ $result = $stmt->get_result();
             <?php endif; ?>
         </div>
     </div>
+    <div style="height: 500px;"></div>
 
     <script>
         function copyToClipboard(link) {

@@ -175,6 +175,8 @@ $applications_result = $applications_stmt->get_result();
             </tbody>
         </table>
     </div>
+    <div style="height: 500px;"></div>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

@@ -122,6 +122,7 @@ while ($row = $interviews_result->fetch_assoc()) {
             });
         </script>
     </div>
+    <div style="height: 500px;"></div>
 </body>
 
 <?php

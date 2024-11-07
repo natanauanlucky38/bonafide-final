@@ -200,6 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </form>
     </div>
+    <div style="height: 500px;"></div>
 
     <script>
         function togglePasswordVisibility(id) {

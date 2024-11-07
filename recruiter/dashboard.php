@@ -167,7 +167,7 @@ $calendar_events = getCalendarEvents($conn);
 </head>
 
 <body class="dashboard-main-content">
-    <div class="content-area">
+    <div class="dashboard-content-area">
         <div class="container-fluid">
             <h2>Welcome, <?php echo htmlspecialchars($_SESSION['email']); ?>! You are logged in as a Recruiter.</h2>
             <p>Manage users, track applicants, and access analytics from your dashboard.</p>
@@ -211,6 +211,7 @@ $calendar_events = getCalendarEvents($conn);
             </div>
         </div>
     </div>
+    <div style="height: 500px;"></div>
 
     <script>
         Chart.register(ChartDataLabels); // Ensure datalabels plugin is active
@@ -426,6 +427,7 @@ $calendar_events = getCalendarEvents($conn);
             calendar.render();
         });
     </script>
+
 </body>
 <?php include 'footer.php'; ?>
 

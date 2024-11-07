@@ -226,10 +226,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
 </head>
 
 <body>
-
-    <?php include 'header.php'; ?>
-    <?php include 'sidebar.php'; ?>
-
     <div class="content-area">
         <h2>Create Job Posting</h2>
 

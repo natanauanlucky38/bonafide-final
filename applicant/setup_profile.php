@@ -57,6 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Setup Profile</title>
+    <link rel="stylesheet" href="applicant_styles.css"> <!-- Include your CSS styles here -->
+
     <script>
         // Script to show/hide degree field based on education level
         function toggleDegreeField() {
@@ -82,9 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </script>
 </head>
 
-<body class="setup_main-content">
+<body class="setup_profile-main-content">
 
-    <div class="setup-container">
+    <div class="setup-profile-container">
         <h2>Setup Your Profile</h2>
 
         <!-- Added form opening tag with method="POST" -->
@@ -161,6 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </script>
 
     </div>
+    <div style="height: 500px;"></div>
 
 </body>
 <?php include 'footer.php'; ?>
