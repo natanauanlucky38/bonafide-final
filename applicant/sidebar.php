@@ -1,20 +1,15 @@
-<?php
-// sidebar.php
-?>
-
-<!-- Sidebar -->
 <div class="sidebar">
     <ul class="sidebar_list">
-        <li><a href="dashboard.php">Dashboard</a></li>
-        <li><a href="view_job.php">Job Postings</a></li>
-        <li><a href="referrals.php">Referrals</a></li>
-        <li><a href="application.php">Applications</a></li>
-        <li><a href="profile.php">Profile</a></li>
+        <li><a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="view_job.php"><i class="fas fa-briefcase"></i> Job Postings</a></li>
+        <li><a href="application.php"><i class="fas fa-file-alt"></i> Applications</a></li>
+        <li><a href="referrals.php"><i class="fas fa-user-friends"></i> Referrals</a></li>
+        <li><a href="profile.php"><i class="fas fa-user-circle"></i> Profile</a></li>
     </ul>
 </div>
-
-<!-- Link to Font Awesome for icons -->
-<link rel="stylesheet" href="applicant_styles.css"> <!-- Link to your CSS file -->
+>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="applicant_styles.css">
 
 <script>
     function toggleSidebar() {

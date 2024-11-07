@@ -79,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create_user'])) {
                     <?php endif; ?>
                 </select>
             </div>
+            <a href="dashboard.php" class="btn btn-secondary mr-2"><i class="fas fa-arrow-left"></i> Back</a>
             <button type="submit" name="create_user" class="btn btn-primary"><i class="fas fa-user-plus"></i> Create User</button>
         </form>
     </div>

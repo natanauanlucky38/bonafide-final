@@ -477,7 +477,7 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                 const jobCard = jobCards[i];
                 const jobDetail = jobCard.querySelector('.card-body');
 
-                // Get job title and other information
+                // Get job title and other details
                 const jobTitleElement = jobCard.querySelector('.btn-link');
                 const createdAtElement = jobDetail.querySelector('p:nth-of-type(3)');
                 const deadlineElement = jobDetail.querySelector('p:nth-of-type(4)');
@@ -486,7 +486,7 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                 const createdAt = createdAtElement ? createdAtElement.innerText : 'Created At Not Available';
                 const deadline = deadlineElement ? deadlineElement.innerText : 'Deadline Not Available';
 
-                if (i > 0) pdf.addPage(); // New page for each job section if needed
+                if (i > 0) pdf.addPage(); // New page for each job section
 
                 // Add job details to PDF
                 pdf.setFontSize(16);
@@ -499,20 +499,26 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
                 const charts = jobDetail.querySelectorAll('canvas');
                 let yOffset = 50;
 
-                // Convert each chart to an image and add it to the PDF
+                // Convert each chart to an image using html2canvas
                 for (const chart of charts) {
                     if (chart) {
                         try {
-                            await new Promise((resolve) => setTimeout(resolve, 500)); // Small delay to ensure charts are rendered
-                            const imgData = chart.toDataURL('image/png'); // Capture chart as an image
-                            const imgWidth = 160; // Adjust width for the PDF
-                            const imgHeight = (chart.height * imgWidth) / chart.width; // Keep aspect ratio
+                            // Capture the chart as an image using html2canvas
+                            const canvasImage = await html2canvas(chart, {
+                                scale: 2, // Increase resolution
+                            });
 
+                            // Convert the captured canvas to data URL
+                            const imgData = canvasImage.toDataURL('image/png');
+                            const imgWidth = 160; // Adjust width for the PDF
+                            const imgHeight = (chart.height * imgWidth) / chart.width; // Maintain aspect ratio
+
+                            // Add the image to the PDF
                             pdf.addImage(imgData, 'PNG', 10, yOffset, imgWidth, imgHeight);
                             yOffset += imgHeight + 10; // Move down for the next chart
 
                             if (yOffset > 250) { // Check if space on page is exceeded
-                                pdf.addPage(); // Add a new page for the next chart if needed
+                                pdf.addPage(); // Add a new page if needed
                                 yOffset = 20; // Reset yOffset for new page
                             }
                         } catch (error) {

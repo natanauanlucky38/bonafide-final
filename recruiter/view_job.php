@@ -89,7 +89,8 @@ foreach ($statuses as $status) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Job Postings</title>
-    <link rel="stylesheet" href="recruiter_styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="recruiter_styles.css">
 
 </head>
 
@@ -105,8 +106,10 @@ foreach ($statuses as $status) {
         </form>
 
         <div>
-            <a href="job_posting.php" class="button">Create New Job</a>
-        </div>
+            <a href="job_posting.php" class="button">
+                <i class="fas fa-plus"></i> Create New Job
+            </a>
+        </div><br>
 
         <!-- Display errors -->
         <?php if (!empty($errors)): ?>

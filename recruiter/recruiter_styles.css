@@ -1038,6 +1038,29 @@ table tbody tr:nth-child(odd) {
     font-weight: bold;
     margin-bottom: 30px; /* Extra margin below the title */
 }
+/* Create Job */
+.button {
+    display: inline-block;
+    padding: 12px 24px;
+    margin: 20px 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.button:hover {
+    background-color: #0056b3;
+}
+
+.button i {
+    margin-right: 8px; /* Spacing for icon */
+}
 
 /* Search Form */
 form[action="view_job.php"] {
@@ -1561,8 +1584,135 @@ button[type="button"]:hover {
 
 /*
 
+/*View Application */
+/* View Application Main Content Area */
+.view_application-main-content {
+    margin-top: 80px;
+    margin-left: 270px;
+    padding: 20px;
+    background-color: #f0f4f7;
+    color: #333;
+    display: flex;
+    justify-content: center;
+}
 
+/* Content Area Styling */
+.content-area {
+    width: 100%;
+    max-width: 1100px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
 
+/* Section Header */
+.content-area h2 {
+    text-align: center;
+    color: #004d00;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* Card Styling for Application Details and Form Sections */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Headings for Subsections */
+.card h3 {
+    color: #006400;
+    font-size: 1.2em;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+/* Application Details Styling */
+.applicant-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.applicant-info p {
+    margin: 5px 0;
+    font-size: 1em;
+    color: #333;
+}
+
+.applicant-info strong {
+    color: #228B22;
+}
+
+/* Form Section Styling */
+.select-action, .form-field, textarea {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+/* Action Fields - Conditional Display */
+#interviewFields, #offerFields, #deploymentFields, #rejectionFields {
+    margin-top: 15px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+}
+
+/* Button Styling */
+button[type="submit"], button[type="button"] {
+    background-color: #228B22;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 12px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover, button[type="button"]:hover {
+    background-color: #006400;
+}
+
+/* Success and Error Message Styling */
+.message {
+    text-align: center;
+    padding: 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.success {
+    background-color: #e6ffe6;
+    color: #004d00;
+    border: 1px solid #004d00;
+}
+
+.error {
+    background-color: #ffe6e6;
+    color: #990000;
+    border: 1px solid #990000;
+}
+
+/* Responsive Layout Adjustments */
+@media (max-width: 992px) {
+    .applicant-info {
+        grid-template-columns: 1fr;
+    }
+}
+/*
 
 .
 .
