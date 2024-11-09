@@ -27,10 +27,16 @@ $unread_count = $unread_row['unread_count'];
     <title>Applicant Dashboard</title>
     <link rel="stylesheet" href="applicant_styles.css"> <!-- Link to your CSS file -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- Link to Font Awesome -->
+    <script>
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('sidebar-hidden');
+        }
+    </script>
 </head>
 
 <body>
     <header>
+        <button class="toggle-btn" onclick="toggleSidebar()">☰</button> <!-- Toggle button for sidebar -->
         <div class="header-title">
             <img src="images/logo.png" alt="Company Logo" class="logo"> <!-- Update path to your logo -->
             <h1>Bonafide Trainology Placement Services</h1>

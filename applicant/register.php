@@ -74,7 +74,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <title>Applicant Registration</title>
     <link rel="stylesheet" href="applicant_styles.css"> <!-- Include your CSS styles here -->
-
 </head>
 
 <body class="register-main-content">
@@ -88,12 +87,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <button type="submit">Register</button>
         </form>
         <?php if (isset($error)) {
-            echo "<p style='color:red;'>$error</p>";
+            echo "<p class='error-message'>$error</p>";
         } ?>
     </div>
-
-
 </body>
-<?php include 'footer.php'; ?>
 
 </html>

@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </form>
 
             <!-- Registration Link -->
-            <p>Don't have an account? <a href="register.php">Register here</a></p>
+            <p class="registration-link">Don't have an account? <a href="register.php">Register here</a></p>
 
             <?php if (isset($error)) {
                 echo "<p class='error'>$error</p>";
