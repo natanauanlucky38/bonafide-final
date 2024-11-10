@@ -59,10 +59,10 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
 </head>
 
 <body class="applicant_tracking-main-content">
-    <div class="container">
+    <div class="applicant_tracking-container">
         <h1 style="text-align: center; margin-bottom: 20px;">Applicant Tracking System</h1>
 
-        <div class="summary-box">
+        <div class="applicant_tracking-summary-box">
             <h2>Total Applications Summary</h2>
             <div class="summary-metrics">
                 <div class="summary-metric">

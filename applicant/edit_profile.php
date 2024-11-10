@@ -1,7 +1,6 @@
 <?php
 include '../db.php'; // Include database connection
 include 'header.php';
-include 'sidebar.php';
 
 // Ensure the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
