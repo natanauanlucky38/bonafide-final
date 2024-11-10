@@ -380,49 +380,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
 <head>
     <meta charset="UTF-8">
     <title>View Application</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-        }
 
-        .container {
-            width: 500px;
-            margin: auto;
-            padding: 20px;
-            background: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .message {
-            text-align: center;
-            color: white;
-            padding: 10px;
-            border-radius: 4px;
-            margin-top: 10px;
-        }
-
-        .success {
-            background-color: #28a745;
-        }
-
-        .error {
-            background-color: #dc3545;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 8px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-    </style>
     <script>
         // JavaScript to handle checkbox click and send AJAX request
         function updateRequirementStatus(req_id, application_id, isSubmitted) {
@@ -444,8 +402,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$is_view_only) {
     </script>
 </head>
 
-<body>
-    <div class="container">
+<body class="view_application-main-content">
+    <div class="view_application-container">
         <h2>Application Details</h2>
 
         <?php if ($message): ?>

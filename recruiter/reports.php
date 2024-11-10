@@ -1,6 +1,7 @@
 <?php
 // reports.php for recruiters
 include '../db.php';  // Include database connection
+include 'header.php';
 
 // Check if user is logged in and is a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
@@ -9,8 +10,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
 }
 
 // Include the header and sidebar components
-include 'header.php';
-include 'sidebar.php';
+
+
 
 // Verify database connection
 if (!$conn) {
@@ -132,7 +133,6 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
 <head>
     <meta charset="UTF-8">
     <title>Recruiter Reports</title>
-
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -537,7 +537,7 @@ $avg_times = array_column($historical_data, 'avg_time_to_fill');
             console.log("PDF generated successfully with all charts, labels, and values.");
         }
     </script>
-
+    <div style="height: 900px;"></div>
 
 </body>
 <?php include 'footer.php'; ?>

@@ -1,7 +1,6 @@
 <?php
 include '../db.php'; // Database connection
 include 'header.php';
-include 'sidebar.php';
 
 // Fetch job postings with applicant counts per stage for each job
 $job_sql = "
@@ -46,7 +45,6 @@ $total_result = $conn->query($total_sql)->fetch_assoc();
 <head>
     <meta charset="UTF-8">
     <title>Applicant Tracking System</title>
-    <link rel="stylesheet" href="recruiter_styles.css"> <!-- Link to your CSS file -->
     <script>
         // Toggle visibility of applicant information for each job
         function toggleApplicantInfo(jobId) {

@@ -2,7 +2,6 @@
 // Include database connection and start session
 include '../db.php';  // Adjust this path based on your directory structure
 include 'header.php';  // Include header
-include 'sidebar.php';
 
 
 // Check if the user is logged in as a recruiter
@@ -58,7 +57,7 @@ while ($row = $referrals_result->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Referrals</title>
-    <link rel="stylesheet" href="recruiter_styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS file -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 
@@ -182,12 +181,11 @@ while ($row = $referrals_result->fetch_assoc()) {
             });
         </script>
     </div>
-
-
 </body>
 <?php include 'footer.php'; ?>
 
 </html>
+
 
 <?php
 // Close the database connection

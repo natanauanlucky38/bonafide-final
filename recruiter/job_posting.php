@@ -1,6 +1,7 @@
 <?php
 // Include necessary files
 include '../db.php';  // Include database connection
+include 'header.php';
 
 // Check if the user is logged in and is a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
@@ -156,7 +157,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Job Posting</title>
-    <link rel="stylesheet" href="recruiter_styles.css"> <!-- Link to your CSS file -->
     <script>
         function addRequirement() {
             const container = document.getElementById('requirements-container');
@@ -225,8 +225,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
     </script>
 </head>
 
-<body>
-    <div class="content-area">
+<body class="job-posting-main-content">
+    <div class="job-posting-content-area">
         <h2>Create Job Posting</h2>
 
         <?php if (!empty($errors)): ?>
@@ -314,7 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_title'])) {
         </form>
     </div>
 
-
+    <div style="height: 900px;"></div>
 
 </body>
 <?php include 'footer.php'; ?>

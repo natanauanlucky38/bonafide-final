@@ -1,6 +1,5 @@
 <?php
 include '../db.php'; // Include database connection
-include 'sidebar.php';
 include 'header.php';
 
 // Ensure the user is logged in as an applicant
@@ -41,7 +40,7 @@ $user = $user_result->fetch_assoc();
 <body class="view_profile-content">
 
     <div class="view-profile-container">
-        <div class="profile-header">
+        <div class="view-profile-header">
             <h1>Profile Information</h>
         </div>
 

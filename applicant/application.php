@@ -1,15 +1,13 @@
 <?php
 // Include database connection and start session
 include '../db.php';  // Adjust this path based on your directory structure
-include 'sidebar.php';
+include 'header.php';
 
 // Check if the user is logged in as an applicant
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'APPLICANT') {
     header('Location: index.php');
     exit();
 }
-
-include 'header.php';
 
 $user_id = $_SESSION['user_id'];
 
@@ -55,10 +53,9 @@ $applications_result = $applications_stmt->get_result();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Applications</title>
-    <link rel="stylesheet" href="applicant_styles.css"> <!-- Include your CSS styles here -->
 </head>
 
-<body class="application-main-content">
+<body class="application-body-content">
 
     <div class="application-container">
         <h1>My Applications</h1>
@@ -175,7 +172,7 @@ $applications_result = $applications_stmt->get_result();
             </tbody>
         </table>
     </div>
-    <div style="height: 500px;"></div>
+    <div style="height: 900px;"></div>
 
 
     <script>

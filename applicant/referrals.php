@@ -2,7 +2,6 @@
 // Include database connection and start session
 include '../db.php';  // Adjust this path based on your directory structure
 include 'header.php';  // Include header
-include 'sidebar.php';
 
 // Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -51,8 +50,6 @@ $referred_users = $referred_users_result->fetch_all(MYSQLI_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Referrals</title>
-    <link rel="stylesheet" href="applicant_styles.css"> <!-- Include your CSS styles here -->
-
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 
@@ -208,7 +205,7 @@ $referred_users = $referred_users_result->fetch_all(MYSQLI_ASSOC);
             }
         }
     </script>
-
+    <div style="height: 900px;"></div>
 
 </body>
 <?php include 'footer.php'; ?>

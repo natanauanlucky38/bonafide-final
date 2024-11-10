@@ -1,6 +1,5 @@
 <?php
 include '../db.php';  // Database connection
-include 'sidebar.php';
 include 'header.php';
 
 // Check if the user is logged in as an applicant

@@ -2,7 +2,7 @@
 // dashboard.php
 include '../db.php';  // Database connection
 include 'header.php';
-include 'sidebar.php';
+
 
 
 // Check if the user is logged in and is an applicant
@@ -71,13 +71,8 @@ while ($row = $interviews_result->fetch_assoc()) {
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Applicant Dashboard</title>
-    <link rel="stylesheet" href="applicant_styles.css"> <!-- Include your CSS styles here -->
-
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FullCalendar CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
 </head>
 
 <body class="dashboard-main-content">
@@ -90,18 +85,16 @@ while ($row = $interviews_result->fetch_assoc()) {
         </div>
 
         <!-- Right Column: Calendar Section -->
-        <div class="calendar-section">
+
+        <div class="calendar-section" id="calendarSection">
             <h3>Upcoming Events</h3>
-            <div id="calendar"></div>
+            <div id="calendar">
+                <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
+                <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+            </div>
         </div>
-
-
-
-        <!-- Bootstrap JS and FullCalendar JS -->
-        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
-
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 var calendarEl = document.getElementById('calendar');
@@ -120,9 +113,19 @@ while ($row = $interviews_result->fetch_assoc()) {
                 });
                 calendar.render();
             });
+
+            // Listen for the custom event from the sidebar
+            document.addEventListener('sidebarToggle', (event) => {
+                const calendarSection = document.getElementById('calendarSection');
+                if (event.detail === 'open') {
+                    calendarSection.classList.add('hide-calendar');
+                } else {
+                    calendarSection.classList.remove('hide-calendar');
+                }
+            });
         </script>
     </div>
-    <div style="height: 500px;"></div>
+    <div style="height: 900px;"></div>
 </body>
 
 <?php

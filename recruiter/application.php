@@ -9,8 +9,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
     exit();
 }
 
-include 'sidebar.php';
-
 // Fetch all job posts with their statuses (ACTIVE, ARCHIVED, DRAFT)
 $jobs_sql = "
     SELECT jp.job_id, jp.job_title, jp.status, jp.company, jp.location, jp.openings, jp.created_at, jp.deadline
@@ -75,73 +73,7 @@ while ($job = $jobs_result->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Applications</title>
-    <style>
-        /* Styling */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-        }
 
-        .container {
-            width: 90%;
-            margin: auto;
-            padding: 20px;
-        }
-
-        .sort-dropdown {
-            margin: 10px 0;
-            font-size: 0.9em;
-        }
-
-        .status-section {
-            margin-top: 30px;
-        }
-
-        /* Job card styling */
-        .job-card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .job-title {
-            font-size: 1.5em;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .job-details {
-            display: flex;
-            justify-content: space-between;
-            color: #555;
-            font-size: 0.9em;
-            margin-bottom: 10px;
-        }
-
-        /* Application card styling */
-        .application-card {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-top: 10px;
-            cursor: pointer;
-        }
-
-        .applicant-name {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .no-applications {
-            color: #888;
-            font-style: italic;
-            padding: 15px;
-            text-align: center;
-        }
-    </style>
     <script>
         // Toggle visibility of applications within each job using dropdown
         function toggleApplications(jobId) {
@@ -221,8 +153,8 @@ while ($job = $jobs_result->fetch_assoc()) {
     </script>
 </head>
 
-<body>
-    <div class="container">
+<body class="application-main-content">
+    <div class="applicant-container">
         <h1>Job Applications</h1>
 
         <?php foreach (['ACTIVE', 'ARCHIVED', 'DRAFT'] as $status): ?>
@@ -297,6 +229,7 @@ while ($job = $jobs_result->fetch_assoc()) {
             </div>
         <?php endforeach; ?>
     </div>
+    <div style="height: 500px;"></div>
 </body>
 <?php include 'footer.php'; ?>
 

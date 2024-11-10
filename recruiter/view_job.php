@@ -1,7 +1,6 @@
 <?php
 include '../db.php';  // Include database connection
 include 'header.php';
-include 'sidebar.php';
 
 // Check if the user is logged in and is a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
@@ -90,13 +89,11 @@ foreach ($statuses as $status) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Job Postings</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="recruiter_styles.css">
-
 </head>
 
 <body class="view_job-main-content">
 
-    <div class="content-area">
+    <div class="view-job-content-area">
         <h2>Available Job Postings</h2>
 
         <!-- Search Bar -->

@@ -1,7 +1,7 @@
 <?php
 // dashboard.php for recruiters
 include '../db.php';  // Include database connection
-
+include 'header.php';
 // Check if user is logged in and is a recruiter
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
     header('Location: index.php');  // Redirect to login page if not a recruiter
@@ -9,8 +9,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'RECRUITER') {
 }
 
 // Include the header and sidebar components
-include 'header.php';
-include 'sidebar.php';
+
+
 
 // Helper function to validate intervals
 function validateInterval($interval)
@@ -157,13 +157,11 @@ $calendar_events = getCalendarEvents($conn);
 <head>
     <meta charset="UTF-8">
     <title>Recruiter Dashboard</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
-    <link rel="stylesheet" href="recruiter_styles.css">
 </head>
 
 <body class="dashboard-main-content">
